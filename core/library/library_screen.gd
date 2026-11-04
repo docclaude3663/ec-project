@@ -62,6 +62,9 @@ func _ready() -> void:
 	_embedded = get_tree().current_scene != self
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	# Корень из PackedScene под CanvasLayer получает размер 0: якоря из сцены считались до входа в дерево,
+	# а перерасчёта никто не вызывает. Без этого экран схлопывается до минимального размера и не закрывает игру
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	settings = StudioSettings.new()
 	settings.name = "StudioSettings"

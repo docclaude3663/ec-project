@@ -26,7 +26,10 @@ var _plain_panels := {}
 
 # XX claude-library L1: экран Library поверх игры
 const LIBRARY_SCREEN := preload("res://core/library/library_screen.tscn")
+## Слой экрана Library: выше UI (0) и подсказок (10), чтобы игра ни рисовалась, ни кликалась поверх
+const LIBRARY_LAYER := 50
 var _library_screen: Control
+var _library_layer: CanvasLayer
 var _library_prev_mode: StringName = &"build"
 
 
@@ -124,14 +127,22 @@ func _open_library() -> void:
 	if is_instance_valid(_library_screen):
 		return
 	_library_prev_mode = Global.current_mode
+	_library_layer = CanvasLayer.new()
+	_library_layer.name = "LibraryLayer"
+	_library_layer.layer = LIBRARY_LAYER
+	_library_layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	_library_screen = LIBRARY_SCREEN.instantiate()
 	_library_screen.closed.connect(_on_library_closed)
-	get_parent().add_child(_library_screen)
+	_library_layer.add_child(_library_screen)
+	get_parent().add_child(_library_layer)
 
 
 ## Экран закрыт: кнопка режима возвращается на прежний режим (сам режим не менялся)
 func _on_library_closed() -> void:
 	_library_screen = null
+	if is_instance_valid(_library_layer):
+		_library_layer.queue_free()
+	_library_layer = null
 	var btn := %ModePanel.get_node_or_null("VBoxContainer/" + String(_library_prev_mode).capitalize() + "Button") as Button
 	if btn:
 		btn.button_pressed = true
