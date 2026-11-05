@@ -262,6 +262,7 @@ func _build_greybox() -> void:
 	_wall_x(1.0)
 	_build_window_frame()
 	_build_sky_card()
+	_build_fake_ao()
 
 	# Потолок: отдельной нодой, по умолчанию скрыт, без коллизии
 	ceiling = Node3D.new()
@@ -315,6 +316,79 @@ func _wall_x(sgn: float) -> void:
 	_walls.append(_box(visuals, "WallE" if sgn > 0.0 else "WallW",
 			Vector3(c.wall_thickness, c.size.y, c.size.z), Vector3(cx, c.floor_y + c.size.y * 0.5, 0.0),
 			_wall_col, Global.active_layers(['room']), _vis_layer(), walls_cast_shadow))
+
+
+## Ложный AO (ATTN_14 §14.13): мягкое затемнение у плинтуса и в вертикальных углах. SSAO в Clean выключен и почти ничего
+## не давал, а плоские стены без этого читаются как нарисованные. 9 полупрозрачных квадов без теней, на visual-слое комнаты.
+## Стена с дверью (юг) пропущена: квад повис бы в проёме
+const AO_COLOR := Color(0.05, 0.07, 0.16)
+const AO_ALPHA := 0.42
+const AO_FLOOR_H := 45.0      # высота полосы у пола, см
+const AO_CORNER_W := 32.0     # ширина полосы в вертикальном углу, см
+const AO_GAP := 0.3           # отступ от стены против z-fighting, см
+
+
+func _build_fake_ao() -> void:
+	var c := config
+	var hx := c.size.x * 0.5
+	var hz := c.size.z * 0.5
+	var y0 := c.floor_y
+	var h := c.size.y
+	var root := Node3D.new()
+	root.name = "FakeAO"
+	visuals.add_child(root)
+	var tex_floor := _ao_tex(true)
+	var tex_corner := _ao_tex(false)
+	# Полосы у пола: север, запад, восток (rot_y: куда смотрит нормаль квада внутрь комнаты)
+	_ao_quad(root, "FloorN", Vector2(c.size.x, AO_FLOOR_H), Vector3(0.0, y0 + AO_FLOOR_H * 0.5, -hz + AO_GAP), 0.0, tex_floor, false)
+	_ao_quad(root, "FloorW", Vector2(c.size.z, AO_FLOOR_H), Vector3(-hx + AO_GAP, y0 + AO_FLOOR_H * 0.5, 0.0), PI * 0.5, tex_floor, false)
+	_ao_quad(root, "FloorE", Vector2(c.size.z, AO_FLOOR_H), Vector3(hx - AO_GAP, y0 + AO_FLOOR_H * 0.5, 0.0), -PI * 0.5, tex_floor, false)
+	# Вертикальные углы: на северной стене и на боковых стенах у севера и юга (градиент от угла)
+	var w := AO_CORNER_W
+	_ao_quad(root, "CornerN_W", Vector2(w, h), Vector3(-hx + w * 0.5, y0 + h * 0.5, -hz + AO_GAP), 0.0, tex_corner, false)
+	_ao_quad(root, "CornerN_E", Vector2(w, h), Vector3(hx - w * 0.5, y0 + h * 0.5, -hz + AO_GAP), 0.0, tex_corner, true)
+	_ao_quad(root, "CornerW_N", Vector2(w, h), Vector3(-hx + AO_GAP, y0 + h * 0.5, -hz + w * 0.5), PI * 0.5, tex_corner, true)
+	_ao_quad(root, "CornerW_S", Vector2(w, h), Vector3(-hx + AO_GAP, y0 + h * 0.5, hz - w * 0.5), PI * 0.5, tex_corner, false)
+	_ao_quad(root, "CornerE_N", Vector2(w, h), Vector3(hx - AO_GAP, y0 + h * 0.5, -hz + w * 0.5), -PI * 0.5, tex_corner, false)
+	_ao_quad(root, "CornerE_S", Vector2(w, h), Vector3(hx - AO_GAP, y0 + h * 0.5, hz - w * 0.5), -PI * 0.5, tex_corner, true)
+
+
+## Градиентная текстура: тёмный край и прозрачный дальний конец. floor_strip: по вертикали (тёмный низ), иначе по горизонтали (тёмный левый край)
+func _ao_tex(floor_strip: bool) -> GradientTexture2D:
+	var g := Gradient.new()
+	var dark := Color(AO_COLOR, AO_ALPHA)
+	g.colors = PackedColorArray([dark, Color(AO_COLOR, AO_ALPHA * 0.35), Color(AO_COLOR, 0.0)])
+	g.offsets = PackedFloat32Array([0.0, 0.35, 1.0])
+	var t := GradientTexture2D.new()
+	t.gradient = g
+	t.width = 64
+	t.height = 64
+	t.fill_from = Vector2(0.0, 1.0) if floor_strip else Vector2(0.0, 0.0)
+	t.fill_to = Vector2(0.0, 0.0) if floor_strip else Vector2(1.0, 0.0)
+	return t
+
+
+func _ao_quad(parent: Node, nm: String, size: Vector2, pos: Vector3, rot_y: float, tex: Texture2D, flip_h: bool) -> void:
+	var mi := MeshInstance3D.new()
+	var q := QuadMesh.new()
+	q.size = size
+	mi.mesh = q
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.albedo_texture = tex
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	m.disable_receive_shadows = true
+	if flip_h:
+		m.uv1_scale = Vector3(-1.0, 1.0, 1.0)
+		m.uv1_offset = Vector3(1.0, 0.0, 0.0)
+	mi.material_override = m
+	mi.name = nm
+	mi.position = pos
+	mi.rotation.y = rot_y
+	mi.layers = _vis_layer()
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(mi)
 
 
 ## Кусок стены между x0..x1 и y0..y1 на z = cz
