@@ -129,10 +129,29 @@ func switch_tool(new_tool: Node):
 ## Дубль последнего поставленного объекта. Только в режиме Build и только из SelectTool или BuildTool
 ## (в драге, Observe и т.п. клавиша ничего не делает)
 func duplicate_last_object() -> void:
-	if Global.current_mode != &'build' or not build_tool.can_duplicate():
+	if Global.current_mode != &'build':
 		return
-	if active_tool == select_tool or active_tool == build_tool:
+	if active_tool != select_tool and active_tool != build_tool:
+		return
+	# Выбран объект: дублируем его (копия на курсоре), иначе последний поставленный
+	var sel := selected_for_duplicate()
+	if sel != null:
+		build_tool.duplicate_entity(sel)
+	elif build_tool.can_duplicate():
 		build_tool.duplicate_last()
+
+
+## Что дублировать по V и кнопке «Дубль»: выбранный в SelectTool настоящий объект (не призрак) с паспортом. null: ничего
+func selected_for_duplicate() -> Entity:
+	if active_tool != select_tool:
+		return null
+	var e: Entity = select_tool.selected_entity
+	if e == null or not is_instance_valid(e) or e.is_queued_for_deletion() or e.has_comp(C_Ghost):
+		return null
+	var idc := e.get_comp(C_Identity) as C_Identity
+	if idc == null or idc.setting == null:
+		return null
+	return e
 
 
 

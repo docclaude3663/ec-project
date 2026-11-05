@@ -18,7 +18,7 @@ class_name ToolbarController extends Node
 
 ## ⚡Сигнал: выбран объект в режиме Build (приемник Build, его слушает ToolController)
 signal object_selected(setting: EntitySetting)
-## ⚡Сигнал: нажата кнопка «Дубль» (последний поставленный объект)
+## ⚡Сигнал: нажата кнопка «Дубль» (выбранный объект, а если ничего не выбрано, последний поставленный)
 signal duplicate_requested
 
 @onready var _categories: Control = %DockCategories
@@ -39,6 +39,9 @@ var _mode: StringName = &""
 var _providers := {}   # режим -> CatalogProvider
 var _receivers := {}   # режим -> Callable(setting)
 var _dup_btn: Button
+var _dup_has_last := false     # есть последний поставленный объект
+var _dup_sel_name := ""        # название выбранного настоящего объекта, пусто: ничего не выбрано
+var _dup_last_name := ""       # название последнего поставленного объекта
 var _filter_bar: FilterBar
 var _filters := {}   # "режим/категория" -> {id фильтра: значение}, на время сессии
 
@@ -51,7 +54,7 @@ func _ready() -> void:
 	_dup_btn.text = "Дубль  (V)"
 	_dup_btn.focus_mode = Control.FOCUS_NONE   # чтобы Пробел и Enter не нажимали кнопку, а клавиши работали в игре
 	_dup_btn.disabled = true
-	_dup_btn.tooltip_text = "Еще один такой же, как последний построенный (клавиша V)"
+	_dup_btn.tooltip_text = "Копия выбранного объекта, а если ничего не выбрано, еще один такой же, как последний построенный (клавиша V)"
 	_dup_btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	_dup_btn.pressed.connect(func() -> void: duplicate_requested.emit())
 	var box: Node = _title.get_parent()
@@ -86,6 +89,7 @@ func _connect_game() -> void:
 	object_selected.connect(tc.select_build_object)
 	duplicate_requested.connect(tc.duplicate_last_object)
 	tc.build_tool.last_changed.connect(on_last_changed)
+	tc.selection_changed.connect(_on_selection_for_duplicate)
 	tc.build_selection_cleared.connect(object_deselected)
 
 
@@ -208,9 +212,27 @@ func object_deselected() -> void:
 
 ## ⚡Сигнал BuildTool.last_changed: появился или сменился последний поставленный объект
 func on_last_changed(setting: EntitySetting) -> void:
-	_dup_btn.disabled = setting == null
-	if setting != null:
-		_dup_btn.tooltip_text = "Еще один: %s (клавиша V)" % setting.name
+	_dup_has_last = setting != null
+	_dup_last_name = setting.name if setting != null else ""
+	_refresh_dup_btn()
+
+
+## ⚡Сигнал ToolController.selection_changed: выбран объект или выбор снят. Выбранный (не призрак) дублируется по кнопке и V
+func _on_selection_for_duplicate(entity: Entity) -> void:
+	_dup_sel_name = ""
+	if entity != null and is_instance_valid(entity) and not entity.has_comp(C_Ghost):
+		var idc := entity.get_comp(C_Identity) as C_Identity
+		if idc != null and idc.setting != null:
+			_dup_sel_name = idc.get_name_e()
+	_refresh_dup_btn()
+
+
+func _refresh_dup_btn() -> void:
+	_dup_btn.disabled = not _dup_has_last and _dup_sel_name == ""
+	if _dup_sel_name != "":
+		_dup_btn.tooltip_text = "Копия выбранного: %s (клавиша V)" % _dup_sel_name
+	elif _dup_has_last:
+		_dup_btn.tooltip_text = "Еще один: %s (клавиша V)" % _dup_last_name
 
 
 static func _clear(box: Node) -> void:

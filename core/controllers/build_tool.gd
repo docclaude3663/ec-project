@@ -28,6 +28,8 @@ var tunnel_mode := false
 signal last_changed(setting: EntitySetting)
 ## Что дублировать: настройка последнего объекта и он сам (источник состояния, если еще жив)
 var last_setting: EntitySetting
+## Стиль исходного трака при дубле выбранного (пусто: стиль сессии). Берется один раз в enter()
+var _dup_style: StringName = &""
 var last_entity: Entity
 ## Призрак получил готовую форму (flex): фазу растягивания пропускаем, ставится одним кликом
 var preshaped := false
@@ -38,7 +40,9 @@ func enter():
 	stretch_phase = 0
 	preshaped = false   # XX claude-terra 13.1.4
 	if ghost: ghost.queue_free()
-	ghost = controller.entity_factory.create_from_setting(ghost_setting)
+	# Дубль выбранного трака берет его стиль, остальные призраки стиль сессии (пустой запрос)
+	ghost = controller.entity_factory.create_from_setting(ghost_setting, _dup_style if _dup_pending else &"")
+	_dup_style = &""
 	# Стиль сессии сменили, пока призрак в руке: перестроить в новом стиле (ATTN_17 §17.13)
 	if not TSM.current_changed.is_connected(_on_track_style_changed):
 		TSM.current_changed.connect(_on_track_style_changed)
@@ -303,6 +307,17 @@ func _remember(setting: EntitySetting, entity: Entity) -> void:
 
 func can_duplicate() -> bool:
 	return last_setting != null
+
+
+## Дубль ВЫБРАННОГО объекта: призрак той же настройки на курсоре с состоянием исходного (поворот, уровень, форма flex)
+## и со стилем исходного трака. Исходный становится «последним»: следующая V тоже копирует его
+func duplicate_entity(e: Entity) -> void:
+	var idc := e.get_comp(C_Identity) as C_Identity
+	if idc == null or idc.setting == null:
+		return
+	_dup_style = e.style_id
+	_remember(idc.setting, e)
+	duplicate_last()
 
 
 ## ⚡Сигнал TSM: стиль сессии сменился. Призрак трака, следующий сессии, пересобирается в новом стиле
