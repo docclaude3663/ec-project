@@ -475,7 +475,8 @@ func _build_miniature() -> void:
 	_mini_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_mini_rect.visible = false
 	_mini_layer.add_child(_mini_rect)
-	_mini_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	# Именно set_anchors_and_offsets_preset: set_anchors_preset оставляет смещения (right=-ширина окна), прямоугольник схлопывался
+	_mini_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 
 ## Observe включает и выключает миниатюру плавно
