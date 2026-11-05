@@ -323,7 +323,7 @@ func _wall_x(sgn: float) -> void:
 ## Швы гаснут на расстоянии (fwidth), чтобы не рябило. Рисунок считается по мировым координатам XZ
 const PARQUET_SHADER := """
 shader_type spatial;
-uniform vec3 base_color : source_color = vec3(0.74, 0.58, 0.40);
+uniform vec4 base_color : source_color = vec4(0.74, 0.58, 0.40, 1.0);
 uniform float plank_w = 12.0;
 uniform float plank_len = 100.0;
 uniform float groove = 0.35;
@@ -349,7 +349,7 @@ void fragment() {
 	float fw = max(fwidth(wp.x), fwidth(wp.z));
 	g *= 1.0 - smoothstep(0.3, 1.2, fw);
 	float t = (hash(vec2(row, colm)) - 0.5) * 2.0 * tint;
-	vec3 c = base_color * (1.0 + t);
+	vec3 c = base_color.rgb * (1.0 + t);
 	c = mix(c, c * 0.55, g * 0.85);
 	ALBEDO = c;
 	ROUGHNESS = 0.85;
@@ -364,7 +364,7 @@ func _parquet_mat(color: Color) -> ShaderMaterial:
 		_parquet_shader.code = PARQUET_SHADER
 	var m := ShaderMaterial.new()
 	m.shader = _parquet_shader
-	m.set_shader_parameter("base_color", Vector3(color.r, color.g, color.b))
+	m.set_shader_parameter("base_color", color)   # Color, а не Vector3: иначе source_color не переведёт sRGB в linear и пол выцветает
 	return m
 
 
