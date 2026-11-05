@@ -55,7 +55,7 @@ class_name GraphicsPreset extends Resource
 @export_category("Reflections / Lamp")
 @export var probe_intensity := 1.0
 ## Энергия лампы над столом, когда она включена (включает Time, ручной переключатель или lamp_forced_on)
-@export var lamp_energy := 10.0
+@export var lamp_energy := 200.0
 @export var lamp_forced_on := false
 
 @export_category("Miniature (S8, пока не применяется)")
@@ -94,7 +94,7 @@ static func builtin(_id: StringName) -> GraphicsPreset:
 				"ssao_enabled": true, "ssao_radius": 0.9, "ssao_intensity": 2.8,
 				"ssao_power": 1.6, "ssao_light_affect": 0.1, "ssil": true, "ao_multibounce": true,
 				"sun_energy_mul": 0.4, "sun_shadow_blur": 1.8, "contact_shadows": true,
-				"probe_intensity": 0.6, "lamp_energy": 12.0, "lamp_forced_on": true,
+				"probe_intensity": 0.6, "lamp_energy": 220.0, "lamp_forced_on": true,
 				"tilt_shift": 0.5, "vignette": 0.35,
 			})
 		&"clean":

@@ -64,7 +64,7 @@ static func builtin(_id: StringName) -> TimeOfDayPreset:
 			return _make(_id, "Ночь", {
 				"sun_azimuth": 0.0, "sun_elevation": 35.0,
 				"sun_color": Color(0.55, 0.65, 1.0), "sun_energy": 0.12,
-				"ambient_tint": Color(0.45, 0.55, 0.9), "ambient_energy_mul": 0.55,
+				"ambient_tint": Color(0.58, 0.66, 0.92), "ambient_energy_mul": 0.65,
 				"background_tint": Color(0.3, 0.35, 0.6),
 				"sky_top": Color(0.03, 0.05, 0.15), "sky_bottom": Color(0.10, 0.12, 0.25),
 				"lamp_on": true,

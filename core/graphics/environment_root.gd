@@ -55,7 +55,8 @@ func _ensure_sun() -> void:
 	l.add_to_group(&"gfx_sun")
 
 
-## Лампа над столом. До S4 временная: включает ее только Look с lamp_energy > 0
+## Лампа над столом. Мир в сантиметрах (1 м = 100 ед.), а затухание света Godot идёт как 1/расстояние (decay 1):
+## на высоте 120 нужна энергия порядка 150-250, а не 6-12. До S4 временная: включает ее только Look с lamp_energy > 0
 func _ensure_lamp() -> void:
 	if _has(&"gfx_lamp"):
 		return
@@ -65,7 +66,7 @@ func _ensure_lamp() -> void:
 	l.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	l.light_color = Color(1.0, 0.82, 0.6)
 	l.light_energy = 0.0
-	l.spot_range = 300.0
+	l.spot_range = 700.0
 	l.spot_angle = 65.0
 	l.shadow_enabled = true
 	l.visible = false
