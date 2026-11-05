@@ -23,29 +23,25 @@ const SETTLE_VIEW := 12    # кадров после смены закладки
 
 const _WARM := Color(1.0, 0.90, 0.74)
 const _COOL := Color(0.62, 0.70, 0.86)
-## Раунд 2 (после анализа раунда 1, ATTN_14 §14.13.7). База: ACES, тёплое солнце, холодный слабый ambient.
-## Приёмы добавляются по одному поверх базы. blue = синие стены комнаты (слот wall, RoomDecor.VARIANTS).
-## sun50 / sun58 = высота солнца в градусах: чтобы луч из окна лёг на стол. lamp = лампа над столом как свет на макете.
+## Раунд 3 (после анализа раунда 2, ATTN_14 §14.13.7). База: ACES, тёплое солнце 50°, холодный ambient 0,75,
+## без лампы и без volumetric fog (они в раунде 2 не помогли). Меняются цвет стен, насыщенность, контраст, виньетка.
+## dusty / slate / sage = мягкие цвета стен (RoomDecor.PALETTE), cream = исходные стены для сравнения.
 func _variants() -> Array:
-	var base := {"ambient_energy": 0.55, "ambient_color": _COOL, "sun_energy_mul": 1.5, "contrast": 1.0, "saturation": 1.15,
+	var base := {"ambient_energy": 0.75, "ambient_color": _COOL, "sun_energy_mul": 1.5, "contrast": 1.0, "saturation": 1.15,
 			"tonemap": Environment.TONE_MAPPER_ACES}
-	var lamp := {"lamp_forced_on": true, "lamp_energy": 6.0}
-	var lift := {"ambient_energy": 0.75}
-	var blue := {"wall": "blue"}
-	var warm := {"sun_color": _WARM}
+	var warm := _t({"sun_color": _WARM}, 50.0)
+	var dusty := {"wall": "dusty"}
 	return [
-		_mk("r2_0_base", base, warm),
-		_mk("r2_1_blue", base, warm, {}, blue),
-		_mk("r2_2_blue_sun50", base, _t(warm, 50.0), {}, blue),
-		_mk("r2_3_blue_sun58", base, _t(warm, 58.0), {}, blue),
-		_mk("r2_4_blue_lamp", _m(base, lamp), warm, {}, blue),
-		_mk("r2_5_blue_sun50_lamp", _m(base, lamp), _t(warm, 50.0), {}, blue),
-		_mk("r2_6_blue_sun50_lift", _m(base, lift), _t(warm, 50.0), {}, blue),
-		_mk("r2_7_blue_sun50_shafts06", base, _t(warm, 50.0), _fog(0.0006), blue),
-		_mk("r2_8_blue_sun50_shafts10", base, _t(warm, 50.0), _fog(0.001), blue),
-		_mk("r2_9_candidate", _m(_m(base, lamp), lift), _t(warm, 50.0), _fog(0.0006), blue),
-		_mk("r2_10_candidate_agx", _m(_m(_m(base, lamp), lift), {"tonemap": Environment.TONE_MAPPER_AGX}),
-				_t(warm, 50.0), _fog(0.0006), blue),
+		_mk("r3_0_dusty", base, warm, {}, dusty),
+		_mk("r3_1_slate", base, warm, {}, {"wall": "slate"}),
+		_mk("r3_2_sage", base, warm, {}, {"wall": "sage"}),
+		_mk("r3_3_cream", base, warm, {}, {"wall": "cream"}),
+		_mk("r3_4_dusty_vig25", _m(base, {"vignette": 0.25}), warm, {}, dusty),
+		_mk("r3_5_dusty_vig40", _m(base, {"vignette": 0.4}), warm, {}, dusty),
+		_mk("r3_6_dusty_sat130", _m(base, {"saturation": 1.3}), warm, {}, dusty),
+		_mk("r3_7_dusty_contrast110", _m(base, {"contrast": 1.1}), warm, {}, dusty),
+		_mk("r3_8_dusty_sun58_amb65", _m(base, {"ambient_energy": 0.65}), _t(warm, 58.0), {}, dusty),
+		_mk("r3_9_dusty_haze03", base, warm, _fog(0.0003), dusty),
 	]
 
 

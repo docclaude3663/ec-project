@@ -23,13 +23,16 @@ const PALETTE := {
 	"blue": Color(0.22, 0.46, 0.88),
 	"sky": Color(0.55, 0.78, 0.96),
 	"mint": Color(0.62, 0.88, 0.76),
+	"dusty": Color(0.52, 0.64, 0.82),
+	"slate": Color(0.42, 0.54, 0.72),
+	"sage": Color(0.66, 0.76, 0.64),
 	"purple": Color(0.58, 0.40, 0.80),
 	"brown": Color(0.50, 0.33, 0.22),
 }
 
 ## Варианты по слотам: слот -> допустимые значения (ключи палитры или набор цветов постеров). Первый = по умолчанию
 const VARIANTS := {
-	"wall": ["cream", "sky", "mint", "blue"],
+	"wall": ["cream", "sky", "mint", "blue", "dusty", "slate", "sage"],
 	"bedding": ["blue", "red", "green"],
 	"curtains": ["yellow", "red", "blue"],
 	"posters": ["trains", "map", "space"],
