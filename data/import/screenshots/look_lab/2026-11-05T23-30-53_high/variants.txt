@@ -1,0 +1,189 @@
+[{
+"env": {},
+"id": "r3_0_dusty",
+"look": {
+"ambient_color": Color(0.62, 0.7, 0.86, 1),
+"ambient_energy": 0.75,
+"contrast": 1.0,
+"saturation": 1.15,
+"sun_energy_mul": 1.5,
+"tonemap": 3
+},
+"room": {
+"wall": "dusty"
+},
+"time": {
+"sun_color": Color(1, 0.9, 0.74, 1),
+"sun_elevation": 50.0
+}
+}, {
+"env": {},
+"id": "r3_1_slate",
+"look": {
+"ambient_color": Color(0.62, 0.7, 0.86, 1),
+"ambient_energy": 0.75,
+"contrast": 1.0,
+"saturation": 1.15,
+"sun_energy_mul": 1.5,
+"tonemap": 3
+},
+"room": {
+"wall": "slate"
+},
+"time": {
+"sun_color": Color(1, 0.9, 0.74, 1),
+"sun_elevation": 50.0
+}
+}, {
+"env": {},
+"id": "r3_2_sage",
+"look": {
+"ambient_color": Color(0.62, 0.7, 0.86, 1),
+"ambient_energy": 0.75,
+"contrast": 1.0,
+"saturation": 1.15,
+"sun_energy_mul": 1.5,
+"tonemap": 3
+},
+"room": {
+"wall": "sage"
+},
+"time": {
+"sun_color": Color(1, 0.9, 0.74, 1),
+"sun_elevation": 50.0
+}
+}, {
+"env": {},
+"id": "r3_3_cream",
+"look": {
+"ambient_color": Color(0.62, 0.7, 0.86, 1),
+"ambient_energy": 0.75,
+"contrast": 1.0,
+"saturation": 1.15,
+"sun_energy_mul": 1.5,
+"tonemap": 3
+},
+"room": {
+"wall": "cream"
+},
+"time": {
+"sun_color": Color(1, 0.9, 0.74, 1),
+"sun_elevation": 50.0
+}
+}, {
+"env": {},
+"id": "r3_4_dusty_vig25",
+"look": {
+"ambient_color": Color(0.62, 0.7, 0.86, 1),
+"ambient_energy": 0.75,
+"contrast": 1.0,
+"saturation": 1.15,
+"sun_energy_mul": 1.5,
+"tonemap": 3,
+"vignette": 0.25
+},
+"room": {
+"wall": "dusty"
+},
+"time": {
+"sun_color": Color(1, 0.9, 0.74, 1),
+"sun_elevation": 50.0
+}
+}, {
+"env": {},
+"id": "r3_5_dusty_vig40",
+"look": {
+"ambient_color": Color(0.62, 0.7, 0.86, 1),
+"ambient_energy": 0.75,
+"contrast": 1.0,
+"saturation": 1.15,
+"sun_energy_mul": 1.5,
+"tonemap": 3,
+"vignette": 0.4
+},
+"room": {
+"wall": "dusty"
+},
+"time": {
+"sun_color": Color(1, 0.9, 0.74, 1),
+"sun_elevation": 50.0
+}
+}, {
+"env": {},
+"id": "r3_6_dusty_sat130",
+"look": {
+"ambient_color": Color(0.62, 0.7, 0.86, 1),
+"ambient_energy": 0.75,
+"contrast": 1.0,
+"saturation": 1.3,
+"sun_energy_mul": 1.5,
+"tonemap": 3
+},
+"room": {
+"wall": "dusty"
+},
+"time": {
+"sun_color": Color(1, 0.9, 0.74, 1),
+"sun_elevation": 50.0
+}
+}, {
+"env": {},
+"id": "r3_7_dusty_contrast110",
+"look": {
+"ambient_color": Color(0.62, 0.7, 0.86, 1),
+"ambient_energy": 0.75,
+"contrast": 1.1,
+"saturation": 1.15,
+"sun_energy_mul": 1.5,
+"tonemap": 3
+},
+"room": {
+"wall": "dusty"
+},
+"time": {
+"sun_color": Color(1, 0.9, 0.74, 1),
+"sun_elevation": 50.0
+}
+}, {
+"env": {},
+"id": "r3_8_dusty_sun58_amb65",
+"look": {
+"ambient_color": Color(0.62, 0.7, 0.86, 1),
+"ambient_energy": 0.65,
+"contrast": 1.0,
+"saturation": 1.15,
+"sun_energy_mul": 1.5,
+"tonemap": 3
+},
+"room": {
+"wall": "dusty"
+},
+"time": {
+"sun_color": Color(1, 0.9, 0.74, 1),
+"sun_elevation": 58.0
+}
+}, {
+"env": {
+"volumetric_fog_albedo": Color(1, 0.96, 0.88, 1),
+"volumetric_fog_anisotropy": 0.6,
+"volumetric_fog_density": 0.0003,
+"volumetric_fog_enabled": true,
+"volumetric_fog_length": 600.0
+},
+"id": "r3_9_dusty_haze03",
+"look": {
+"ambient_color": Color(0.62, 0.7, 0.86, 1),
+"ambient_energy": 0.75,
+"contrast": 1.0,
+"saturation": 1.15,
+"sun_energy_mul": 1.5,
+"tonemap": 3
+},
+"room": {
+"wall": "dusty"
+},
+"time": {
+"sun_color": Color(1, 0.9, 0.74, 1),
+"sun_elevation": 50.0
+}
+}]
