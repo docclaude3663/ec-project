@@ -36,6 +36,9 @@ const FRONT := 0
 const REAR := 1
 
 const GROUP := &"coupler"
+## Тип сцепки «вечная» (сочленённый блок: паровоз с тендером, секции электровоза, вагоны скоростного).
+## Цепляется только с таким же типом, после сцепки без люфта, не рвётся и не расцепляется вручную
+const FIXED := &"fixed"
 const SCAN_PERIOD := 0.1   # с,  как часто обновляем список соседей
 const SCAN_MARGIN := 6.0   # м,  запас радиуса поиска соседей
 const MAX_OVERLAP := 2.0   # м,  глубже - считаем, что вагоны друг друга не касаются
@@ -76,6 +79,7 @@ class Link:
 	var b: C_Coupler
 	var b_end: int
 	var coupled := false    # false - просто контакт буферов
+	var permanent := false  # вечная сцепка (тип FIXED на обоих торцах): без люфта, не рвётся, ручная расцепка не работает
 	var stretch := 0.0      # дебаг: зазор s (<0 - сжатие)
 	var force := 0.0        # дебаг: сила на B вдоль нормали A (>0 толкает, <0 тянет)
 	var peak := 0.0
@@ -135,10 +139,20 @@ func get_neighbor(end: int) -> C_Coupler:
 
 
 ## Ручная расцепка (для инструмента/кнопки в InfoPanel)
-func uncouple(end: int) -> void:
+## Вечную сцепку вручную не разорвать (false). Сход, снятие с рельсов и удаление её рвут как обычно
+func uncouple(end: int) -> bool:
 	var l: Link = links[end]
-	if l:
-		_drop_link(l, &"manual")
+	if l == null:
+		return true
+	if l.permanent:
+		return false
+	_drop_link(l, &"manual")
+	return true
+
+
+func is_permanent(end: int) -> bool:
+	var l: Link = links[end]
+	return l != null and l.coupled and l.permanent
 
 
 ## Весь состав, в котором стоит этот вагон (обход по сцепкам)
@@ -169,7 +183,7 @@ func get_debug_info() -> Array[String]:
 			res.append("%s: free" % title)
 		else:
 			res.append("%s: %s [%s] s=%.2f F=%.1f peak=%.1f" % [
-				title, "COUPLED" if l.coupled else "contact",
+				title, ("PERMANENT" if l.permanent else "COUPLED") if l.coupled else "contact",
 				l.other(self).entity.name, l.stretch, l.force, l.peak])
 	return res
 
@@ -358,6 +372,9 @@ func _solve_link(l: Link, dt: float) -> void:
 	var w := minf(minf(omega, cb.omega), 0.3 / dt)  # устойчивость при любых массах и dt
 	var slk := 0.5 * (slack + cb.slack)
 	var trv := 0.5 * (buffer_travel + cb.buffer_travel)
+	if l.permanent:
+		slk = 0.0   # вечная сцепка: жёсткая тяга и упор без свободного хода
+		trv = 0.0
 
 	# f - сила на B вдоль +n: f>0 - буфера толкают, f<0 - сцепка тянет
 	var f := 0.0
@@ -371,7 +388,7 @@ func _solve_link(l: Link, dt: float) -> void:
 		var x := s - slk                            # слабину выбрали - сцепка натянулась
 		var pull = mu * (w * w * x + 2.0 * draw_zeta * w * sdot)
 		f = -maxf(pull, 0.0)
-		if -f > minf(strength, cb.strength):
+		if not l.permanent and -f > minf(strength, cb.strength):
 			_break(l, -f)
 			return
 
@@ -571,6 +588,7 @@ func _link(end: int, other: C_Coupler, oend: int, coupled: bool) -> Link:
 		l.b = self
 		l.b_end = end
 	l.coupled = coupled
+	l.permanent = coupled and _type_of(end) == FIXED and other._type_of(oend) == FIXED
 	links[end] = l
 	other.links[oend] = l
 	return l
