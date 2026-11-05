@@ -70,17 +70,25 @@ const ACTIONS := {
 	&"debug_look_lab_medium": [KEY_M, &"medium"],
 	&"debug_look_lab_low": [KEY_K, &"low"],
 }
+## Матрица Look × Time (все пресеты, текущая настройка, без вариантов): [клавиша, tier]
+const MATRIX_ACTIONS := {
+	&"debug_look_matrix": [KEY_N, &"high"],
+	&"debug_look_matrix_medium": [KEY_B, &"medium"],
+	&"debug_look_matrix_low": [KEY_J, &"low"],
+}
 
 var _busy := false
 
 
 func _ready() -> void:
-	for a in ACTIONS:
+	var all := ACTIONS.duplicate()
+	all.merge(MATRIX_ACTIONS)
+	for a in all:
 		if InputMap.has_action(a):
 			continue
 		InputMap.add_action(a)
 		var ev := InputEventKey.new()
-		ev.physical_keycode = ACTIONS[a][0]
+		ev.physical_keycode = all[a][0]
 		ev.ctrl_pressed = true
 		ev.shift_pressed = true
 		InputMap.action_add_event(a, ev)
@@ -95,6 +103,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			print("[LookLab] запуск, качество ", ACTIONS[a][1])
 			run([], ACTIONS[a][1])
+			return
+	for a in MATRIX_ACTIONS:
+		if event.is_action_pressed(a) and not event.is_echo():
+			get_viewport().set_input_as_handled()
+			print("[LookLab] матрица Look × Time, качество ", MATRIX_ACTIONS[a][1])
+			run_matrix(MATRIX_ACTIONS[a][1])
 			return
 
 
@@ -132,6 +146,8 @@ func run(only: Array = [], quality: StringName = &"high") -> void:
 	var room_saved := {}
 	var vp := get_viewport().get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(vp, true)
+	var vsync_was := DisplayServer.window_get_vsync_mode()
+	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)   # без V-Sync fps и время кадра честные
 	var env_saved := {}
 	var done := 0
 
@@ -189,6 +205,7 @@ func run(only: Array = [], quality: StringName = &"high") -> void:
 	_restore_env(env, env_saved)
 	_restore_room(rb, room_saved)
 	RenderingServer.viewport_set_measure_render_time(vp, false)
+	DisplayServer.window_set_vsync_mode(vsync_was)
 	GFX.looks[BASE_LOOK] = look0
 	GFX.times[BASE_TIME] = time0
 	GFX.apply_look(prev.look, 0.0)
@@ -202,6 +219,78 @@ func run(only: Array = [], quality: StringName = &"high") -> void:
 	_write(dir + "metrics.csv", "\n".join(rows) + "\n")
 	_write(dir + "variants.txt", var_to_str(variants))
 	print("[LookLab] готово, файлы: ", ProjectSettings.globalize_path(dir))
+	_busy = false
+
+
+## Матрица: каждый Look × каждый Time на текущих настройках (без вариантов), по закладкам камеры.
+## Снимки <look>_<time>_b<N>.png и metrics.csv (look,time,view,...) в user://look_lab/<время>_matrix_<tier>/. Нужна для L4:
+## как выглядят и сколько стоят остальные пресеты после правок Clean + Day.
+func run_matrix(quality: StringName = &"high") -> void:
+	if _busy:
+		return
+	var gimbal := get_node_or_null("/root/GameRoot/Gimbal") as Gimbal
+	if gimbal == null or GFX.get("_env") == null:
+		push_warning("LookLab: нет Gimbal или Environment (режим --fast?)")
+		return
+	_busy = true
+	var ui := get_node_or_null("/root/GameRoot/UI")
+	var views := _views(gimbal)
+	var prev := {"look": GFX.state.look, "time": GFX.state.time, "quality": GFX.state.quality}
+	var view0 := gimbal.get_view()
+	var ui_was := true
+	if ui and "visible" in ui:
+		ui_was = ui.visible
+		ui.visible = false
+	Hints.suspend(true)
+	var observe_was := bool(GFX.get("_observe_active"))
+	GFX.set("_observe_active", true)
+	var vp := get_viewport().get_viewport_rid()
+	RenderingServer.viewport_set_measure_render_time(vp, true)
+	var vsync_was := DisplayServer.window_get_vsync_mode()
+	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+	var dir := OUT_DIR + Time.get_datetime_string_from_system().replace(":", "-") + "_matrix_" + String(quality) + "/"
+	DirAccess.make_dir_recursive_absolute(dir)
+	var rows: Array[String] = ["look,time,view,sat,val,val_std,sat50_pct,draw_calls,objects,primitives,gpu_ms,cpu_ms,fps"]
+	GFX.apply_quality(quality, 0.0, false)
+	var looks: Array = GFX.looks.keys()
+	var times: Array = GFX.times.keys()
+	looks.sort()
+	times.sort()
+	var n := 0
+	for l in looks:
+		for t in times:
+			GFX.apply_look(l, 0.0)
+			GFX.apply_time(t, 0.0)
+			await _frames(SETTLE_FIRST)
+			for i in views.size():
+				var vw: Dictionary = views[i].view
+				gimbal.set_view(vw.pivot, vw.yaw, vw.pitch, vw.dist, true)
+				await _frames(SETTLE_VIEW)
+				var tm := await _measure(vp)
+				await RenderingServer.frame_post_draw
+				var img := get_viewport().get_texture().get_image()
+				var shot := "%s_%s_%s" % [l, t, views[i].name]
+				if img.save_png(dir + shot + ".png") != OK:
+					push_error("LookLab: не сохранён " + shot)
+				var st := _stats(img)
+				rows.append("%s,%s,%s,%.3f,%.3f,%.3f,%.1f,%d,%d,%d,%.2f,%.2f,%.0f" % [l, t, views[i].name, st.sat, st.val, st.val_std, st.sat50,
+						int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)),
+						int(Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME)),
+						int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)), tm.gpu, tm.cpu, tm.fps])
+			n += 1
+			print("[LookLab] %s + %s готов (%d/%d)" % [l, t, n, looks.size() * times.size()])
+	RenderingServer.viewport_set_measure_render_time(vp, false)
+	DisplayServer.window_set_vsync_mode(vsync_was)
+	GFX.set("_observe_active", observe_was)
+	GFX.apply_look(prev.look, 0.0)
+	GFX.apply_time(prev.time, 0.0)
+	GFX.apply_quality(prev.quality, 0.0, false)
+	gimbal.set_view(view0.pivot, view0.yaw, view0.pitch, view0.dist, true)
+	if ui and "visible" in ui:
+		ui.visible = ui_was
+	Hints.suspend(false)
+	_write(dir + "metrics.csv", "\n".join(rows) + "\n")
+	print("[LookLab] матрица готова, файлы: ", ProjectSettings.globalize_path(dir))
 	_busy = false
 
 
