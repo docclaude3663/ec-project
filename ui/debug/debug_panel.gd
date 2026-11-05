@@ -5,7 +5,7 @@ class_name DebugPanel extends PanelContainer
 ###########################
 ## Создается GameRoot только при Global.debug_mode (в релизе узла нет). Открывается клавишей F3
 ## (действие debug_panel_toggle), закрывается ей же или крестиком, тянется за заголовок.
-## Вкладки: Tuning (параметры выбранного вагона), Entity (компоненты), Perf (fps, отрисовка, физика),
+## Вкладки: Tuning и Suspension (параметры выбранного вагона), Entity (компоненты), Perf (fps, отрисовка, физика),
 ## Toggles (флаги Global), Keys (отладочные клавиши). Вкладки лежат в ui/debug/debug_*_tab.gd.
 ## Выбранный объект приходит сигналом ToolController.selection_changed. Положение окна пишется в Settings [debug].
 ## Когда появится FloatingPanel (U13), перетаскивание и положение переедут в него.
@@ -17,7 +17,7 @@ const VARS_KEY := "show_vars"
 ## Частота обновления живых значений открытой вкладки, раз в секунду
 const REFRESH_HZ := 10.0
 const DEFAULT_POS := Vector2(16.0, 56.0)
-const PANEL_WIDTH := 400.0
+const PANEL_WIDTH := 460.0
 const TABS_HEIGHT := 460.0
 
 var _tool_controller: ToolController
@@ -44,7 +44,8 @@ func _ready() -> void:
 	_tabs = TabContainer.new()
 	_tabs.tab_changed.connect(_on_tab_changed)
 	root.add_child(_tabs)
-	_add_tab(DebugTuningTab.new())
+	_add_tab(DebugTuningTab.new(WagonTuning.TAB_TUNING))
+	_add_tab(DebugTuningTab.new(WagonTuning.TAB_SUSPENSION))
 	_add_tab(DebugEntityTab.new())
 	_add_tab(DebugPerfTab.new())
 	_add_tab(DebugTogglesTab.new())

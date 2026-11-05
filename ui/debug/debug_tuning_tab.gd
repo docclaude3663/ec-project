@@ -1,36 +1,48 @@
 class_name DebugTuningTab extends DebugTab
 
 ###########################
-## Вкладка «Tuning»: настройка выбранного вагона (U14)
+## Вкладки «Tuning» и «Suspension»: настройка выбранного вагона (U14)
 ###########################
-## Строки строятся один раз по WagonTuning.PARAMS. При выборе показываются только те, что есть у цели
-## (у вагона без мотора нет группы «Мотор»). Кнопка «R» у строки и «Вернуть все» возвращают значения на момент
-## выбора вагона: так можно крутить ручки и вернуться, не перезагружая макет.
-## Значения живут в компонентах вагона и не сохраняются в макет. Чтобы оставить подобранное, кнопка «В паспорт»
-## записывает отличия в WagonConfig типа вагона (.tres): новые вагоны этого типа возьмут значения оттуда.
+## Один класс на две вкладки: tab_id выбирает группы из WagonTuning.GROUPS (Tuning: физика, мотор, сцепка, тело;
+## Suspension: включатели и SuspensionConfig). Группы сворачиваются, как категории в инспекторе паспорта, состояние
+## хранится в Settings [debug] closed_<вкладка>. Строки строятся один раз по WagonTuning.params(); при выборе
+## показываются только те, что есть у цели, а группы без компонента перечислены строкой «Нет у этого объекта».
+## Кнопка «R» у строки и «Вернуть все» возвращают значения на момент выбора вагона.
+## Значения живут в компонентах вагона и не сохраняются в макет. Чтобы оставить подобранное, «В паспорт»
+## записывает отличия в паспорт типа вагона (.tres): новые вагоны этого типа возьмут значения оттуда.
+
+const SETTINGS_SECTION := "debug"
+
+var tab_id: String
 
 ## Строки: key -> {control, kind, nodes: Array[Control], group}
 var _rows: Dictionary = {}
-## Группы: id -> {header, grid}
-var _groups: Dictionary = {}
+## Группы: id -> FoldableContainer
+var _folds: Dictionary = {}
 ## Значения на момент выбора вагона
 var _baseline: Dictionary = {}
+## id свернутых групп
+var _closed: Array = []
 
 var _title: Label
 var _hint: Label
 var _body: VBoxContainer
+var _absent: Label
 var _passport_btn: Button
 var _copy_btn: Button
 var _status: Label
 var _confirm: ConfirmationDialog
 
 
-func _init() -> void:
-	name = &"Tuning"
+func _init(p_tab_id: String = WagonTuning.TAB_TUNING) -> void:
+	tab_id = p_tab_id
+	name = &"Tuning" if tab_id == WagonTuning.TAB_TUNING else &"Suspension"
+	_closed = _load_closed()
+
 	_title = Label.new()
 	_title.add_theme_color_override(&"font_color", Color(0.4, 1.0, 0.5))
 	add_child(_title)
-	_hint = make_note("Выберите вагон в режиме Select. Здесь меняются параметры подвески, кинематики, тела и мотора.")
+	_hint = make_note("Выберите вагон в режиме Select.")
 	add_child(_hint)
 
 	_body = VBoxContainer.new()
@@ -63,27 +75,60 @@ func _init() -> void:
 	add_child(_confirm)
 
 	for g in WagonTuning.GROUPS:
-		var header := make_header(g.title)
-		_body.add_child(header)
+		if g.tab != tab_id:
+			continue
+		var fold := FoldableContainer.new()
+		fold.title = g.title
+		fold.folded = _closed.has(g.id)
+		fold.folding_changed.connect(_on_folded.bind(g.id))
 		var grid := GridContainer.new()
 		grid.columns = 3
 		grid.add_theme_constant_override(&"h_separation", 6)
-		_body.add_child(grid)
-		_groups[g.id] = {"header": header, "grid": grid}
+		fold.add_child(grid)
+		_body.add_child(fold)
+		_folds[g.id] = fold
 
-	for p in WagonTuning.PARAMS:
-		_add_row(p)
+	for p in WagonTuning.params():
+		if p.tab == tab_id:
+			_add_row(p)
+
+	_absent = make_note("")
+	_body.add_child(_absent)
 	_body.hide()
 
 
+## Свернутые группы: из настроек, а если там пусто (первый запуск), свернуты все кроме первой группы вкладки
+func _load_closed() -> Array:
+	var saved: Variant = Settings.get_value(SETTINGS_SECTION, "closed_" + tab_id, null)
+	if saved is Array:
+		return saved
+	var closed: Array = []
+	var first := true
+	for g in WagonTuning.GROUPS:
+		if g.tab != tab_id:
+			continue
+		if not first:
+			closed.append(g.id)
+		first = false
+	return closed
+
+
+func _on_folded(is_folded: bool, group_id: String) -> void:
+	if is_folded and not _closed.has(group_id):
+		_closed.append(group_id)
+	elif not is_folded:
+		_closed.erase(group_id)
+	Settings.set_value(SETTINGS_SECTION, "closed_" + tab_id, _closed)
+
+
 func _add_row(p: Dictionary) -> void:
-	var grid: GridContainer = _groups[p.group].grid
+	var grid := (_folds[p.group] as FoldableContainer).get_child(0) as GridContainer
 	# Ячейка подписи: название и, мелко, имя переменной (показывается кнопкой в заголовке панели)
 	var cell := VBoxContainer.new()
 	cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	cell.mouse_filter = Control.MOUSE_FILTER_PASS   # без этого тултип на подписи не покажется
 	cell.add_theme_constant_override(&"separation", -2)
-	if p.has("tip"):
+	if p.tip != "":
 		cell.tooltip_text = p.tip
 	var label := Label.new()
 	label.text = p.label
@@ -134,10 +179,21 @@ func _on_bind() -> void:
 			n.visible = has_it
 		if has_it:
 			shown[row.group] = true
-	for gid in _groups:
-		_groups[gid].header.visible = shown.has(gid)
-		_groups[gid].grid.visible = shown.has(gid)
+	var absent: PackedStringArray = []
+	for gid in _folds:
+		(_folds[gid] as FoldableContainer).visible = shown.has(gid)
+		if not shown.has(gid):
+			absent.append("%s: %s" % [_group_title(gid), WagonTuning.missing_reason(gid)])
+	_absent.visible = not absent.is_empty()
+	_absent.text = "Нет у этого объекта:\n" + "\n".join(absent)
 	_fill_controls(true)
+
+
+func _group_title(group_id: String) -> String:
+	for g in WagonTuning.GROUPS:
+		if g.id == group_id:
+			return g.title
+	return group_id
 
 
 func refresh() -> void:
@@ -169,7 +225,7 @@ func _fill_controls(force: bool) -> void:
 
 ## Кнопки паспорта доступны, когда вагон чем-то отличается от паспорта и паспорт есть куда записать
 func _update_passport_buttons() -> void:
-	var changed := not WagonTuning.passport_diff(target).is_empty()
+	var changed := not WagonTuning.passport_diff(target, tab_id).is_empty()
 	var can_write := WagonTuning.passport_path(target) != ""
 	_passport_btn.disabled = not (changed and can_write)
 	_passport_btn.tooltip_text = "Записать отличия в паспорт типа вагона (.tres)" if can_write \
@@ -178,19 +234,22 @@ func _update_passport_buttons() -> void:
 
 
 func _ask_passport() -> void:
-	var diff := WagonTuning.passport_diff(target)
+	var diff := WagonTuning.passport_diff(target, tab_id)
 	if diff.is_empty():
 		return
 	var text := "Записать в паспорт типа вагона?\n%s\n\n" % WagonTuning.passport_path(target)
 	for d in diff:
-		text += "%s: %s -> %s\n" % [d.key, String.num(d.old, 4), String.num(d.value, 4)]
-	text += "\nПаспорт общий для всех вагонов этого типа. Уже стоящие вагоны не изменятся, новые будут с этими значениями. Подвеска, трение и демпфирование в паспорт не входят."
+		text += "%s: %s -> %s\n" % [d.field, String.num(d.old, 4), String.num(d.value, 4)]
+	text += "\nПаспорт общий для всех вагонов этого типа. Уже стоящие вагоны не изменятся, новые будут с этими значениями."
+	if tab_id == WagonTuning.TAB_SUSPENSION:
+		text += " У стоящих вагонов с тем же паспортом подвеска может частично подхватить значения сразу (стыки, рыскание), остальное после пересоздания."
+	text += " Параметры без пометки паспорта (включатели, тело, ощущение сцепки) не записываются."
 	_confirm.dialog_text = text
 	_confirm.popup_centered(Vector2i(480, 0))
 
 
 func _write_passport() -> void:
-	var result := WagonTuning.save_to_passport(target)
+	var result := WagonTuning.save_to_passport(target, tab_id)
 	_status.text = result.message
 	_status.add_theme_color_override(&"font_color", Color(0.4, 1.0, 0.5) if result.ok else Color(1.0, 0.5, 0.4))
 	_status.show()
@@ -201,7 +260,7 @@ func _write_passport() -> void:
 
 
 func _copy_diff() -> void:
-	DisplayServer.clipboard_set(WagonTuning.passport_diff_text(target))
+	DisplayServer.clipboard_set(WagonTuning.passport_diff_text(target, tab_id))
 	_status.text = "Отличия от паспорта скопированы в буфер."
 	_status.add_theme_color_override(&"font_color", Color(0.7, 0.7, 0.7))
 	_status.show()

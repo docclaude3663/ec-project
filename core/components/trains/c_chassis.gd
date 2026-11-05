@@ -44,6 +44,8 @@ var wheel_surface_speed: float = 0.0
 @export var effect_multiplier: float = 1.0    # общий множитель входов
 
 var _susp: SuspensionState
+## true: у вагона своя копия SuspensionConfig (правили в DebugPanel), паспорт не затронут
+var _susp_is_copy := false
 
 # Кэш ссылок: get_comp() - это линейный поиск по детям, в физ. тике его быть не должно
 var _bogie: C_Bogie
@@ -102,13 +104,39 @@ func on_entity_ready() -> void:
 	if cfg == null:
 		cfg = SuspensionConfig.new() # значения по умолчанию
 
+	_susp = SuspensionState.new()
+	_susp.rail_joint.connect(_on_susp_joint)
+	_configure_suspension(cfg)
+
+
+## Собирает производные подвески из конфига: частоты зависят от массы, а упоры и отклики пересчитываются из градусов
+func _configure_suspension(cfg: SuspensionConfig) -> void:
 	var span := 0.0
 	if _bogie and _bogie.bogies_data.size() > 1:
 		span = absf(_bogie.bogies_data.back().pivot.position.z - _bogie.bogies_data.front().pivot.position.z)
-
-	_susp = SuspensionState.new()
 	_susp.setup(cfg, _kin.mass if _kin else 1.0, span)
-	_susp.rail_joint.connect(_on_susp_joint)
+
+
+## Для DebugPanel (U14): подвеска, которую сейчас использует вагон. null, если вагон еще не собран
+func get_suspension_config() -> SuspensionConfig:
+	return _susp.cfg if _susp else null
+
+
+## Для DebugPanel (U14): подвеска этого вагона для правки. Первый вызов делает копию, чтобы правки не меняли
+## общий паспорт типа (он один на все вагоны) и не задевали другие вагоны
+func get_tunable_suspension() -> SuspensionConfig:
+	if _susp == null:
+		return null
+	if not _susp_is_copy:
+		_susp.cfg = _susp.cfg.duplicate() as SuspensionConfig
+		_susp_is_copy = true
+	return _susp.cfg
+
+
+## Для DebugPanel (U14): пересчитать подвеску после правки конфига или массы. Колебания кузова обнуляются
+func rebuild_suspension() -> void:
+	if _susp:
+		_configure_suspension(_susp.cfg)
 
 
 func _ensure_refs() -> void:
