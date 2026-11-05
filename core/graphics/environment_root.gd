@@ -67,6 +67,8 @@ func _ensure_lamp() -> void:
 	l.light_color = Color(1.0, 0.82, 0.6)
 	l.light_energy = 0.0
 	l.spot_range = 700.0
+	l.shadow_bias = 0.6          # мир в см: стандартные 0,03–0,1 дают полосы (shadow acne) на стенах в ночных кадрах
+	l.shadow_normal_bias = 3.0
 	l.spot_angle = 65.0
 	l.shadow_enabled = true
 	l.visible = false
