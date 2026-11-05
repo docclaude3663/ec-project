@@ -213,6 +213,7 @@ func set_power_routing(on: bool) -> void:
 	_update_liveness()
 	_update_process()
 	_recalc_power()
+	entity.send_event("on_switch_power_mode_changed", {})   # визуал перекрашивает ветки сразу
 
 
 ## Сменить способ управления в игре (отладка/аксессуар). Пока идет перекладка, не меняем

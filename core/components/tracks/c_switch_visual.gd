@@ -86,6 +86,14 @@ func on_routes_changed(_d: Dictionary) -> void:
 
 func on_route_activated(data: Dictionary) -> void:
 	_update_lever(int(data.get("route", 0)))
+	# Слой электрики: окраска веток (E1) зависит от активного маршрута, а PGM обновляет вид только у траков, чей контур
+	# сменился (у самой стрелки контур тот же). Без этого вид менялся только при наведении мыши
+	update_visual()
+
+
+## Режим питания или тип крестовины сменили в игре (вкладка «Стрелка»): перекрасить ветки сразу
+func on_switch_power_mode_changed(_data: Dictionary) -> void:
+	update_visual()
 
 
 ## Стрелку переложили (рычаг, пульт, привод): подсветить активный путь на пару секунд.
