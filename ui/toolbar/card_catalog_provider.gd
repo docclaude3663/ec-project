@@ -51,11 +51,11 @@ const CARDS := {
 	&"room": [
 		{"id": &"room_visible", "title": "Комната", "toggle": true, "default": true},
 		{"id": &"ceiling", "title": "Потолок", "toggle": true},
-		{"id": &"wall_cream", "title": "Стены: беж", "group": &"wall", "default": true},
+		{"id": &"wall_cream", "title": "Стены: беж", "group": &"wall"},
 		{"id": &"wall_sky", "title": "Стены: небо", "group": &"wall"},
 		{"id": &"wall_mint", "title": "Стены: мята", "group": &"wall"},
 		{"id": &"wall_blue", "title": "Стены: синий", "group": &"wall"},
-		{"id": &"wall_dusty", "title": "Стены: пыльный голубой", "group": &"wall"},
+		{"id": &"wall_dusty", "title": "Стены: пыльный голубой", "group": &"wall", "default": true},
 		{"id": &"wall_slate", "title": "Стены: сланец", "group": &"wall"},
 		{"id": &"wall_sage", "title": "Стены: шалфей", "group": &"wall"},
 		{"id": &"bed_blue", "title": "Постель: синяя", "group": &"bedding", "default": true},
