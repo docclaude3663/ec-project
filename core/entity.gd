@@ -27,13 +27,13 @@ var style_request: StringName = &""
 
 
 func _ready():
+	# Имя ноды до сборки: оно нужно компонентам (имена нод сокетов, метки механизмов)
+	_assign_node_name()
+
 	# Оповещаем все компоненты, что сущность полностью собрана
 	for child in get_children():
 		if child is Component:
 			child.on_entity_ready()
-		
-	var _identity = get_comp(C_Identity)
-	name = _identity.get_name_e() + '_01'
 
 	if not Global.debug_markers:
 		return
@@ -44,6 +44,27 @@ func _ready():
 	center.position.y = 8.0
 	center.mesh = box_shape
 	add_child(center)
+
+## Имя ноды: последний сегмент ключа объекта (EntitySetting.key) заглавными и номер, например G239_01.
+## Название из паспорта (оно русское, для интерфейса) в имя ноды не идет: кириллица в путях и логах неудобна.
+## Номер подбирается свободный среди соседей, поэтому имена уникальны и стабильны (G239_01, G239_02, ...)
+func _assign_node_name() -> void:
+	var base := "ENTITY"
+	var idc := get_comp(C_Identity) as C_Identity
+	if idc and idc.setting:
+		var key := String(idc.setting.get_key())
+		base = key.get_slice(".", key.get_slice_count(".") - 1).to_upper()
+	base = base.validate_node_name()
+	if base == "":
+		base = "ENTITY"
+	var parent := get_parent()
+	var n := 1
+	var candidate := "%s_%02d" % [base, n]
+	while parent != null and parent.has_node(NodePath(candidate)) and parent.get_node(NodePath(candidate)) != self:
+		n += 1
+		candidate = "%s_%02d" % [base, n]
+	name = candidate
+
 
 ## ------ BUS --------
 

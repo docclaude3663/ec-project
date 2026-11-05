@@ -223,7 +223,7 @@ func load_game(slot_name: String  ='savegame', dir: String = SAVE_DIR, style_ove
 		if style_override != &"" and e_data.has("style_id"):
 			_style_id = style_override   # трак без style_id (зафиксирован в объекте, не трак) не трогаем
 		var new_entity = entity_factory.create_from_setting(_setting, _style_id)
-		new_entity.name = _setting.name # имя ентити 
+		# Имя ноды (G239_01) Entity назначает сам в _ready из ключа объекта
 		# Восстанавливаем трансформацию ДО добавления в дерево
 		new_entity.global_transform = e_data["transform"]
 		# Добавляем в мир
