@@ -95,7 +95,9 @@ func _build_bogies():
 	#INFO  Шейдер на колеса
 	for wheel in wheel_nodes:
 			var _mesh = wheel.wheel_node.get_node('WheelPairMesh')
-			_mesh.set_material_overlay(WHEEL_SHADER)
+			# Свой экземпляр материала на каждое колесо: C_Bogie пишет в него slip_blend,
+			# общий ресурс на все колёса всех вагонов даёт чужое значение и мерцание цвета
+			_mesh.set_material_overlay(WHEEL_SHADER.duplicate())
 			
 	#поднимаем кузов
 	var wagon_collision = instance.get_node('WagonCollisionShape3D')
