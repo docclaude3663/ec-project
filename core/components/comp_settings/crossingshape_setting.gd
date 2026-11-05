@@ -13,8 +13,6 @@ func create_component(entity: Entity) -> Component:
 	else:
 		comp.length = cfg.radius
 		comp.cross_deg = cfg.cross_deg
-		comp.auto_fit = cfg.auto_fit
-		comp.end_clearance = cfg.end_clearance
 		comp.separate_circuits = cfg.separate_circuits
 	entity.add_component(comp)
 	return comp

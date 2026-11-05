@@ -17,8 +17,6 @@ class_name C_CrossingShape extends ICapability
 ## Параметры задает CrossingShapeSettings из паспорта (CrossingConfig), компонент паспорт не читает
 var length := 23.9
 var cross_deg := 15.0
-var auto_fit := true
-var end_clearance := 0.1
 var separate_circuits := true
 
 
@@ -29,17 +27,7 @@ func on_entity_ready() -> void:
 		return
 	cross_deg = clampf(absf(cross_deg), 5.0, 90.0)
 
-	# Подгонка под коллизию: соседние концы двух путей разнесены на L * sin(a / 2)
-	var vis := get_comp(C_SwitchVisual) as C_SwitchVisual
-	var width := vis.style.collision_width if vis and vis.style else 3.2
-	var need := width + end_clearance
-	if length > 0.1:
-		var sep := length * sin(deg_to_rad(cross_deg) * 0.5)
-		if sep < need - 0.01:
-			if auto_fit:
-				cross_deg = clampf(rad_to_deg(2.0 * asin(minf(need / length, 1.0))), 5.0, 90.0)
-			else:
-				push_warning("C_CrossingShape: концы путей разнесены на %.2f, а коллизии соседей требуют %.2f. Увеличьте угол (или auto_fit)" % [sep, need])
+	# Геометрия ровно по паспорту, угол сам не меняется (соседние концы путей разнесены на L * sin(a / 2))
 	path.set_routes(build_routes(path, length, cross_deg), 0, true)
 
 	# Электрика: два независимых луча (путь 0 и путь 1). Сокеты получат свой луч при сборке (C_Socket идет после формы)

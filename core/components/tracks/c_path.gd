@@ -32,6 +32,9 @@ var has_passport := false
 var track_height := -1.0
 ## Трак тоннельный по паспорту (.tres)
 var allow_underground := false
+## Ширина коллизии основания из паспорта (TrackConfig.collision_width), 0 = глобальная из настроек. Для траков со сценой
+## Blender, у которых коллизию балласта генерирует C_Path (у процедурных ее строит визуал по TrackStyle)
+var collision_width := 0.0
 
 # XX claude-terra --- пандус и подготовка к Flex ---
 var rise := 0.0       # подъем вдоль трака (ю), только прямые
@@ -133,6 +136,14 @@ func _generate_path() -> Path3D:
 
 
 ## Синхронизируем ноду "Ballast" с нодой сцены внутри C_TrackVisual
+## Размер сегмента коллизии балласта: глобальный из настроек, но ширина из паспорта, если она задана
+func _ballast_size() -> Vector3:
+	var sz: Vector3 = Global.settings.track_ballast_segment.size
+	if collision_width > 0.0:
+		sz.x = collision_width
+	return sz
+
+
 func _sync_with_visual_ballast():
 	var visual = get_comp(C_TrackVisual)
 
@@ -150,7 +161,7 @@ func _sync_with_visual_ballast():
 	if ballast_node.get_child_count() == 0: 
 		# основной балласт
 		var dynamic_count = _calculate_collision_count(radius, deg, gs_ballast.deg_per_segment)
-		_generate_collision_segments(ballast_node, dynamic_count, gs_ballast.size,  gs_ballast.offset_x, 0, gs_ballast.start_end_padding , gs_ballast.gap, gs_ballast.align_ends)
+		_generate_collision_segments(ballast_node, dynamic_count, _ballast_size(),  gs_ballast.offset_x, 0, gs_ballast.start_end_padding , gs_ballast.gap, gs_ballast.align_ends)
 
 		_debug_color=Color("fd3fadff")
 		
@@ -187,7 +198,7 @@ func _sync_with_visual_heads():
 	if not head_node or head_node.get_child_count() == 0: # Метод генерации статикбоди трака
 		
 		if gs_head.static_generation_ballast:
-			_generate_collision_segments(head_node, dynamic_count, gs_ballast.size,  gs_ballast.offset_x, 0, gs_ballast.start_end_padding , gs_ballast.gap, gs_ballast.align_ends)
+			_generate_collision_segments(head_node, dynamic_count, _ballast_size(),  gs_ballast.offset_x, 0, gs_ballast.start_end_padding , gs_ballast.gap, gs_ballast.align_ends)
 
 		# 3️⃣ 1️⃣  Вешаем  1 большой  хедстатик 
 		if gs_head.static_generation_heads == 1 :  # Метод генерации статик

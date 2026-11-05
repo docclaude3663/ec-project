@@ -15,8 +15,6 @@ var diverge_deg := 15.0
 var diverge_radius := 0.0
 var hand := 1.0
 var start_route := 0
-var auto_fit := true
-var end_clearance := 0.1
 
 
 func on_entity_ready() -> void:
@@ -26,18 +24,8 @@ func on_entity_ready() -> void:
 		return
 	var start := start_route
 
-	# Подгонка под коллизию: концы веток разнесены на L * tan(a / 2) (при R = L / sin a)
-	var vis := get_comp(C_SwitchVisual) as C_SwitchVisual
-	var width := vis.style.collision_width if vis and vis.style else 3.2
-	var need := width + end_clearance
-	if auto_fit and diverge_radius <= 0.0 and length > 0.1:
-		diverge_deg = maxf(diverge_deg, rad_to_deg(2.0 * atan(need / length)))
-
+	# Геометрия ровно по паспорту, угол сам не меняется (концы веток разнесены на L * tan(a / 2) при R = L / sin a)
 	var routes: Array[Curve3D] = build_routes(path, length, diverge_deg, diverge_radius, hand)
-	var c1 := routes[1]
-	var sep := c1.sample_baked(c1.get_baked_length()).distance_to(routes[0].sample_baked(routes[0].get_baked_length()))
-	if sep < need - 0.01:
-		push_warning("C_SwitchShape: концы веток разнесены на %.2f, а коллизии соседей требуют %.2f. Увеличьте угол или радиус (или auto_fit)" % [sep, need])
 	path.set_routes(routes, start)
 
 

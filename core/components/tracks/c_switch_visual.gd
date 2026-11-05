@@ -27,8 +27,6 @@ const FLASH_STEP := 1.0          # ю, шаг ленты вдоль кривой
 var style: TrackStyle
 ## Рычаг стрелки. Выключен у траков без переключения (упор C_BufferStop использует этот же визуал)
 var with_lever := true
-## Ширина коллизии основания из паспорта (TrackConfig.collision_width). 0 = из стиля. Задает SwitchVisualSettings
-var collision_width := 0.0
 
 var ballast: Area3D
 var head: StaticBody3D
@@ -50,10 +48,6 @@ var _flash_tween: Tween
 func on_added() -> void:
 	if style == null:
 		style = TrackStyle.new()
-	# XX claude-switch: ширина коллизии из паспорта (collision_width, 0 = как в стиле). Стиль общий ресурс: правим копию
-	if collision_width > 0.0 and not is_equal_approx(collision_width, style.collision_width):
-		style = style.duplicate() as TrackStyle
-		style.collision_width = collision_width
 	rail_surface_index = 1 if style.ballast_enabled else 0
 	instance = _build_instance()
 	entity.add_child(instance)

@@ -26,3 +26,4 @@ static func apply_passport(path: C_Path, entity: Entity) -> void:
 	path.rise = cfg.rise
 	path.track_height = cfg.height
 	path.allow_underground = cfg.allow_underground
+	path.collision_width = cfg.collision_width

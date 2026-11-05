@@ -18,8 +18,16 @@ class_name TrackConfig extends ObjectConfig
 ## Трак тоннельный сразу при постановке (C_Tunnel): может уходить под листы пенопласта. Обычно включается клавишей U
 @export var allow_underground := false
 # XX claude-switch
-## Ширина коллизии основания (балласт, шпалы), ю. 0 = из TrackStyle (по умолчанию 2.9).
-## Читают стрелка, кросс и упор (C_SwitchVisual). Нужна, когда соседние траки стоят близко: у стрелки и кросса
-## от нее зависит, на какое расстояние разойдутся концы (см. auto_fit в SwitchConfig и CrossingConfig)
+## Ширина коллизии основания (балласт, шпалы), ю. 0 = не задана: берется ширина из TrackStyle (процедурные траки)
+## или из глобальных настроек track_ballast_segment (траки со сценой Blender). Больше нуля: перекрывает их у ЛЮБОГО трака
+## (flex, стилевой, со сценой, стрелка, кросс, упор). Применяют адаптеры визуала и пути (TrackStyle.with_collision_width,
+## C_Path.collision_width), см. TrackConfig.collision_width_of
 @export var collision_width := 0.0
 #@export var align_ends := false # Выравнивание торцов коллизий
+
+
+## Ширина коллизии основания из паспорта трака, ю (0 = не задана или у сущности нет паспорта TrackConfig)
+static func collision_width_of(entity: Entity) -> float:
+	var idc := entity.get_comp(C_Identity) as C_Identity
+	var cfg := idc.object_config as TrackConfig if idc else null
+	return cfg.collision_width if cfg else 0.0

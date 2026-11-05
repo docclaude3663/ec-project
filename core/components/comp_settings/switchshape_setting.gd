@@ -16,7 +16,5 @@ func create_component(entity: Entity) -> Component:
 		comp.diverge_radius = cfg.diverge_radius
 		comp.hand = 1.0 if cfg.hand >= 0 else -1.0
 		comp.start_route = cfg.start_route
-		comp.auto_fit = cfg.auto_fit
-		comp.end_clearance = cfg.end_clearance
 	entity.add_component(comp)
 	return comp

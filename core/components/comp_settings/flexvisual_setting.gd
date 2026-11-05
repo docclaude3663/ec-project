@@ -13,7 +13,8 @@ class_name FlexVisualSetting extends ComponentSettings
 func create_component(entity: Entity) -> Component:
 	# 1. Визуал (строит ноды Ballast / HeadStaticBody3D в коде)
 	var vis := C_FlexVisual.new()
-	vis.style = TSM.resolve_for(entity, style)
+	# Ширина коллизии из паспорта (0 = как в стиле)
+	vis.style = TrackStyle.with_collision_width(TSM.resolve_for(entity, style), TrackConfig.collision_width_of(entity))
 
 	vis.name = 'C_FlexVisual'
 	entity.add_component(vis)

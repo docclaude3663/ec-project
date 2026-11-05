@@ -130,3 +130,21 @@ func _max_y(p: PackedVector2Array) -> float:
 	for v in p:
 		m = maxf(m, v.y)
 	return m
+
+
+## XX claude-switch. Стиль с шириной коллизии из паспорта трака (TrackConfig.collision_width).
+## width <= 0 или равна ширине стиля: возвращает сам стиль (общий ресурс не копируется). Иначе копия: стиль общий для всех
+## траков набора, правим только копию. Поле id копия сохраняет. Стиля нет (st = null), но ширина задана: новый стиль по умолчанию
+static func with_collision_width(st: TrackStyle, width: float) -> TrackStyle:
+	if width <= 0.0:
+		return st
+	if st == null:
+		var d := TrackStyle.new()
+		d.collision_width = width
+		return d
+	if is_equal_approx(width, st.collision_width):
+		return st
+	var c := st.duplicate() as TrackStyle
+	c.collision_width = width
+	return c
+

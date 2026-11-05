@@ -41,7 +41,8 @@ func _create_style_visual(entity: Entity, st: TrackStyle) -> Component:
 
 	# 2. Визуал: строит каркас сразу (on_added), геометрию по кривой - в on_entity_ready
 	var vis := C_StyleVisual.new()
-	vis.style = st
+	# Ширина коллизии из паспорта (0 = как в стиле)
+	vis.style = TrackStyle.with_collision_width(st, TrackConfig.collision_width_of(entity))
 	vis.name = 'C_StyleVisual'
 	entity.add_component(vis)
 	return vis
