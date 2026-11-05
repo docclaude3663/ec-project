@@ -54,6 +54,7 @@ const CARDS := {
 		{"id": &"wall_cream", "title": "Стены: беж", "group": &"wall", "default": true},
 		{"id": &"wall_sky", "title": "Стены: небо", "group": &"wall"},
 		{"id": &"wall_mint", "title": "Стены: мята", "group": &"wall"},
+		{"id": &"wall_blue", "title": "Стены: синий", "group": &"wall"},
 		{"id": &"bed_blue", "title": "Постель: синяя", "group": &"bedding", "default": true},
 		{"id": &"bed_red", "title": "Постель: красная", "group": &"bedding"},
 		{"id": &"bed_green", "title": "Постель: зелёная", "group": &"bedding"},

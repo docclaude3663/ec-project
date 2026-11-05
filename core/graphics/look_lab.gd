@@ -3,16 +3,17 @@ class_name LookLab extends Node
 ########################
 ## Look Lab (debug): прогон вариантов картинки одним заходом (ATTN_14 §14.13).
 ########################
-## Ctrl+Shift+L (любая раскладка) или кнопка на вкладке Keys панели F3: для каждого варианта из VARIANTS применяет его поверх Look `clean` + Time `day`,
+## Кнопка на вкладке Keys панели F3 (или Ctrl+Shift+L): для каждого варианта из _variants() применяет его поверх Look `clean` + Time `day`,
 ## переезжает по закладкам камеры 1-5 (Settings camera/bookmarks; нет закладок: снимает текущий вид),
-## снимает кадр без UI на качестве High и пишет в user://look_lab/<время>/:
+## снимает кадр без UI на выбранном качестве (High по умолчанию) и пишет в user://look_lab/<время>/:
 ##   <вариант>_b<N>.png, metrics.csv, variants.txt (параметры прогона).
 ## metrics.csv: насыщенность, яркость, разброс яркости, доля насыщенных пикселей (те же формулы, что в анализе
-## скриншотов Golf 2), плюс draw calls, объекты и примитивы кадра (Performance, §14.7.1).
+## скриншотов Golf 2), плюс draw calls, объекты, примитивы, время кадра GPU и CPU, fps (Performance, §14.7.1).
 ## После прогона всё возвращается: Look, Time, Quality, Environment, камера, UI.
 ## Запускать в режиме Observe (виньетка и tilt-shift работают только там). Во время прогона мышь и клавиши не трогать.
-## Вариант: {"id": "...", "look": {поле GraphicsPreset: значение}, "time": {поле TimeOfDayPreset: значение},
-##           "env": {свойство Environment: значение}}. Все поля необязательны.
+## Вариант (_variants): {"id": "...", "look": {поле GraphicsPreset: значение}, "time": {поле TimeOfDayPreset: значение},
+##           "env": {свойство Environment: значение}, "room": {слот варианта комнаты: значение}}. Все поля необязательны.
+## Кнопки на вкладке Keys панели F3: прогон на High, Medium, Low (в папке user://look_lab/<время>_<tier>/).
 
 const OUT_DIR := "user://look_lab/"
 const BASE_LOOK := &"clean"
@@ -22,79 +23,87 @@ const SETTLE_VIEW := 12    # кадров после смены закладки
 
 const _WARM := Color(1.0, 0.90, 0.74)
 const _COOL := Color(0.62, 0.70, 0.86)
-## v1 это опорная точка «объём»: меньше ровного ambient, сильнее тёплое солнце, холодная тень.
-## Остальные варианты добавляют по одному приёму поверх v1, чтобы было видно вклад каждого.
-const VARIANTS := [
-	{"id": "v0_base"},
-	{"id": "v1_warm_cool",
-		"look": {"ambient_energy": 0.55, "ambient_color": _COOL, "sun_energy_mul": 1.5, "contrast": 1.08, "saturation": 1.2},
-		"time": {"sun_color": _WARM}},
-	{"id": "v2_aces",
-		"look": {"ambient_energy": 0.55, "ambient_color": _COOL, "sun_energy_mul": 1.5, "contrast": 1.08, "saturation": 1.2,
-			"tonemap": Environment.TONE_MAPPER_ACES},
-		"time": {"sun_color": _WARM}},
-	{"id": "v3_agx",
-		"look": {"ambient_energy": 0.55, "ambient_color": _COOL, "sun_energy_mul": 1.5, "contrast": 1.08, "saturation": 1.2,
-			"tonemap": Environment.TONE_MAPPER_AGX},
-		"time": {"sun_color": _WARM}},
-	{"id": "v4_glow",
-		"look": {"ambient_energy": 0.55, "ambient_color": _COOL, "sun_energy_mul": 1.5, "contrast": 1.08, "saturation": 1.2,
-			"glow_enabled": true, "glow_intensity": 0.6, "glow_bloom": 0.12},
-		"time": {"sun_color": _WARM}},
-	{"id": "v5_vignette",
-		"look": {"ambient_energy": 0.55, "ambient_color": _COOL, "sun_energy_mul": 1.5, "contrast": 1.08, "saturation": 1.2,
-			"vignette": 0.45},
-		"time": {"sun_color": _WARM}},
-	{"id": "v6_shafts_thin",
-		"look": {"ambient_energy": 0.55, "ambient_color": _COOL, "sun_energy_mul": 1.5, "contrast": 1.08, "saturation": 1.2},
-		"time": {"sun_color": _WARM},
-		"env": {"volumetric_fog_enabled": true, "volumetric_fog_density": 0.001,
-			"volumetric_fog_length": 600.0, "volumetric_fog_albedo": Color(1.0, 0.96, 0.88), "volumetric_fog_anisotropy": 0.6}},
-	{"id": "v7_shafts_thick",
-		"look": {"ambient_energy": 0.55, "ambient_color": _COOL, "sun_energy_mul": 1.5, "contrast": 1.08, "saturation": 1.2},
-		"time": {"sun_color": _WARM},
-		"env": {"volumetric_fog_enabled": true, "volumetric_fog_density": 0.003,
-			"volumetric_fog_length": 600.0, "volumetric_fog_albedo": Color(1.0, 0.96, 0.88), "volumetric_fog_anisotropy": 0.6}},
-	{"id": "v8_ref_ssao",
-		"look": {"ambient_energy": 0.55, "ambient_color": _COOL, "sun_energy_mul": 1.5, "contrast": 1.08, "saturation": 1.2,
-			"ssao_enabled": true, "ssao_radius": 0.9, "ssao_intensity": 2.6, "ssao_power": 1.6, "ssao_light_affect": 0.15},
-		"time": {"sun_color": _WARM}},
-	{"id": "v9_combo",
-		"look": {"ambient_energy": 0.55, "ambient_color": _COOL, "sun_energy_mul": 1.5, "contrast": 1.08, "saturation": 1.2,
-			"glow_enabled": true, "glow_intensity": 0.6, "glow_bloom": 0.12, "vignette": 0.45},
-		"time": {"sun_color": _WARM},
-		"env": {"volumetric_fog_enabled": true, "volumetric_fog_density": 0.001,
-			"volumetric_fog_length": 600.0, "volumetric_fog_albedo": Color(1.0, 0.96, 0.88), "volumetric_fog_anisotropy": 0.6}},
-]
+## Раунд 2 (после анализа раунда 1, ATTN_14 §14.13.7). База: ACES, тёплое солнце, холодный слабый ambient.
+## Приёмы добавляются по одному поверх базы. blue = синие стены комнаты (слот wall, RoomDecor.VARIANTS).
+## sun50 / sun58 = высота солнца в градусах: чтобы луч из окна лёг на стол. lamp = лампа над столом как свет на макете.
+func _variants() -> Array:
+	var base := {"ambient_energy": 0.55, "ambient_color": _COOL, "sun_energy_mul": 1.5, "contrast": 1.0, "saturation": 1.15,
+			"tonemap": Environment.TONE_MAPPER_ACES}
+	var lamp := {"lamp_forced_on": true, "lamp_energy": 6.0}
+	var lift := {"ambient_energy": 0.75}
+	var blue := {"wall": "blue"}
+	var warm := {"sun_color": _WARM}
+	return [
+		_mk("r2_0_base", base, warm),
+		_mk("r2_1_blue", base, warm, {}, blue),
+		_mk("r2_2_blue_sun50", base, _t(warm, 50.0), {}, blue),
+		_mk("r2_3_blue_sun58", base, _t(warm, 58.0), {}, blue),
+		_mk("r2_4_blue_lamp", _m(base, lamp), warm, {}, blue),
+		_mk("r2_5_blue_sun50_lamp", _m(base, lamp), _t(warm, 50.0), {}, blue),
+		_mk("r2_6_blue_sun50_lift", _m(base, lift), _t(warm, 50.0), {}, blue),
+		_mk("r2_7_blue_sun50_shafts06", base, _t(warm, 50.0), _fog(0.0006), blue),
+		_mk("r2_8_blue_sun50_shafts10", base, _t(warm, 50.0), _fog(0.001), blue),
+		_mk("r2_9_candidate", _m(_m(base, lamp), lift), _t(warm, 50.0), _fog(0.0006), blue),
+		_mk("r2_10_candidate_agx", _m(_m(_m(base, lamp), lift), {"tonemap": Environment.TONE_MAPPER_AGX}),
+				_t(warm, 50.0), _fog(0.0006), blue),
+	]
 
-## Действие InputMap. Клавиша по physical_keycode: работает на любой раскладке (на русской keycode у L другой)
-const ACTION := &"debug_look_lab"
+
+func _mk(id: String, look: Dictionary, time := {}, env := {}, room := {}) -> Dictionary:
+	return {"id": id, "look": look, "time": time, "env": env, "room": room}
+
+
+func _m(a: Dictionary, b: Dictionary) -> Dictionary:
+	var r := a.duplicate()
+	r.merge(b, true)
+	return r
+
+
+func _t(time: Dictionary, elevation: float) -> Dictionary:
+	return _m(time, {"sun_elevation": elevation})
+
+
+func _fog(density: float) -> Dictionary:
+	return {"volumetric_fog_enabled": true, "volumetric_fog_density": density, "volumetric_fog_length": 600.0,
+			"volumetric_fog_albedo": Color(1.0, 0.96, 0.88), "volumetric_fog_anisotropy": 0.6}
+
+
+## Действия InputMap: [клавиша по physical_keycode, tier качества]. Кнопки «Нажать» на вкладке Keys панели F3 шлют их же
+const ACTIONS := {
+	&"debug_look_lab": [KEY_L, &"high"],
+	&"debug_look_lab_medium": [KEY_M, &"medium"],
+	&"debug_look_lab_low": [KEY_K, &"low"],
+}
 
 var _busy := false
 
 
 func _ready() -> void:
-	if not InputMap.has_action(ACTION):
-		InputMap.add_action(ACTION)
+	for a in ACTIONS:
+		if InputMap.has_action(a):
+			continue
+		InputMap.add_action(a)
 		var ev := InputEventKey.new()
-		ev.physical_keycode = KEY_L
+		ev.physical_keycode = ACTIONS[a][0]
 		ev.ctrl_pressed = true
 		ev.shift_pressed = true
-		InputMap.action_add_event(ACTION, ev)
-	print("[LookLab] готов: Ctrl+Shift+L (любая раскладка) или кнопка «Нажать» на вкладке Keys панели F3")
+		InputMap.action_add_event(a, ev)
+	print("[LookLab] готов: кнопки «Нажать» на вкладке Keys панели F3 (High, Medium, Low) или Ctrl+Shift+L / M / K")
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not Global.debug_mode:
 		return
-	if event.is_action_pressed(ACTION) and not event.is_echo():
-		get_viewport().set_input_as_handled()
-		print("[LookLab] запуск")
-		run()
+	for a in ACTIONS:
+		if event.is_action_pressed(a) and not event.is_echo():
+			get_viewport().set_input_as_handled()
+			print("[LookLab] запуск, качество ", ACTIONS[a][1])
+			run([], ACTIONS[a][1])
+			return
 
 
-## Прогон. only: id вариантов (пусто = все)
-func run(only: Array = []) -> void:
+## Прогон. only: id вариантов (пусто = все), quality: tier качества на время прогона
+func run(only: Array = [], quality: StringName = &"high") -> void:
 	if _busy:
 		return
 	var gimbal := get_node_or_null("/root/GameRoot/Gimbal") as Gimbal
@@ -119,18 +128,24 @@ func run(only: Array = []) -> void:
 		print("[LookLab] ВНИМАНИЕ: не режим Observe, виньетка и tilt-shift в кадрах не появятся")
 
 	var stamp := Time.get_datetime_string_from_system().replace(":", "-")
-	var dir := OUT_DIR + stamp + "/"
+	var dir := OUT_DIR + stamp + "_" + String(quality) + "/"
 	DirAccess.make_dir_recursive_absolute(dir)
-	var rows: Array[String] = ["variant,view,sat,val,val_std,sat50_pct,draw_calls,objects,primitives"]
+	var rows: Array[String] = ["variant,view,sat,val,val_std,sat50_pct,draw_calls,objects,primitives,gpu_ms,cpu_ms,fps"]
+	var variants := _variants()
+	var rb := get_tree().get_first_node_in_group(&"room_root") as RoomBuilder
+	var room_saved := {}
+	var vp := get_viewport().get_viewport_rid()
+	RenderingServer.viewport_set_measure_render_time(vp, true)
 	var env_saved := {}
 	var done := 0
 
-	GFX.apply_quality(&"high", 0.0, false)
-	for v in VARIANTS:
+	GFX.apply_quality(quality, 0.0, false)
+	for v in variants:
 		var id: String = v.id
 		if not only.is_empty() and not only.has(id):
 			continue
 		_restore_env(env, env_saved)
+		_restore_room(rb, room_saved)
 		var look := look0.duplicate() as GraphicsPreset
 		_set_props(look, v.get("look", {}), id)
 		var tod := time0.duplicate() as TimeOfDayPreset
@@ -147,12 +162,19 @@ func run(only: Array = []) -> void:
 			if not env_saved.has(k):
 				env_saved[k] = env.get(k)
 			env.set(k, extra[k])
+		var room_want: Dictionary = v.get("room", {})
+		if rb and not room_want.is_empty():
+			for slot in room_want:
+				if not room_saved.has(slot):
+					room_saved[slot] = rb.config.variants.get(slot, null)
+				rb.set_variant(slot, room_want[slot])
 		await _frames(SETTLE_FIRST)
 
 		for i in views.size():
 			var vw: Dictionary = views[i].view
 			gimbal.set_view(vw.pivot, vw.yaw, vw.pitch, vw.dist, true)
 			await _frames(SETTLE_VIEW)
+			var tm := await _measure(vp)
 			await RenderingServer.frame_post_draw
 			var img := get_viewport().get_texture().get_image()
 			var shot := "%s_%s" % [id, views[i].name]
@@ -160,15 +182,17 @@ func run(only: Array = []) -> void:
 			if err != OK:
 				push_error("LookLab: не сохранён %s (код %d)" % [shot, err])
 			var s := _stats(img)
-			rows.append("%s,%s,%.3f,%.3f,%.3f,%.1f,%d,%d,%d" % [id, views[i].name, s.sat, s.val, s.val_std, s.sat50,
+			rows.append("%s,%s,%.3f,%.3f,%.3f,%.1f,%d,%d,%d,%.2f,%.2f,%.0f" % [id, views[i].name, s.sat, s.val, s.val_std, s.sat50,
 					int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)),
 					int(Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME)),
-					int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))])
+					int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)), tm.gpu, tm.cpu, tm.fps])
 		done += 1
-		print("[LookLab] %s готов (%d/%d)" % [id, done, VARIANTS.size() if only.is_empty() else only.size()])
+		print("[LookLab] %s готов (%d/%d)" % [id, done, variants.size() if only.is_empty() else only.size()])
 
 	# --- Возврат состояния ---
 	_restore_env(env, env_saved)
+	_restore_room(rb, room_saved)
+	RenderingServer.viewport_set_measure_render_time(vp, false)
 	GFX.looks[BASE_LOOK] = look0
 	GFX.times[BASE_TIME] = time0
 	GFX.apply_look(prev.look, 0.0)
@@ -180,7 +204,7 @@ func run(only: Array = []) -> void:
 	Hints.suspend(false)
 
 	_write(dir + "metrics.csv", "\n".join(rows) + "\n")
-	_write(dir + "variants.txt", var_to_str(VARIANTS))
+	_write(dir + "variants.txt", var_to_str(variants))
 	print("[LookLab] готово, файлы: ", ProjectSettings.globalize_path(dir))
 	_busy = false
 
@@ -215,6 +239,31 @@ func _restore_env(env: Environment, saved: Dictionary) -> void:
 	for k in saved:
 		env.set(k, saved[k])
 	saved.clear()
+
+
+## Возвращает комнату к исходным вариантам (слоты, которые меняли варианты прогона)
+func _restore_room(rb: RoomBuilder, saved: Dictionary) -> void:
+	if rb == null or saved.is_empty():
+		saved.clear()
+		return
+	for slot in saved:
+		if saved[slot] == null:
+			rb.config.variants.erase(slot)
+		else:
+			rb.config.variants[slot] = saved[slot]
+	saved.clear()
+	rb.rebuild_room()
+
+
+## Среднее время кадра GPU и CPU (мс) за несколько кадров и fps. Без V-Sync числа точнее
+func _measure(vp: RID, frames := 6) -> Dictionary:
+	var gpu := 0.0
+	var cpu := 0.0
+	for i in frames:
+		await get_tree().process_frame
+		gpu += RenderingServer.viewport_get_measured_render_time_gpu(vp)
+		cpu += RenderingServer.viewport_get_measured_render_time_cpu(vp)
+	return {"gpu": gpu / frames, "cpu": cpu / frames, "fps": Engine.get_frames_per_second()}
 
 
 func _frames(n: int) -> void:
