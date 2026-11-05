@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://c6snth5wbq2sj"
+
+[deps]
+
+files=["res://data/import/screenshots/look_lab/2026-11-06T00-09-43_matrix_low/metrics.time.translation", "res://data/import/screenshots/look_lab/2026-11-06T00-09-43_matrix_low/metrics.view.translation", "res://data/import/screenshots/look_lab/2026-11-06T00-09-43_matrix_low/metrics.sat.translation", "res://data/import/screenshots/look_lab/2026-11-06T00-09-43_matrix_low/metrics.val.translation", "res://data/import/screenshots/look_lab/2026-11-06T00-09-43_matrix_low/metrics.val.translation", "res://data/import/screenshots/look_lab/2026-11-06T00-09-43_matrix_low/metrics.sat50.translation", "res://data/import/screenshots/look_lab/2026-11-06T00-09-43_matrix_low/metrics.draw.translation", "res://data/import/screenshots/look_lab/2026-11-06T00-09-43_matrix_low/metrics.objects.translation", "res://data/import/screenshots/look_lab/2026-11-06T00-09-43_matrix_low/metrics.primitives.translation", "res://data/import/screenshots/look_lab/2026-11-06T00-09-43_matrix_low/metrics.gpu.translation", "res://data/import/screenshots/look_lab/2026-11-06T00-09-43_matrix_low/metrics.cpu.translation", "res://data/import/screenshots/look_lab/2026-11-06T00-09-43_matrix_low/metrics.fps.translation"]
+
+source_file="res://data/import/screenshots/look_lab/2026-11-06T00-09-43_matrix_low/metrics.csv"
+dest_files=["res://data/import/screenshots/look_lab/2026-11-06T00-09-43_matrix_low/metrics.time.translation", "res://data/import/screenshots/look_lab/2026-11-06T00-09-43_matrix_low/metrics.view.translation", "res://data/import/screenshots/look_lab/2026-11-06T00-09-43_matrix_low/metrics.sat.translation", "res://data/import/screenshots/look_lab/2026-11-06T00-09-43_matrix_low/metrics.val.translation", "res://data/import/screenshots/look_lab/2026-11-06T00-09-43_matrix_low/metrics.val.translation", "res://data/import/screenshots/look_lab/2026-11-06T00-09-43_matrix_low/metrics.sat50.translation", "res://data/import/screenshots/look_lab/2026-11-06T00-09-43_matrix_low/metrics.draw.translation", "res://data/import/screenshots/look_lab/2026-11-06T00-09-43_matrix_low/metrics.objects.translation", "res://data/import/screenshots/look_lab/2026-11-06T00-09-43_matrix_low/metrics.primitives.translation", "res://data/import/screenshots/look_lab/2026-11-06T00-09-43_matrix_low/metrics.gpu.translation", "res://data/import/screenshots/look_lab/2026-11-06T00-09-43_matrix_low/metrics.cpu.translation", "res://data/import/screenshots/look_lab/2026-11-06T00-09-43_matrix_low/metrics.fps.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true
