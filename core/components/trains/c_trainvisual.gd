@@ -23,7 +23,9 @@ var offset_mesh_y := 1.2
 
 var bogie_nodes: Array[Node3D] = []
 
-var wheel_nodes: Array[Dictionary] = [] # все колеса {'wheel_node', 'radius'}
+var wheel_nodes: Array[Dictionary] = [] # все колеса {'wheel_node', 'radius', 'bogie': номер тележки, 'sign': +1/-1 по Z}
+## Коллизии тележек по номеру тележки в паспорте (нужны для правки раскладки в DebugPanel)
+var bogie_collisions: Array[CollisionShape3D] = []
 
 
 # XX claude
@@ -43,7 +45,8 @@ func _on_instance_ready() -> void:
 # XX claude функция вместо скрипта в on_added()
 func _build_bogies():
 	# достраиваем боги (bogie_configs и offset_mesh_y пришли из паспорта через TrainVisualSettings)
-	for bogie in bogie_configs: 
+	for bogie_index in bogie_configs.size():
+		var bogie: BogieConfig = bogie_configs[bogie_index]
 		# 1. Создаем сцену боги
 		var b_scene = bogie.scene.instantiate() 
 		## моя‼️Замена b_offset на b_offset_z
@@ -56,7 +59,7 @@ func _build_bogies():
 		b_scene.add_child(wp_scene)
 		wp_scene.position.z = wp_z # Смещение вперед\назад
 		## моя‼️Замена b_offset на b_offset_z
-		wheel_nodes.append({'wheel_node':wp_scene, 'radius': bogie.wheel_pair_position.y} )
+		wheel_nodes.append({'wheel_node':wp_scene, 'radius': bogie.wheel_pair_position.y, 'bogie': bogie_index, 'sign': 1.0})
 		
 		# 3. Двухосная тележка?: добавляем еще колесо
 		## XX claude тележка??
@@ -67,7 +70,7 @@ func _build_bogies():
 			wp_scene.position.z = -wp_z # Смещение вперед\назад
 			# В массив колес добаляем колесо и радиус
 			## моя‼️Замена b_offset на b_offset_z
-			wheel_nodes.append({'wheel_node':wp_scene, 'radius': bogie.wheel_pair_position.y})
+			wheel_nodes.append({'wheel_node':wp_scene, 'radius': bogie.wheel_pair_position.y, 'bogie': bogie_index, 'sign': -1.0})
 
 		# 4. Перестраиваем коллизию боги c колесами к вагону
 		var bg_collision = CollisionShape3D.new()
@@ -80,6 +83,7 @@ func _build_bogies():
 		bg_collision.shape = sh
 		bg_collision.position = b_scene.position # коллизию в точку боги
 		instance.add_child(bg_collision)
+		bogie_collisions.append(bg_collision)
 		bg_collision.name = 'BogieCollisionShape3D_01'
 
 		instance.add_child(b_scene) # боги и колеса
@@ -128,3 +132,37 @@ func _find_collisions(node):
 	for child in node.get_children(): 
 		_find_collisions(child)
 		
+
+
+## --- Раскладка для DebugPanel (U14, вкладка Layout) ---
+## Меняют положение узлов уже собранного вагона. Паспорт не трогают: значения берутся из копии конфига вагона.
+
+## Высота меша кузова над началом вагона (WagonConfig.offset_mesh_y). null, если меша нет
+func get_mesh_offset_y() -> Variant:
+	return mesh_nodes[0].position.y if not mesh_nodes.is_empty() else null
+
+
+## Двигает меш кузова. Коллизия кузова не двигается (она собрана один раз при создании вагона)
+func set_mesh_offset_y(y: float) -> void:
+	if not mesh_nodes.is_empty():
+		mesh_nodes[0].position.y = y
+
+
+## Применяет b_offset_z и wheel_pair_position тележки с номером index (как в паспорте) к ее узлам:
+## тележка, колеса, радиус для вращения, коллизия. Одна ось или две решается при сборке, здесь не меняется
+func apply_bogie_layout(index: int, cfg: BogieConfig) -> void:
+	if index < 0 or index >= bogie_nodes.size():
+		return
+	var node := bogie_nodes[index]
+	node.position.y = cfg.wheel_pair_position.y
+	node.position.z = cfg.b_offset_z
+	for w in wheel_nodes:
+		if w.bogie != index:
+			continue
+		w.radius = cfg.wheel_pair_position.y
+		(w.wheel_node as Node3D).position.z = cfg.wheel_pair_position.z * w.sign
+	if index < bogie_collisions.size():
+		var col := bogie_collisions[index]
+		col.position = node.position
+		(col.shape as BoxShape3D).size = Vector3(2.02, cfg.wheel_pair_position.y * 2.0,
+				(cfg.wheel_pair_position.z + cfg.wheel_pair_position.y) * 2.0)

@@ -16,6 +16,9 @@ enum Kind { SPIN, TOGGLE }
 
 const TAB_TUNING := "tuning"
 const TAB_SUSPENSION := "suspension"
+const TAB_LAYOUT := "layout"
+## Сколько тележек поддерживает вкладка Layout (у вагонов 1-2, у сочлененных больше)
+const BOGIE_SLOTS := 4
 
 ## Группы по вкладкам в порядке показа. id, tab, title (как категория в инспекторе паспорта)
 const GROUPS: Array[Dictionary] = [
@@ -33,10 +36,16 @@ const GROUPS: Array[Dictionary] = [
 	{"id": "susp_track", "tab": TAB_SUSPENSION, "title": "Track input (стыки и неровности)"},
 	{"id": "susp_hunting", "tab": TAB_SUSPENSION, "title": "Hunting (рыскание тележек)"},
 	{"id": "susp_geometry", "tab": TAB_SUSPENSION, "title": "Geometry"},
+	{"id": "mesh", "tab": TAB_LAYOUT, "title": "Mesh (кузов)"},
+	{"id": "bogies_all", "tab": TAB_LAYOUT, "title": "All bogies (все тележки сразу)"},
+	{"id": "bogie0", "tab": TAB_LAYOUT, "title": "Bogie 1"},
+	{"id": "bogie1", "tab": TAB_LAYOUT, "title": "Bogie 2"},
+	{"id": "bogie2", "tab": TAB_LAYOUT, "title": "Bogie 3"},
+	{"id": "bogie3", "tab": TAB_LAYOUT, "title": "Bogie 4"},
 ]
 
 ## Владельцы значений: kin, eng, cpl, chs (компоненты), rb (RigidBody3D), mat (его physics material),
-## susp (SuspensionConfig вагона)
+## susp (SuspensionConfig вагона), layout (меш и тележки, см. _read_layout / _write_layout)
 const _SPINS := [
 	# key, group, label, min, max, step, owner, dest, field
 	["mass", "kinematics", "Масса", 0.1, 10000.0, 0.1, "kin", "wagon", ""],
@@ -141,9 +150,32 @@ static func params() -> Array[Dictionary]:
 			_params.append({"key": r[0], "group": r[1], "tab": tab_of[r[1]], "kind": Kind.SPIN, "label": r[2],
 					"tip": _TIPS.get(r[0], ""), "min": r[3], "max": r[4], "step": r[5], "owner": r[6],
 					"dest": r[7], "field": r[8] if r[8] != "" else r[0]})
+		_add_layout_params()
 		for p in _params:
 			_index[p.key] = p
 	return _params
+
+
+## Ручки вкладки Layout: высота меша и тележки. bogie: номер тележки (-1: нет, -2: все сразу), prop: что правим
+static func _add_layout_params() -> void:
+	_params.append({"key": "offset_mesh_y", "group": "mesh", "tab": TAB_LAYOUT, "kind": Kind.SPIN,
+			"label": "Высота меша над началом вагона, м", "tip": "WagonConfig.offset_mesh_y. Коллизия кузова не двигается",
+			"min": -2.0, "max": 5.0, "step": 0.005, "owner": "layout", "dest": "wagon", "field": "offset_mesh_y",
+			"bogie": -1, "prop": "offset_mesh_y"})
+	var items := [
+		["wheel_y", "Радиус колеса = высота тележки, м", "Y в wheel_pair_position: радиус колеса без реборды, он же высота тележки над началом вагона", 0.05, 3.0, "wheel_pair_position:y"],
+		["wheel_z", "Смещение оси от центра тележки, м", "Z в wheel_pair_position. 0: ось одна; одна или две оси решается при сборке вагона", 0.0, 5.0, "wheel_pair_position:z"],
+	]
+	for it in items:
+		_params.append({"key": "all_" + it[0], "group": "bogies_all", "tab": TAB_LAYOUT, "kind": Kind.SPIN,
+				"label": it[1], "tip": "Пишется во все тележки сразу. " + it[2], "min": it[3], "max": it[4], "step": 0.005,
+				"owner": "layout", "dest": "", "field": it[5], "bogie": -2, "prop": it[0]})
+	items.push_front(["b_offset_z", "Смещение тележки по Z, м", "b_offset_z. После правки перепоставьте вагон на рельс: расстановка тележек по траку считается при посадке", -30.0, 30.0, "b_offset_z"])
+	for i in BOGIE_SLOTS:
+		for it in items:
+			_params.append({"key": "bogie%d_%s" % [i, it[0]], "group": "bogie%d" % i, "tab": TAB_LAYOUT, "kind": Kind.SPIN,
+					"label": it[1], "tip": it[2], "min": it[3], "max": it[4], "step": 0.005, "owner": "layout",
+					"dest": "bogie:%d" % i, "field": it[5], "bogie": i, "prop": it[0]})
 
 
 static func _def(key: String) -> Dictionary:
@@ -164,6 +196,10 @@ static func var_name(key: String) -> String:
 		"mat": return "rb.physics_material_override." + key
 		"rb": return "rb." + key
 		"susp": return "SuspensionConfig." + key
+		"layout":
+			if p.prop == "offset_mesh_y":
+				return "C_TrainVisual.mesh_nodes[0].position.y"
+			return "BogieConfig%s.%s" % ["[%d]" % p.bogie if p.bogie >= 0 else "[все]", p.field.replace(":", ".")]
 	return key
 
 
@@ -192,8 +228,7 @@ static func _owner(entity: Entity, which: String, for_write := false) -> Object:
 
 ## Есть ли у цели то, где лежит параметр (нужные компоненты и тело)
 static func has(entity: Entity, key: String) -> bool:
-	var p := _def(key)
-	return not p.is_empty() and _owner(entity, p.owner) != null
+	return read(entity, key) != null
 
 
 ## Текущее значение или null, если у цели такого параметра нет
@@ -201,6 +236,8 @@ static func read(entity: Entity, key: String) -> Variant:
 	var p := _def(key)
 	if p.is_empty():
 		return null
+	if p.owner == "layout":
+		return _read_layout(entity, p)
 	var o := _owner(entity, p.owner)
 	return o.get(key) if o else null
 
@@ -209,6 +246,9 @@ static func read(entity: Entity, key: String) -> Variant:
 static func write(entity: Entity, key: String, value: Variant) -> void:
 	var p := _def(key)
 	if p.is_empty():
+		return
+	if p.owner == "layout":
+		_write_layout(entity, p, float(value))
 		return
 	var o := _owner(entity, p.owner, true)
 	if o == null:
@@ -224,6 +264,51 @@ static func write(entity: Entity, key: String, value: Variant) -> void:
 		var chassis := entity.get_comp(C_Chassis) as C_Chassis
 		if chassis:
 			chassis.rebuild_suspension()
+
+
+## Меш и тележки. Меш читается с узла, тележка с конфига (у вагона своя копия после первой правки)
+static func _read_layout(entity: Entity, p: Dictionary) -> Variant:
+	if p.prop == "offset_mesh_y":
+		var vis := entity.get_comp(C_TrainVisual) as C_TrainVisual
+		return vis.get_mesh_offset_y() if vis else null
+	var bc := entity.get_comp(C_Bogie) as C_Bogie
+	if bc == null:
+		return null
+	var cfg := bc.bogie_config(maxi(p.bogie, 0))   # -2: «все», показываем первую
+	if cfg == null:
+		return null
+	match p.prop:
+		"b_offset_z": return cfg.b_offset_z
+		"wheel_y": return cfg.wheel_pair_position.y
+		"wheel_z": return cfg.wheel_pair_position.z
+	return null
+
+
+static func _write_layout(entity: Entity, p: Dictionary, value: float) -> void:
+	var vis := entity.get_comp(C_TrainVisual) as C_TrainVisual
+	if vis == null:
+		return
+	if p.prop == "offset_mesh_y":
+		vis.set_mesh_offset_y(value)
+		return
+	var bc := entity.get_comp(C_Bogie) as C_Bogie
+	if bc == null:
+		return
+	var indices: Array[int] = []
+	if p.bogie >= 0:
+		indices.append(p.bogie)
+	else:
+		for b in bc.bogies_data:
+			indices.append(b.id)
+	for i in indices:
+		var cfg := bc.tunable_bogie_config(i)
+		if cfg == null:
+			continue
+		match p.prop:
+			"b_offset_z": cfg.b_offset_z = value
+			"wheel_y": cfg.wheel_pair_position.y = value
+			"wheel_z": cfg.wheel_pair_position.z = value
+		vis.apply_bogie_layout(i, cfg)
 
 
 ## Значения всех доступных цели ручек: key -> значение. Для кнопки «вернуть»
@@ -254,6 +339,8 @@ static func missing_reason(group_id: String) -> String:
 		"coupler", "coupler_feel": return "нет сцепки (C_Coupler)"
 		"body": return "нет тела или physics material"
 		"kinematics", "yaw": return "нет кинематики (C_Kinematics)"
+		"mesh": return "нет визуала вагона (C_TrainVisual)"
+		"bogies_all", "bogie0", "bogie1", "bogie2", "bogie3": return "нет такой тележки (или нет C_Bogie)"
 	return "нет шасси (C_Chassis)"
 
 
@@ -284,6 +371,9 @@ static func _passport_source(entity: Entity, which: String, create := false) -> 
 		return null
 	if which == "wagon":
 		return cfg
+	if which.begins_with("bogie:"):
+		var i := int(which.get_slice(":", 1))
+		return cfg.bogie_configs[i] if i < cfg.bogie_configs.size() else null
 	if cfg.suspension == null:
 		if not create:
 			if _default_susp == null:
@@ -303,7 +393,7 @@ static func passport_diff(entity: Entity, tab: String) -> Array[Dictionary]:
 		var src := _passport_source(entity, p.dest)
 		if now == null or src == null:
 			continue
-		var old: Variant = src.get(p.field)
+		var old: Variant = _field_get(src, p.field)
 		if not is_equal_approx(float(old), float(now)):
 			diff.append({"key": p.key, "dest": p.dest, "field": p.field, "old": float(old), "value": float(now)})
 	return diff
@@ -324,7 +414,7 @@ static func save_to_passport(entity: Entity, tab: String) -> Dictionary:
 		return {"ok": true, "message": "Паспорт уже совпадает с вагоном."}
 	var susp_was_null := cfg.suspension == null
 	for d in diff:
-		_passport_source(entity, d.dest, true).set(d.field, d.value)
+		_field_set(_passport_source(entity, d.dest, true), d.field, d.value)
 	var setting := (entity.get_comp(C_Identity) as C_Identity).setting
 	var err := ResourceSaver.save(setting, path)
 	# Подвеска может лежать в своем .tres: тогда ее сохраняем отдельно
@@ -334,7 +424,7 @@ static func save_to_passport(entity: Entity, tab: String) -> Dictionary:
 			err = ResourceSaver.save(cfg.suspension, sp)
 	if err != OK:
 		for d in diff:   # не оставляем в памяти значения, которых нет в файле
-			_passport_source(entity, d.dest, true).set(d.field, d.old)
+			_field_set(_passport_source(entity, d.dest, true), d.field, d.old)
 		if susp_was_null:
 			cfg.suspension = null
 		return {"ok": false, "message": "Не записано в %s: %s." % [path, error_string(err)]}
@@ -347,6 +437,28 @@ static func passport_diff_text(entity: Entity, tab: String) -> String:
 	for d in passport_diff(entity, tab):
 		lines.append("%s%s = %s" % ["suspension." if d.dest == "susp" else "", d.field, String.num(d.value, 4)])
 	return "\n".join(lines)
+
+
+## Поле паспорта по имени; «wheel_pair_position:y» это компонента вектора
+static func _field_get(src: Object, field: String) -> Variant:
+	if field.contains(":"):
+		var v: Vector3 = src.get(field.get_slice(":", 0))
+		return v[_axis(field.get_slice(":", 1))]
+	return src.get(field)
+
+
+static func _field_set(src: Object, field: String, value: float) -> void:
+	if field.contains(":"):
+		var fname := field.get_slice(":", 0)
+		var v: Vector3 = src.get(fname)
+		v[_axis(field.get_slice(":", 1))] = value
+		src.set(fname, v)
+	else:
+		src.set(field, value)
+
+
+static func _axis(c: String) -> int:
+	return {"x": 0, "y": 1, "z": 2}.get(c, 1)
 
 
 static func _body(entity: Entity) -> RigidBody3D:

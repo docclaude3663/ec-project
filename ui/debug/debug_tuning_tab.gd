@@ -3,8 +3,8 @@ class_name DebugTuningTab extends DebugTab
 ###########################
 ## Вкладки «Tuning» и «Suspension»: настройка выбранного вагона (U14)
 ###########################
-## Один класс на две вкладки: tab_id выбирает группы из WagonTuning.GROUPS (Tuning: физика, мотор, сцепка, тело;
-## Suspension: включатели и SuspensionConfig). Группы сворачиваются, как категории в инспекторе паспорта, состояние
+## Один класс на три вкладки: tab_id выбирает группы из WagonTuning.GROUPS (Tuning: физика, мотор, сцепка, тело;
+## Suspension: включатели и SuspensionConfig; Layout: высота меша и тележки, с линиями уровней в 3D). Группы сворачиваются, как категории в инспекторе паспорта, состояние
 ## хранится в Settings [debug] closed_<вкладка>. Строки строятся один раз по WagonTuning.params(); при выборе
 ## показываются только те, что есть у цели, а группы без компонента перечислены строкой «Нет у этого объекта».
 ## Кнопка «R» у строки и «Вернуть все» возвращают значения на момент выбора вагона.
@@ -32,11 +32,16 @@ var _passport_btn: Button
 var _copy_btn: Button
 var _status: Label
 var _confirm: ConfirmationDialog
+var _levels_check: CheckBox
+var _overlay: DebugLayoutOverlay
 
 
 func _init(p_tab_id: String = WagonTuning.TAB_TUNING) -> void:
 	tab_id = p_tab_id
-	name = &"Tuning" if tab_id == WagonTuning.TAB_TUNING else &"Suspension"
+	match tab_id:
+		WagonTuning.TAB_SUSPENSION: name = &"Suspension"
+		WagonTuning.TAB_LAYOUT: name = &"Layout"
+		_: name = &"Tuning"
 	_closed = _load_closed()
 
 	_title = Label.new()
@@ -47,6 +52,14 @@ func _init(p_tab_id: String = WagonTuning.TAB_TUNING) -> void:
 
 	_body = VBoxContainer.new()
 	add_child(_body)
+
+	if tab_id == WagonTuning.TAB_LAYOUT:
+		_levels_check = CheckBox.new()
+		_levels_check.text = "Показать уровни (рельс, колеса, меш)"
+		_levels_check.tooltip_text = "Линии и числа в 3D: колесо должно стоять на рельсе (разница 0)"
+		_levels_check.toggled.connect(func(_on: bool) -> void: _update_overlay())
+		_body.add_child(_levels_check)
+		_body.add_child(make_note("Поставьте вагон на рельс и меняйте высоту тележки, пока у «колесо-рельс» не будет 0, затем высоту меша. Паспорт не меняется, пока не нажмете «В паспорт»."))
 
 	var reset_all := Button.new()
 	reset_all.text = "Вернуть все (как при выборе)"
@@ -162,6 +175,7 @@ func _add_row(p: Dictionary) -> void:
 func _on_bind() -> void:
 	_baseline.clear()
 	_status.hide()
+	_free_overlay()
 	var wagon := WagonTuning.is_wagon(target)
 	_body.visible = wagon
 	_hint.visible = not wagon
@@ -187,6 +201,27 @@ func _on_bind() -> void:
 	_absent.visible = not absent.is_empty()
 	_absent.text = "Нет у этого объекта:\n" + "\n".join(absent)
 	_fill_controls(true)
+	_update_overlay()
+
+
+func closed() -> void:
+	_free_overlay()
+
+
+## Линии уровней показываются у выбранного вагона, пока включена галочка и открыта панель
+func _update_overlay() -> void:
+	_free_overlay()
+	if _levels_check == null or not _levels_check.button_pressed or not WagonTuning.is_wagon(target):
+		return
+	_overlay = DebugLayoutOverlay.new()
+	target.get_tree().current_scene.add_child(_overlay)
+	_overlay.setup(target)
+
+
+func _free_overlay() -> void:
+	if is_instance_valid(_overlay):
+		_overlay.queue_free()
+	_overlay = null
 
 
 func _group_title(group_id: String) -> String:

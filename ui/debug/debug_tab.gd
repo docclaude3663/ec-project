@@ -32,6 +32,11 @@ func opened() -> void:
 	refresh()
 
 
+## Панель закрыли: вкладка убирает с экрана то, что рисовала в игре (например, линии уровней)
+func closed() -> void:
+	pass
+
+
 ## Включает и выключает показ имен переменных у всех подписей, созданных через make_var_label
 func set_show_vars(on: bool) -> void:
 	show_vars = on

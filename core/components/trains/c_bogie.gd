@@ -28,6 +28,9 @@ var bogie_configs: Array[BogieConfig] = []
 # все колеса {'wheel_node', 'radius'}
 var wheel_nodes: Array[Dictionary] = [] 
 
+## Номера тележек, у которых своя копия конфига (правили в DebugPanel), паспорт типа не затронут
+var _own_configs: Dictionary = {}
+
 
 func on_added() -> void:
 	entity.add_to_group(GROUP)   # XX claude-switch
@@ -389,3 +392,23 @@ func _find_entity_from_collider(collider: Node) -> Entity:
 		curr = curr.get_parent()
 	return null
 #
+
+
+## Для DebugPanel (U14): конфиг тележки с номером i (номер в WagonConfig.bogie_configs). null, если такой нет
+func bogie_config(i: int) -> BogieConfig:
+	for b in bogies_data:
+		if b.id == i:
+			return b.config
+	return null
+
+
+## Для DebugPanel (U14): конфиг тележки i для правки. Первый вызов делает копию, чтобы правки не меняли общий паспорт типа
+func tunable_bogie_config(i: int) -> BogieConfig:
+	for b in bogies_data:
+		if b.id != i or b.config == null:
+			continue
+		if not _own_configs.has(i):
+			b.config = b.config.duplicate() as BogieConfig
+			_own_configs[i] = true
+		return b.config
+	return null
