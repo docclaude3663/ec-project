@@ -253,8 +253,9 @@ func _build_greybox() -> void:
 	_decor = RoomDecor.new(c, vis, _lamp_height())
 	_wall_col = _decor.wall_color()
 
-	_box(visuals, "Floor", Vector3(c.size.x + 2.0 * t, t, c.size.z + 2.0 * t), Vector3(0.0, fy - t * 0.5, 0.0),
+	var floor_mi := _box(visuals, "Floor", Vector3(c.size.x + 2.0 * t, t, c.size.z + 2.0 * t), Vector3(0.0, fy - t * 0.5, 0.0),
 			_decor.floor_color(), room_layer, vis, true)
+	floor_mi.material_override = _parquet_mat(_decor.floor_color())
 
 	_wall_z(-1.0, c.window)   # север: окно
 	_wall_z(1.0, c.door)      # юг: дверь
@@ -318,12 +319,61 @@ func _wall_x(sgn: float) -> void:
 			_wall_col, Global.active_layers(['room']), _vis_layer(), walls_cast_shadow))
 
 
+## Паркет процедурным шейдером (без текстур и геометрии): доски 12 × 100 см вразбежку, лёгкий разброс оттенка и тёмные швы.
+## Швы гаснут на расстоянии (fwidth), чтобы не рябило. Рисунок считается по мировым координатам XZ
+const PARQUET_SHADER := """
+shader_type spatial;
+uniform vec3 base_color : source_color = vec3(0.74, 0.58, 0.40);
+uniform float plank_w = 12.0;
+uniform float plank_len = 100.0;
+uniform float groove = 0.35;
+uniform float tint = 0.07;
+varying vec3 wp;
+
+float hash(vec2 p) {
+	return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+void vertex() {
+	wp = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+}
+
+void fragment() {
+	float row = floor(wp.z / plank_w);
+	float off = hash(vec2(row, 3.0)) * plank_len;
+	float colm = floor((wp.x + off) / plank_len);
+	float fz = wp.z / plank_w - row;
+	float fx = (wp.x + off) / plank_len - colm;
+	float gap = min(min(fz, 1.0 - fz) * plank_w, min(fx, 1.0 - fx) * plank_len);
+	float g = 1.0 - smoothstep(0.0, groove, gap);
+	float fw = max(fwidth(wp.x), fwidth(wp.z));
+	g *= 1.0 - smoothstep(0.3, 1.2, fw);
+	float t = (hash(vec2(row, colm)) - 0.5) * 2.0 * tint;
+	vec3 c = base_color * (1.0 + t);
+	c = mix(c, c * 0.55, g * 0.85);
+	ALBEDO = c;
+	ROUGHNESS = 0.85;
+}
+"""
+var _parquet_shader: Shader
+
+
+func _parquet_mat(color: Color) -> ShaderMaterial:
+	if _parquet_shader == null:
+		_parquet_shader = Shader.new()
+		_parquet_shader.code = PARQUET_SHADER
+	var m := ShaderMaterial.new()
+	m.shader = _parquet_shader
+	m.set_shader_parameter("base_color", Vector3(color.r, color.g, color.b))
+	return m
+
+
 ## Ложный AO (ATTN_14 §14.13): мягкое затемнение у плинтуса и в вертикальных углах. SSAO в Clean выключен и почти ничего
 ## не давал, а плоские стены без этого читаются как нарисованные. 9 полупрозрачных квадов без теней, на visual-слое комнаты.
 ## Стена с дверью (юг) пропущена: квад повис бы в проёме
 const AO_COLOR := Color(0.05, 0.07, 0.16)
-const AO_ALPHA := 0.42
-const AO_FLOOR_H := 45.0      # высота полосы у пола, см
+const AO_ALPHA := 0.55
+const AO_FLOOR_H := 60.0      # высота полосы у пола, см
 const AO_CORNER_W := 32.0     # ширина полосы в вертикальном углу, см
 const AO_GAP := 0.3           # отступ от стены против z-fighting, см
 

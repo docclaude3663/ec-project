@@ -132,8 +132,8 @@ func _furniture(p: Node3D) -> void:
 	_ball(p, 1.4, _f(184.5, 36, 70), PALETTE["yellow"], "plastic")
 
 	# Стул
-	_box(p, Vector3(36, 4, 36), _f(160, 43, 40), PALETTE["blue"], "plastic")
-	_box(p, Vector3(4, 34, 36), _f(143, 62, 40), PALETTE["blue"], "plastic")
+	_box(p, Vector3(36, 4, 36), _f(160, 43, 40), PALETTE["orange"], "plastic")
+	_box(p, Vector3(4, 34, 36), _f(143, 62, 40), PALETTE["orange"], "plastic")
 	for sx in [-15.0, 15.0]:
 		for sz in [-15.0, 15.0]:
 			_cyl(p, 1.5, 41.0, _f(160 + sx, 20.5, 40 + sz), PALETTE["grey"], "metal")
@@ -242,7 +242,7 @@ func _tier2(p: Node3D) -> void:
 	_poster(p, 239.5, -1.0, _f(0, 150, 40), pc)
 
 	# Рюкзак у стула
-	_box(p, Vector3(24, 34, 12), _f(150, 17, 92), PALETTE["blue"], "fabric")
+	_box(p, Vector3(24, 34, 12), _f(150, 17, 92), PALETTE["slate"], "fabric")
 	_box(p, Vector3(20, 14, 5), _f(150, 10, 86), PALETTE["yellow"], "fabric")
 
 
