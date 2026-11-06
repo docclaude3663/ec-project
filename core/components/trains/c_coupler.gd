@@ -173,7 +173,18 @@ func get_consist() -> Array[Entity]:
 	return result
 
 
-## Для вкладки Debug в InfoPanel
+## Статус торца для вкладки «Положение» в InfoPanel: нет / контакт / сцеплен / вечная и имя соседа
+func end_status(end: int) -> String:
+	var l: Link = links[end]
+	if l == null:
+		return "нет"
+	var other_name := str(l.other(self).entity.name)
+	if not l.coupled:
+		return "контакт: " + other_name
+	return ("вечная: " if l.permanent else "сцеплен: ") + other_name
+
+
+## Строки для отладочного вывода (в InfoPanel не используется, там end_status)
 func get_debug_info() -> Array[String]:
 	var res: Array[String] = []
 	for end in 2:
