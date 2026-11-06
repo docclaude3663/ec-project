@@ -22,7 +22,7 @@
 script = ExtResource("3_cfg")
 power_routing = true
 radius = 23.9
-collision_width = 2.8
+collision_width = 2.5
 
 [sub_resource type="Resource" id="Resource_id"]
 script = ExtResource("4_id")

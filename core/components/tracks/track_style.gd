@@ -63,7 +63,7 @@ const LEGACY_TILE_ALONG := 10.0
 
 @export_category("Collision")
 ## Ширина коллизии основания (балласт/шпалы), ю
-@export var collision_width := 2.5
+@export var collision_width := 2.9
 
 
 # ==========================================

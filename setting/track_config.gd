@@ -18,7 +18,8 @@ class_name TrackConfig extends ObjectConfig
 ## Трак тоннельный сразу при постановке (C_Tunnel): может уходить под листы пенопласта. Обычно включается клавишей U
 @export var allow_underground := false
 # XX claude-switch
-## Ширина коллизии основания (балласт, шпалы), ю. 0 = не задана: берется ширина из TrackStyle (процедурные траки)
+## Ширина коллизии основания (балласт, шпалы), ю. 0 = не задана: берется ширина из TrackStyle (процедурные траки) 
+## по умолчанию 2.9ю
 ## или из глобальных настроек track_ballast_segment (траки со сценой Blender). Больше нуля: перекрывает их у ЛЮБОГО трака
 ## (flex, стилевой, со сценой, стрелка, кросс, упор). Применяют адаптеры визуала и пути (TrackStyle.with_collision_width,
 ## C_Path.collision_width), см. TrackConfig.collision_width_of
