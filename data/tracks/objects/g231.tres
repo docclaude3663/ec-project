@@ -19,6 +19,7 @@
 [sub_resource type="Resource" id="Resource_cfg"]
 script = ExtResource("2_tc")
 radius = 23.1
+collision_width = 4.0
 
 [sub_resource type="Resource" id="Resource_id"]
 script = ExtResource("3_id")
