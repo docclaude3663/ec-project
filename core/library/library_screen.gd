@@ -161,13 +161,14 @@ func _build_ui() -> void:
 	bg.color = Color(0.09, 0.09, 0.1)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	# set_anchors_preset без offsets оставляет прежний (нулевой) размер, поэтому именно _and_offsets_
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	var margin := MarginContainer.new()
 	for side in ["left", "right", "top", "bottom"]:
 		margin.add_theme_constant_override("margin_" + side, 8)
 	add_child(margin)
-	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	var root := VBoxContainer.new()
 	root.add_theme_constant_override("separation", 6)

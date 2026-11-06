@@ -26,7 +26,8 @@ func _ready() -> void:
 	var root := VBoxContainer.new()
 	root.add_theme_constant_override("separation", 0)
 	add_child(root)
-	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	# set_anchors_preset без offsets оставляет прежний (нулевой) размер, поэтому именно _and_offsets_
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	var bar := HBoxContainer.new()
 	bar.add_theme_constant_override("separation", 6)
