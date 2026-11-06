@@ -17,6 +17,7 @@
 
 [sub_resource type="Resource" id="Resource_cfg"]
 script = ExtResource("2_toorp")
+collision_width = 2.5
 
 [sub_resource type="Resource" id="Resource_id"]
 script = ExtResource("3_yl8ou")
@@ -52,12 +53,12 @@ script = ExtResource("14_y3bfa")
 [resource]
 script = ExtResource("16_56h3u")
 key = &"track.special.flex_02"
+sort_order = 40
 name = "Flex 02"
 description = "Гибкий трак. Клик - начало, второй клик - конец. L 10-90, R от 32."
 tag = &"special"
-sort_order = 40
-hide = true
 icon = ExtResource("15_fmj6a")
+hide = true
 build_behavior = 2
 components = Array[ExtResource("1_jatfo")]([SubResource("Resource_id"), SubResource("Resource_flex"), SubResource("Resource_drag"), SubResource("Resource_piv"), SubResource("Resource_hov"), SubResource("Resource_sel"), SubResource("Resource_blk"), SubResource("Resource_sock"), SubResource("Resource_pwr"), SubResource("Resource_sup")])
 metadata/_custom_type_script = "uid://do5hjkm3r2pdg"
