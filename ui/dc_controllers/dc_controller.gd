@@ -110,8 +110,17 @@ func _attach_source() -> void:
 	PGM.state_loaded.connect(sync_from_source)
 	_indicators = DCIndicators.new()
 	add_child(_indicators)
-	_indicators.position = Vector2(0, size.y + 2)
 	_indicators.setup(source, size.x)
+	# Окошко индикаторов стоит над пультом (его высота растет вверх)
+	_indicators.minimum_size_changed.connect(_place_indicators)
+	_place_indicators()
+
+
+func _place_indicators() -> void:
+	if _indicators == null:
+		return
+	_indicators.size = _indicators.get_combined_minimum_size()
+	_indicators.position = Vector2(0, -_indicators.size.y - 2)
 
 
 func _exit_tree() -> void:
