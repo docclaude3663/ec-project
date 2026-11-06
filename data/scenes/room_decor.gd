@@ -189,7 +189,9 @@ func _window_dressing(p: Node3D) -> void:
 	var left := _box(p, Vector3(26, hang, 3), _f(ox - ww * 0.5 - 14.0, cy, -183), curtain, "fabric")
 	var right := _box(p, Vector3(26, hang, 3), _f(ox + ww * 0.5 + 14.0, cy, -183), curtain, "fabric")
 	var sill := _box(p, Vector3(ww + 16.0, 4, 16), _f(ox, w.sill - 2.0, -182), PALETTE["white"], "paint")
+	var shell := 1 << (Global.ROOM_SHELL_LAYER - 1)   # шторы, карниз и подоконник: оболочка, не отбрасывают тень для SkyFill
 	for part in [rod, left, right, sill]:
+		part.layers = shell
 		window_parts.append(part)
 
 
