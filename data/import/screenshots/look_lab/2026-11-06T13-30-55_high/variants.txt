@@ -1,0 +1,94 @@
+[{
+"env": {},
+"id": "r5_0_base",
+"look": {},
+"room": {},
+"time": {}
+}, {
+"env": {},
+"id": "r5_1_sun20",
+"look": {
+"sun_energy_mul": 2.0
+},
+"room": {},
+"time": {}
+}, {
+"env": {},
+"id": "r5_2_sun25",
+"look": {
+"sun_energy_mul": 2.5
+},
+"room": {},
+"time": {}
+}, {
+"env": {},
+"id": "r5_3_sun20_amb60",
+"look": {
+"ambient_energy": 0.6,
+"sun_energy_mul": 2.0
+},
+"room": {},
+"time": {}
+}, {
+"env": {},
+"id": "r5_4_sun25_amb50",
+"look": {
+"ambient_energy": 0.5,
+"sun_energy_mul": 2.5
+},
+"room": {},
+"time": {}
+}, {
+"env": {},
+"id": "r5_5_sun20_amb60_c115",
+"look": {
+"ambient_energy": 0.6,
+"contrast": 1.15,
+"sun_energy_mul": 2.0
+},
+"room": {},
+"time": {}
+}, {
+"env": {},
+"id": "r5_6_sun20_amb60_warm",
+"look": {
+"ambient_energy": 0.6,
+"sun_energy_mul": 2.0
+},
+"room": {},
+"time": {
+"sun_color": Color(1, 0.84, 0.62, 1)
+}
+}, {
+"env": {},
+"id": "r5_7_sun20_amb60_el30",
+"look": {
+"ambient_energy": 0.6,
+"sun_energy_mul": 2.0
+},
+"room": {},
+"time": {
+"sun_elevation": 30.0
+}
+}, {
+"env": {},
+"id": "r5_8_sun20_amb60_el42",
+"look": {
+"ambient_energy": 0.6,
+"sun_energy_mul": 2.0
+},
+"room": {},
+"time": {
+"sun_elevation": 42.0
+}
+}, {
+"env": {},
+"id": "r5_9_sun20_amb60_blur",
+"look": {
+"ambient_energy": 0.6,
+"sun_energy_mul": 2.0,
+"sun_shadow_blur": 1.5
+},
+"room": {},
+"time": {}
+}]
