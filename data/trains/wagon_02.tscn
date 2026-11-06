@@ -300,7 +300,7 @@ max_contacts_reported = 1
 linear_damp_mode = 1
 
 [node name="F_CentreSill" type="MeshInstance3D" parent="." unique_id=521459781]
-transform = Transform3D(0, 0, -1.4911125, 0, 1.4911125, 0, 1.4911125, 0, 0, 0, 0, 0)
+transform = Transform3D(0, 0, -1.4911125, 0, 1.4911125, 0, 1.4911125, 0, 0, 0, 1.7887166, 0)
 mesh = SubResource("ArrayMesh_7bhru")
 
 [node name="sphere" type="MeshInstance3D" parent="." unique_id=1229154046]
@@ -309,6 +309,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -10)
 mesh = SubResource("SphereMesh_by7bw")
 
 [node name="WagonCollisionShape3D" type="CollisionShape3D" parent="." unique_id=1520040488]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.32558346, -0.0056505203)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.1778576, -0.0056505203)
 shape = SubResource("BoxShape3D_3owqy")
 debug_color = Color(0, 0.6, 0.69803923, 1)

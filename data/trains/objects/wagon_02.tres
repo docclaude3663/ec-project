@@ -49,6 +49,7 @@ scene = ExtResource("5_h3v5j")
 offset_mesh_y = 1.52
 bogie_configs = Array[ExtResource("2_hp0cg")]([SubResource("Resource_u60jt"), SubResource("Resource_6ly6f")])
 coupler_offset = 6.5
+coupler_front = &"fixed"
 metadata/_custom_type_script = "uid://bicjny5dv1h3s"
 
 [sub_resource type="Resource" id="Resource_lvfb0"]
