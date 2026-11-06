@@ -18,6 +18,14 @@ var overload_delay := 0.5
 var instant_factor := 2.0
 
 
+## Питающая сеть обязательна для источников с needs_supply (правило D7 supply_required)
+static var supply_required := true
+## false (P0): токи и лимиты не считаются
+var fidelity_limits := true
+## false: защита по перегрузке не срабатывает (правило D7 short_protection = NONE)
+var protection := true
+
+
 ## Напряжение на выходе, % команды со знаком: 0, если источник выключен или в аварийном стопе, вывод отключён
 ## защитой или пульту нужна сеть, а её нет
 static func voltage_of(source: PowerSource, out: PowerOutput, mains: PowerSupply) -> float:
@@ -25,7 +33,7 @@ static func voltage_of(source: PowerSource, out: PowerOutput, mains: PowerSupply
 		return 0.0
 	if not source.enabled or source.estop or out.tripped:
 		return 0.0
-	if source.needs_supply() and (mains == null or not mains.on):
+	if supply_required and source.needs_supply() and (mains == null or not mains.on):
 		return 0.0
 	return clampf(float(out.command), -out.v_max, out.v_max)
 
@@ -94,6 +102,12 @@ static func branch_current(ports: Array, nets: Dictionary, light_load_enabled :=
 
 func _protect(src: PowerSource, out: PowerOutput, dt: float, events: Array[Dictionary]) -> void:
 	if out.tripped:
+		return
+	if not fidelity_limits or not protection:
+		# P0 или защита выключена: токи видны (P1+), но вывод не отключается и не помечен перегрузкой
+		if out.state != PowerOutput.State.OK:
+			out.state = PowerOutput.State.OK
+			out.overload_t = 0.0
 		return
 	var limit := maxf(out.i_max, 0.001)
 	var was := out.state

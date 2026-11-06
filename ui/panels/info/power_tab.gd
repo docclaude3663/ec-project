@@ -9,6 +9,8 @@ class_name InfoPowerTab extends InfoTab
 ## «Поменять полярность» (клип), «Изостыки» (чекбокс на каждый сокет трака, доступны и без клипа).
 
 var _extra: VBoxContainer
+var _sensor_box: CheckBox
+var _sensor_label: Label
 var _state_label: Label
 var _rev_box: CheckBox
 var _reset_btn: Button
@@ -23,6 +25,7 @@ func _setup() -> void:
 	_n("PowerClipButton").pressed.connect(_on_power_clip_button_pressed)
 	_n("ClipContourIDButton").item_selected.connect(_on_contour_id_item_selected)
 	_build_extras()
+	PGM.sensor_triggered.connect(func(_s: C_OccupancySensor, _o: bool) -> void: update_tab())
 
 
 func _on_bind() -> void:
@@ -59,6 +62,14 @@ func _build_extras() -> void:
 	_extra.add_child(_gap_title)
 	_gap_row = HFlowContainer.new()
 	_extra.add_child(_gap_row)
+
+	# D6: датчик занятости участка
+	_sensor_box = CheckBox.new()
+	_sensor_box.text = "Датчик занятости участка"
+	_sensor_box.toggled.connect(_on_sensor_toggled)
+	_extra.add_child(_sensor_box)
+	_sensor_label = Label.new()
+	_extra.add_child(_sensor_label)
 
 
 func update_tab() -> void:
@@ -243,12 +254,28 @@ func _fill_clip_contour_button(_current_contour_id) -> void:
 
 
 ## Блок D1: состояние цепи, «Поменять полярность», изостыки
+func _on_sensor_toggled(on: bool) -> void:
+	if target == null:
+		return
+	if on and not target.has_comp(C_OccupancySensor):
+		target.add_component(C_OccupancySensor.new())
+	elif not on:
+		target.remove_component(C_OccupancySensor)
+	_update_extras(target.get_comp(C_PowerTrack) as C_PowerTrack, target.get_comp(C_PowerClip) as C_PowerClip)
+
+
 func _update_extras(power_track: C_PowerTrack, clip: C_PowerClip) -> void:
 	if _extra == null:
 		return
 	_extra.visible = power_track != null
 	if power_track == null:
 		return
+	var sensor := target.get_comp(C_OccupancySensor) as C_OccupancySensor
+	_sensor_box.set_pressed_no_signal(sensor != null)
+	_sensor_label.visible = sensor != null
+	if sensor != null:
+		_sensor_label.text = "Участок %s, проходов: %d" % [sensor.state_text(), sensor.passes]
+		_sensor_label.modulate = Color(1.0, 0.45, 0.2) if sensor.occupied else Color(0.4, 0.9, 0.4)
 
 	# Состояние: что не так с клипом, треком или цепью
 	var lines: PackedStringArray = []
@@ -285,8 +312,9 @@ func _update_extras(power_track: C_PowerTrack, clip: C_PowerClip) -> void:
 		_rebuild_gap_boxes(sock, count)
 	for i in _gap_boxes.size():
 		_gap_boxes[i].set_pressed_no_signal(sock.is_gap(i))
-	_gap_title.visible = count > 0
-	_gap_row.visible = count > 0
+	var gaps_on: bool = PGM.rules.gaps_enabled   # D7: при gaps_enabled = false изостыки скрыты
+	_gap_title.visible = count > 0 and gaps_on
+	_gap_row.visible = count > 0 and gaps_on
 
 
 func _rebuild_gap_boxes(sock: C_Socket, count: int) -> void:

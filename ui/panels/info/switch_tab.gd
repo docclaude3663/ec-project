@@ -12,6 +12,7 @@ const SWITCH_REASONS := {
 	&"bad_route": "нет такого маршрута",
 	&"manual_only": "стрелка ручная",
 	&"remote_only": "стрелка дистанционная",
+	&"no_power": "нет питания привода (шина аксессуаров)",
 }
 
 var _sw_status: Label

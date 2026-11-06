@@ -97,6 +97,9 @@ func request(target: int, source: StringName) -> bool:
 			return _reject(&"manual_only")
 		if control == Drive.REMOTE and source != &"remote":
 			return _reject(&"remote_only")
+		# D6: привод дистанционной стрелки питается от шины аксессуаров
+		if control == Drive.REMOTE and not PGM.bus_powered():
+			return _reject(&"no_power")
 	if target == route:
 		return true
 	if is_occupied():

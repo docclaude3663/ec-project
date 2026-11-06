@@ -71,6 +71,10 @@ class Lamp extends RefCounted:
 	var culled := false         # скрыт бюджетом (LightBudget)
 	var delay := 0.0            # оставшаяся случайная задержка перед переходом (LightConfig.delay_jitter)
 	var uses_track := false     # питается с рельсов: светит только при напряжении под сущностью
+	var uses_bus := false       # питается от шины аксессуаров (D6): светит, пока шина запитана
+
+	func uses_power() -> bool:
+		return uses_track or uses_bus
 	var power := 1.0            # доля питания 0..1, плавно догоняет power_target
 	var power_target := 1.0
 
@@ -170,11 +174,34 @@ func on_entity_ready() -> void:
 	_apply_saved_lights()
 	_apply_all_lamps()
 	_setup_rules()
+	_register_bus()
 	if not _lamps.is_empty() and GFX.light_budget:
 		GFX.light_budget.register(self)
 
 
+## Лампы на шине аксессуаров нагружают её (D6): потребитель регистрируется в PGM.bus
+func _register_bus() -> void:
+	if _ghost:
+		return
+	for id in _lamp_order:
+		if (_lamps[id] as Lamp).uses_bus:
+			PGM.bus.add_consumer(self)
+			return
+
+
+## Мощность ламп на шине, Вт (AccessoryBus.step вызывает при load_for_lights)
+func bus_watts() -> float:
+	var w := 0.0
+	for id in _lamp_order:
+		var l: Lamp = _lamps[id]
+		if l.uses_bus and l.anchor != null:
+			w += l.cfg.power_w * l.level()
+	return w
+
+
 func _exit_tree() -> void:
+	if is_instance_valid(PGM):
+		PGM.bus.remove_consumer(self)
 	if not is_instance_valid(GFX):
 		return
 	if GFX.light_budget:
@@ -331,7 +358,7 @@ func _setup_rules() -> void:
 				_has_dir = true
 			LightConfig.Rule.NIGHT:
 				has_night = true
-		if l.uses_track:
+		if l.uses_power():
 			_has_power = true
 	if has_night and not GFX.time_of_day_changed.is_connected(_on_time_of_day_changed):
 		GFX.time_of_day_changed.connect(_on_time_of_day_changed)
@@ -350,7 +377,7 @@ func _rule_value(l: Lamp) -> float:
 			return 1.0
 		LightConfig.Rule.POWERED:
 			# горит, пока есть питание: доля питания учтена в Lamp.level()
-			return 1.0 if l.uses_track else 0.0
+			return 1.0 if l.uses_power() else 0.0
 	return -1.0
 
 
@@ -420,12 +447,15 @@ func _update_power() -> void:
 	if not _has_power:
 		return
 	var v := absf(_track_voltage())
+	var bus_on := PGM.bus_powered()
 	for id in _lamp_order:
 		var l: Lamp = _lamps[id]
-		if not l.uses_track:
+		if not l.uses_power():
 			continue
 		var full := maxf(l.cfg.power_full_voltage, l.cfg.power_min_voltage + 0.01)
 		var f := clampf(inverse_lerp(l.cfg.power_min_voltage, full, v), 0.0, 1.0)
+		if l.uses_bus:
+			f = 1.0 if bus_on else 0.0
 		if not is_equal_approx(f, l.power_target):
 			l.power_target = f
 			set_process(true)
@@ -460,7 +490,7 @@ func get_light_list() -> Array[Dictionary]:
 			"id": id, "title": l.cfg.title, "t": l.t, "target": l.target,
 			"found": l.anchor != null and l.has_output(), "enabled": l.enabled, "changing": l.is_changing(),
 			"gain": l.gain, "rule": l.cfg.rule, "manual": l.manual, "culled": l.culled and l.wants_on(),
-			"no_power": l.uses_track and l.power_target < 0.001,
+			"no_power": l.uses_power() and l.power_target < 0.001,
 		})
 	return res
 
@@ -472,7 +502,8 @@ func _build_lamp(cfg: LightConfig, vis: C_Visual) -> Lamp:
 	l.gain = clampf(cfg.brightness, 0.0, LightConfig.GAIN_MAX)
 	l.ghost = _ghost
 	l.uses_track = _uses_track(cfg)
-	if l.uses_track:
+	l.uses_bus = cfg.power_source == LightConfig.LightSupply.BUS
+	if l.uses_power():
 		l.power = 0.0          # до первого замера напряжения лампа не светит
 		l.power_target = 0.0
 	var parent: Node3D = vis.instance
@@ -661,7 +692,7 @@ func get_debug_info() -> Array[String]:
 	for id in _lamp_order:
 		var l: Lamp = _lamps[id]
 		res.append("light %s: t=%.2f -> %.2f gain %.2f power %s rule %s%s %s%s%s" % [id, l.t, l.target, l.gain,
-				"%.2f" % l.power if l.uses_track else "-",
+				"%.2f" % l.power if l.uses_power() else "-",
 				LightConfig.Rule.keys()[l.cfg.rule], " (manual)" if l.manual else "",
 				"" if l.has_output() else "[NO LIGHT] ", "[culled] " if l.culled else "", "" if l.enabled else "[off]"])
 	return res

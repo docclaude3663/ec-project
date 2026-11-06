@@ -12,6 +12,10 @@ class_name DebugTogglesTab extends DebugTab
 var _toggles: Array[Dictionary] = []
 var _save_manager: SaveManager
 var _confirm: ConfirmationDialog
+var _preset: OptionButton
+var _rules_label: Label
+var _bus_check: CheckBox
+var _bus_label: Label
 
 
 func _init() -> void:
@@ -32,6 +36,40 @@ func _init() -> void:
 	_add_toggle("Физика вагона при драге", "Включено: вагон догоняет курсор и его можно бросить", "Global.drag_physics",
 			func() -> bool: return Global.drag_physics,
 			func(on: bool) -> void: Global.drag_physics = on)
+
+	add_child(make_header("Электрика (DCS, D7)"))
+	_preset = OptionButton.new()
+	for id in DCSPresets.ORDER:
+		_preset.add_item(DCSPresets.TITLES[id])
+		_preset.set_item_metadata(_preset.item_count - 1, id)
+	_preset.add_item("Своя (из сейва)")
+	_preset.set_item_metadata(_preset.item_count - 1, &"custom")
+	_preset.item_selected.connect(_on_preset_selected)
+	add_child(_preset)
+	_rules_label = Label.new()
+	_rules_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_rules_label.modulate = Color(1, 1, 1, 0.7)
+	add_child(_rules_label)
+	PGM.rules_changed.connect(_sync_rules)
+	_sync_rules()
+	_bus_check = CheckBox.new()
+	_bus_check.text = "Шина аксессуаров включена (12 В)"
+	_bus_check.toggled.connect(func(on: bool) -> void:
+		PGM.bus.enabled = on
+		_sync_bus())
+	add_child(_bus_check)
+	_bus_label = Label.new()
+	_bus_label.modulate = Color(1, 1, 1, 0.7)
+	add_child(_bus_label)
+	var bus_reset := Button.new()
+	bus_reset.text = "Сбросить защиту шины"
+	bus_reset.pressed.connect(func() -> void:
+		PGM.reset_bus()
+		_sync_bus())
+	add_child(bus_reset)
+	PGM.bus_event.connect(func(_k: String) -> void: _sync_bus())
+	PGM.solver_stepped.connect(_sync_bus)
+	_sync_bus()
 
 	add_child(make_header("Экран"))
 	_add_toggle("V-Sync (Ctrl+Shift+V)", "Без V-Sync fps не упирается в частоту монитора", "DisplayServer.window_set_vsync_mode",
@@ -68,7 +106,34 @@ func _add_toggle(text: String, tip: String, var_name: String, getter: Callable, 
 	_toggles.append({"check": cb, "get": getter})
 
 
+func _on_preset_selected(i: int) -> void:
+	var id: StringName = _preset.get_item_metadata(i)
+	if id != &"custom":
+		PGM.apply_preset(id)
+
+
+func _sync_rules() -> void:
+	var r := PGM.rules
+	var idx := DCSPresets.ORDER.find(r.preset)
+	_preset.select(idx if idx >= 0 else _preset.item_count - 1)
+	_rules_label.text = "Точность P%d, проводка %s, сеть %s, конфликт %s, защита %s, изостыки %s, свет нагружает %s" % [
+		int(r.fidelity), "обязательна" if r.wiring_required else "по желанию", "нужна" if r.supply_required else "не нужна",
+		"отключает оба" if r.conflict_policy == 1 else "ведёт первый", ["нет", "авто", "ручной сброс"][int(r.short_protection)],
+		"да" if r.gaps_enabled else "нет", "да" if r.load_for_lights else "нет"]
+
+
+func _sync_bus() -> void:
+	if _bus_check == null:
+		return
+	_bus_check.set_pressed_no_signal(PGM.bus.enabled)
+	_bus_label.text = "Шина: %s, нагрузка %.2f из %.1f А" % [
+		"ОТКЛЮЧЕНА ЗАЩИТОЙ" if PGM.bus.tripped else ("запитана" if PGM.bus_powered() else "без питания"),
+		PGM.bus.load_a, PGM.bus.i_max]
+
+
 func refresh() -> void:
+	_sync_rules()
+	_sync_bus()
 	for t in _toggles:
 		(t.check as CheckBox).set_pressed_no_signal(t.get.call())
 

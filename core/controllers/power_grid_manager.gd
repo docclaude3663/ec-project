@@ -31,6 +31,16 @@ var conflict_policy: ConflictPolicy = ConflictPolicy.MERGE
 var wiring_required := false
 ## Свет вагонов нагружает вывод (правило режима D7, по умолчанию нет)
 var load_for_lights := false
+## Шина аксессуаров 12 В (D6): свет домов и фонарей, привод стрелок. Один на макет
+var bus := AccessoryBus.new()
+## Сущность трака -> корень связного участка (после последнего пересчёта, для датчиков занятости)
+var _track_roots: Dictionary = {}
+## Корень участка -> занят (прошлый шаг), для событий net_occupied
+var _occupied_prev: Dictionary = {}
+## Правила электрики макета (D7). Меняются через apply_rules, пишутся в сейв
+var rules: DCSRules = DCSPresets.make(DCSPresets.STANDARD)
+## Метка -> время срабатывания защиты, мс (автосброс при ShortProtection.AUTO)
+var _trip_at: Dictionary = {}
 
 ## Производное представление (метка -> {"voltage": команда, "is_stopped": стоп или защита}). Источник правды это PowerOutput
 var power_pwm : Dictionary = {}
@@ -85,6 +95,14 @@ signal sources_changed()
 signal solver_stepped()
 ## ⚡Событие защиты вывода: kind "overload", "clear" или "trip"
 signal output_event(label: int, kind: String, reason: String)
+## ⚡Правила электрики сменились (пресет или тумблер): UI обновляет подписи и скрывает отключённые опции
+signal rules_changed()
+## ⚡Участок цепи занят или освобождён тележкой (D6): net это метка питающего вывода участка (0: участок без питания)
+signal net_occupied(net: int, occupied: bool)
+## ⚡Датчик занятости сменил состояние (D6)
+signal sensor_triggered(sensor: C_OccupancySensor, occupied: bool)
+## ⚡Событие шины аксессуаров: kind "trip" (защита), "reset"
+signal bus_event(kind: String)
 
 
 
@@ -100,6 +118,69 @@ func _physics_process(delta: float) -> void:
 	var dt := _solver_acc
 	_solver_acc = 0.0
 	_step_solver(dt)
+	_step_peripherals(dt)
+
+
+## Шина аксессуаров и датчики занятости (10 Гц, независимо от наличия пультов)
+func _step_peripherals(dt: float) -> void:
+	if bus.step(dt, mains, rules.supply_required, load_for_lights, short_protection_on()) == "trip":
+		print("⚡ Шина аксессуаров отключена защитой (нагрузка выше %.1f А)" % bus.i_max)
+		bus_event.emit("trip")
+	_step_occupancy()
+
+
+func bus_powered() -> bool:
+	return bus.powered(mains, rules.supply_required)
+
+
+func reset_bus() -> void:
+	bus.reset()
+	bus_event.emit("reset")
+
+
+## Занятость участков: тележка на рельсах (не сошедшая, не в руке) занимает связный участок трака, на котором стоит
+func _step_occupancy() -> void:
+	var sensors := get_tree().get_nodes_in_group(&"occupancy_sensor")
+	if sensors.is_empty() and _occupied_prev.is_empty():
+		return
+	var occ: Dictionary = {}
+	for node in get_tree().get_nodes_in_group(C_Bogie.GROUP):
+		var wagon := node as Entity
+		if wagon == null or wagon.is_queued_for_deletion():
+			continue
+		var bc := wagon.get_comp(C_Bogie) as C_Bogie
+		if bc == null or bc.is_derailed:
+			continue
+		var ch := wagon.get_comp(C_Chassis) as C_Chassis
+		if ch != null and not ch.is_on_rails:
+			continue
+		for b in bc.bogies_data:
+			if b.current_track != null and _track_roots.has(b.current_track):
+				occ[_track_roots[b.current_track]] = true
+	for s in sensors:
+		var sensor := s as C_OccupancySensor
+		if sensor == null or sensor.entity == null or not _track_roots.has(sensor.entity):
+			continue
+		var is_occ := occ.has(_track_roots[sensor.entity])
+		if sensor.set_occupied(is_occ):
+			sensor_triggered.emit(sensor, is_occ)
+	for root in occ:
+		if not _occupied_prev.has(root):
+			net_occupied.emit(_root_net(root), true)
+	for root in _occupied_prev:
+		if not occ.has(root):
+			net_occupied.emit(_root_net(root), false)
+	_occupied_prev = occ
+
+
+## Метка питающего вывода участка (по любому траку участка), 0 если участок не питается
+func _root_net(root: Variant) -> int:
+	for e in _track_roots:
+		if _track_roots[e] == root and is_instance_valid(e):
+			var pt := (e as Entity).get_comp(C_PowerTrack) as C_PowerTrack
+			if pt != null and pt.net_id != 0:
+				return pt.net_id
+	return 0
 
 
 ## Шаг решателя: токи, защита, нагрузка сети. События защиты разбираются здесь
@@ -120,6 +201,7 @@ func _step_solver(dt: float) -> void:
 			_:
 				_refresh_clips()
 		output_event.emit(out.label, String(ev.kind), String(ev.reason))
+	_auto_reset_step()
 	_refresh_clip_labels()
 	solver_stepped.emit()
 
@@ -279,6 +361,9 @@ func set_power_pwm( _cid: int = 0, _voltage :int = 0) -> void:
 func get_power(_cid: int) -> float:
 	if not _label_index.has(_cid):
 		return 0.0
+	# P0: КЗ полярности обнуляет цепь без отключения вывода (D7)
+	if rules.fidelity == DCSRules.Fidelity.P0 and shorted_nets.has(_cid):
+		return 0.0
 	return PowerSolver.voltage_of(_label_index[_cid][0], _label_index[_cid][1], mains)
 
 
@@ -288,7 +373,8 @@ func is_output_stopped(_cid: int) -> bool:
 		return false
 	var s: PowerSource = _label_index[_cid][0]
 	var o: PowerOutput = _label_index[_cid][1]
-	return s.estop or not s.enabled or o.tripped or (s.needs_supply() and not mains.on)
+	return s.estop or not s.enabled or o.tripped or (rules.supply_required and s.needs_supply() and not mains.on) \
+			or (rules.fidelity == DCSRules.Fidelity.P0 and shorted_nets.has(_cid))
 
 
 ## Производное представление, клипы, шейдер полос: всё, что зависит от состояния вывода
@@ -407,6 +493,58 @@ func reset_contour(_cid: int) -> void:
 	reset_output(_cid)
 
 
+# --- ПРАВИЛА (D7) ---
+
+## Применить правила: проводка, конфликт, свет, лимиты решателя, изостыки сборщика, питающая сеть. Пересчитывает сеть
+func apply_rules(r: DCSRules) -> void:
+	rules = r if r != null else DCSPresets.make(DCSPresets.STANDARD)
+	wiring_required = rules.wiring_required
+	conflict_policy = rules.conflict_policy as ConflictPolicy
+	load_for_lights = rules.load_for_lights
+	PowerSolver.supply_required = rules.supply_required
+	_solver.fidelity_limits = rules.fidelity != DCSRules.Fidelity.P0
+	_solver.protection = rules.short_protection != DCSRules.ShortProtection.NONE and _solver.fidelity_limits
+	_builder.gaps_enabled = rules.gaps_enabled
+	if not _solver.protection:
+		for s in sources:
+			for o in s.outputs:
+				if o.tripped:
+					PowerSolver.reset(o)
+	_trip_at.clear()
+	_refresh_all()
+	request_recalculate()
+	rules_changed.emit()
+	power_tab_updated.emit()
+
+
+func apply_preset(id: StringName) -> void:
+	apply_rules(DCSPresets.make(id))
+
+
+## Защита по КЗ полярности и конфликту включена (P1 и выше, не NONE)
+func short_protection_on() -> bool:
+	return rules.fidelity != DCSRules.Fidelity.P0 and rules.short_protection != DCSRules.ShortProtection.NONE
+
+
+## ShortProtection.AUTO: сработавший вывод возвращается через DCSRules.AUTO_RESET_S, если КЗ и конфликта больше нет
+func _auto_reset_step() -> void:
+	if rules.short_protection != DCSRules.ShortProtection.AUTO:
+		_trip_at.clear()
+		return
+	var now := Time.get_ticks_msec()
+	for s in sources:
+		for o in s.outputs:
+			if not o.tripped:
+				_trip_at.erase(o.label)
+				continue
+			if not _trip_at.has(o.label):
+				_trip_at[o.label] = now
+			elif now - int(_trip_at[o.label]) >= int(DCSRules.AUTO_RESET_S * 1000.0) \
+					and not shorted_nets.has(o.label) and not conflict_nets.has(o.label):
+				_trip_at.erase(o.label)
+				reset_output(o.label)
+
+
 ## Сбросить защиту всех выводов источника `source` (null: всех источников)
 func reset_protection(source: PowerSource = null) -> void:
 	for s in sources:
@@ -418,7 +556,7 @@ func reset_protection(source: PowerSource = null) -> void:
 
 ## Причина не устранена: КЗ полярности или конфликт выводов (политика TRIP)
 func _retrip_output(o: PowerOutput) -> void:
-	if o.command == 0 or o.tripped:
+	if o.command == 0 or o.tripped or not short_protection_on():
 		return
 	if shorted_nets.has(o.label):
 		trip_contour(o.label, "polarity")
@@ -463,6 +601,8 @@ func reset_state() -> void:
 			o.current = 0.0
 			PowerSolver.reset(o)
 	mains.on = true
+	bus.load_data({})
+	_occupied_prev.clear()
 	shorted_nets.clear()
 	conflict_nets.clear()
 	net_info.clear()
@@ -472,6 +612,7 @@ func reset_state() -> void:
 			alive.append(clip)
 	active_clips = alive
 	_ensure_default_source()
+	apply_rules(DCSPresets.make(DCSPresets.STANDARD))   # новая партия: «Стандарт» (D7), сейв перепишет правила в load_state
 	_refresh_all()
 	state_reset.emit()
 
@@ -481,14 +622,17 @@ func save_state() -> Dictionary:
 	var arr: Array = []
 	for s in sources:
 		arr.append(s.save_data())
-	return {"version": 1, "sources": arr, "mains": mains.save_data(), "next_id": _next_source_id}
+	return {"version": 2, "sources": arr, "mains": mains.save_data(), "next_id": _next_source_id, "rules": rules.to_dict(), "bus": bus.save_data()}
 
 
 ## Загрузка состояния. Пустой словарь (сейв до D2): остаются нули после reset_state.
 ## Источники с тем же id и моделью обновляются на месте (панель держит ссылку), остальные создаются
 func load_state(d: Dictionary) -> void:
+	# Правила: в сейве до D7 их нет, такой макет получает «Стандарт»
+	apply_rules(DCSRules.from_dict(d.get("rules", {})) if d.has("rules") else DCSPresets.make(DCSPresets.STANDARD))
 	if d.is_empty():
 		return
+	bus.load_data(d.get("bus", {}))
 	mains.load_data(d.get("mains", {}))
 	var saved: Array = d.get("sources", [])
 	var kept: Array[PowerSource] = []
@@ -643,6 +787,7 @@ func recalculate_grid() -> void:
 	var res: Dictionary = _builder.solve(get_tree(), active_clips)
 	last_recalc_usec = Time.get_ticks_usec() - t0
 	net_info = res.nets
+	_track_roots = res.roots
 
 	# Вид обновляем только у тех, у кого цепь, полярность или авария изменились (и у новых траков)
 	for e in res.changed:

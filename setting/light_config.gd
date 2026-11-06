@@ -28,8 +28,8 @@ enum Rule { COMMAND, NIGHT, DIRECTION, POWERED, SPEED, ROUTE, ALWAYS }
 enum End { FRONT, REAR }
 ## Откуда источник берёт питание. AUTO: подвижной состав (есть тележки) питается с рельсов, остальное без питания (пока).
 ## TRACK: свет горит, только если сущность стоит на токопроводящем треке с напряжением контура.
-## NONE: питание не нужно. Позже: CIRCUIT (цепь освещения, шаг C5), DECODER (DCC, шаг C4)
-enum LightSupply { AUTO, NONE, TRACK }
+## BUS: шина аксессуаров (PGM.bus, 12 В, D6): горит, пока шина запитана, нагружает её на power_w при load_for_lights. NONE: питание не нужно. Позже: CIRCUIT (цепь освещения, шаг C5), DECODER (DCC, шаг C4)
+enum LightSupply { AUTO, NONE, TRACK, BUS }
 
 ## Предел множителя яркости в InfoPanel
 const GAIN_MAX := 2.0
@@ -75,6 +75,8 @@ const GAIN_MAX := 2.0
 @export var power_min_voltage: float = 10.0
 ## Напряжение полной яркости. Между min и full яркость растёт плавно, как у лампы накаливания
 @export var power_full_voltage: float = 40.0
+## BUS: мощность лампы при полной яркости, Вт. Нагружает шину аксессуаров при правиле load_for_lights
+@export var power_w: float = 0.5
 
 @export_category("Свечение (L6)")
 ## Видимый светящийся элемент (линза, плафон) в точке источника, горит вместе с ним. Работает и когда Light3D скрыт

@@ -19,6 +19,8 @@ class_name RailNetBuilder extends RefCounted
 
 ## Сущности, учтённые прошлым расчётом (для определения «новых»)
 var _known: Dictionary = {}
+## false (D7, правило gaps_enabled): изостыки не разрывают цепь
+var gaps_enabled := true
 
 
 ## Расчёт сети. Результат:
@@ -133,8 +135,10 @@ func solve(tree: SceneTree, clips: Array) -> Dictionary:
 	var shorts: Array[int] = []
 	var known_now: Dictionary = {}
 	var tracks_of_root: Dictionary = {}
+	var roots_of: Dictionary = {}   # сущность -> корень связного участка (луч 0), для датчиков занятости (D6)
 	for i in ents.size():
 		var pt := powers[i]
+		roots_of[ents[i]] = graph.root_of(first_node[i])
 		var touched := not _known.has(ents[i])
 		known_now[ents[i]] = true
 		var fault := false
@@ -172,7 +176,7 @@ func solve(tree: SceneTree, clips: Array) -> Dictionary:
 				shorts.append(net_id)
 		nets[net_id] = info
 
-	return {"changed": changed, "nets": nets, "shorts": shorts, "graph": graph}
+	return {"changed": changed, "nets": nets, "shorts": shorts, "graph": graph, "roots": roots_of}
 
 
 # ------------------------------------------------------------------
@@ -204,7 +208,7 @@ func _add_joint(graph: RailNetGraph, ents: Array[Entity], powers: Array[C_PowerT
 		var ib: int = joint.id2
 		if not sa.is_socket_live(ia) or not sb.is_socket_live(ib):
 			return
-		if sa.is_gap(ia) or sb.is_gap(ib):
+		if gaps_enabled and (sa.is_gap(ia) or sb.is_gap(ib)):
 			return
 		leg_a = sa.leg_of_socket(ia)
 		leg_b = sb.leg_of_socket(ib)
