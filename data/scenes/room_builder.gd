@@ -127,7 +127,7 @@ func build() -> void:
 		l.name = "TempSun"
 		l.rotation_degrees = Vector3(-55.0, -35.0, 0.0)
 		l.shadow_enabled = true
-		l.directional_shadow_max_distance = 300.0
+		l.directional_shadow_max_distance = 700.0
 		add_child(l)
 
 

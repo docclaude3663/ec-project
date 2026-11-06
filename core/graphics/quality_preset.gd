@@ -17,7 +17,8 @@ class_name QualityPreset extends Resource
 ## Каскады: 1 (orthogonal), 2 или 4
 @export_range(1, 4) var dir_shadow_splits := 1
 ## Дальность теней солнца. Ограничена размером стола и комнаты: чем меньше, тем выше разрешение на макете
-@export var dir_shadow_max_distance := 250.0
+## Дальность теней солнца от камеры, ед. (мир в см: комната 480 × 380, 300 обрезало тень на 3 м от камеры)
+@export var dir_shadow_max_distance := 600.0
 ## RenderingServer.ShadowQuality: 0 hard, 1 soft very low, 2 low, 3 medium, 4 high, 5 ultra
 @export_range(0, 5) var soft_shadow_quality := 1
 ## Атлас теней точечных и spot источников (лампа), Viewport.positional_shadow_atlas_size
@@ -75,7 +76,7 @@ static func builtin(_id: StringName) -> QualityPreset:
 	match _id:
 		&"low":
 			return _make(_id, "Low", {
-				"dir_shadow_atlas": 2048, "dir_shadow_splits": 1, "dir_shadow_max_distance": 200.0,
+				"dir_shadow_atlas": 2048, "dir_shadow_splits": 1, "dir_shadow_max_distance": 450.0,
 				"soft_shadow_quality": 1, "positional_shadow_atlas": 2048,
 				"msaa": 0, "fxaa": true,
 				"ssao": false, "ssil": false, "contact_shadows": false,
@@ -84,7 +85,7 @@ static func builtin(_id: StringName) -> QualityPreset:
 			})
 		&"medium":
 			return _make(_id, "Medium", {
-				"dir_shadow_atlas": 4096, "dir_shadow_splits": 2, "dir_shadow_max_distance": 250.0,
+				"dir_shadow_atlas": 4096, "dir_shadow_splits": 2, "dir_shadow_max_distance": 600.0,
 				"soft_shadow_quality": 3, "positional_shadow_atlas": 4096,
 				"msaa": 1, "fxaa": false,
 				"ssao": true, "ssao_half_size": true, "ssao_quality": 1, "ssil": false,
@@ -94,7 +95,7 @@ static func builtin(_id: StringName) -> QualityPreset:
 			})
 		&"high":
 			return _make(_id, "High", {
-				"dir_shadow_atlas": 8192, "dir_shadow_splits": 4, "dir_shadow_max_distance": 300.0,
+				"dir_shadow_atlas": 8192, "dir_shadow_splits": 4, "dir_shadow_max_distance": 700.0,
 				"soft_shadow_quality": 4, "positional_shadow_atlas": 4096,
 				"msaa": 2, "fxaa": true,
 				"ssao": true, "ssao_half_size": false, "ssao_quality": 2, "ssil": true,

@@ -6,7 +6,7 @@ class_name LookLab extends Node
 ## Кнопка на вкладке Keys панели F3 (или Ctrl+Shift+L): для каждого варианта из _variants() применяет его поверх Look `clean` + Time `day`,
 ## переезжает по закладкам камеры 1-5 (Settings camera/bookmarks; нет закладок: снимает текущий вид),
 ## снимает кадр без UI на выбранном качестве (High по умолчанию) и пишет в user://look_lab/<время>/:
-##   <вариант>_b<N>.png, metrics.csv, variants.txt (параметры прогона).
+##   <вариант>_b<N>.jpg, metrics.csv, variants.txt (параметры прогона).
 ## metrics.csv: насыщенность, яркость, разброс яркости, доля насыщенных пикселей (те же формулы, что в анализе
 ## скриншотов Golf 2), плюс draw calls, объекты, примитивы, время кадра GPU и CPU, fps (Performance, §14.7.1).
 ## После прогона всё возвращается: Look, Time, Quality, Environment, камера, UI.
@@ -15,6 +15,8 @@ class_name LookLab extends Node
 ##           "env": {свойство Environment: значение}, "room": {слот варианта комнаты: значение}}. Все поля необязательны.
 ## Кнопки на вкладке Keys панели F3: прогон на High, Medium, Low (в папке user://look_lab/<время>_<tier>/).
 
+## Снимки пишутся в JPEG (около 0,3 МБ вместо 1,5 МБ у PNG); метрики считаются по изображению до сжатия
+const JPEG_QUALITY := 0.9
 const OUT_DIR := "user://look_lab/"
 const BASE_LOOK := &"clean"
 const BASE_TIME := &"day"
@@ -23,25 +25,22 @@ const SETTLE_VIEW := 12    # кадров после смены закладки
 
 const _WARM := Color(1.0, 0.90, 0.74)
 const _COOL := Color(0.62, 0.70, 0.86)
-## Раунд 3 (после анализа раунда 2, ATTN_14 §14.13.7). База: ACES, тёплое солнце 50°, холодный ambient 0,75,
-## без лампы и без volumetric fog (они в раунде 2 не помогли). Меняются цвет стен, насыщенность, контраст, виньетка.
-## dusty / slate / sage = мягкие цвета стен (RoomDecor.PALETTE), cream = исходные стены для сравнения.
+## Варианты прогона. База = текущие Clean + Day из .tres/.gd, без переопределений. Сейчас проверяются:
+## куда ложится световое пятно окна (азимут и высота солнца: хотим, чтобы стол был в пятне целиком)
+## и SSAO под масштаб комнаты (мир в см: радиус по умолчанию 1 ед. = 1 см, вокруг мебели нужны десятки).
 func _variants() -> Array:
-	var base := {"ambient_energy": 0.75, "ambient_color": _COOL, "sun_energy_mul": 1.5, "contrast": 1.0, "saturation": 1.15,
-			"tonemap": Environment.TONE_MAPPER_ACES}
-	var warm := _t({"sun_color": _WARM}, 50.0)
-	var dusty := {"wall": "dusty"}
+	var ssao := {"ssao_enabled": true, "ssao_intensity": 2.5, "ssao_power": 1.6}
 	return [
-		_mk("r3_0_dusty", base, warm, {}, dusty),
-		_mk("r3_1_slate", base, warm, {}, {"wall": "slate"}),
-		_mk("r3_2_sage", base, warm, {}, {"wall": "sage"}),
-		_mk("r3_3_cream", base, warm, {}, {"wall": "cream"}),
-		_mk("r3_4_dusty_vig25", _m(base, {"vignette": 0.25}), warm, {}, dusty),
-		_mk("r3_5_dusty_vig40", _m(base, {"vignette": 0.4}), warm, {}, dusty),
-		_mk("r3_6_dusty_sat130", _m(base, {"saturation": 1.3}), warm, {}, dusty),
-		_mk("r3_7_dusty_contrast110", _m(base, {"contrast": 1.1}), warm, {}, dusty),
-		_mk("r3_8_dusty_sun58_amb65", _m(base, {"ambient_energy": 0.65}), _t(warm, 58.0), {}, dusty),
-		_mk("r3_9_dusty_haze03", base, warm, _fog(0.0003), dusty),
+		_mk("r4_0_base", {}),
+		_mk("r4_1_sun_az_m15", {}, {"sun_azimuth": -15.0}),
+		_mk("r4_2_sun_az_m30", {}, {"sun_azimuth": -30.0}),
+		_mk("r4_3_sun_az_p15", {}, {"sun_azimuth": 15.0}),
+		_mk("r4_4_sun_el35", {}, {"sun_elevation": 35.0}),
+		_mk("r4_5_sun_el65", {}, {"sun_elevation": 65.0}),
+		_mk("r4_6_ssao_r10", _m(ssao, {"ssao_radius": 10.0})),
+		_mk("r4_7_ssao_r25", _m(ssao, {"ssao_radius": 25.0})),
+		_mk("r4_8_ssao_r50", _m(ssao, {"ssao_radius": 50.0})),
+		_mk("r4_9_ssao_r25_ssil", _m(ssao, {"ssao_radius": 25.0, "ssil": true})),
 	]
 
 
@@ -190,7 +189,7 @@ func run(only: Array = [], quality: StringName = &"high") -> void:
 			await RenderingServer.frame_post_draw
 			var img := get_viewport().get_texture().get_image()
 			var shot := "%s_%s" % [id, views[i].name]
-			var err := img.save_png(dir + shot + ".png")
+			var err := img.save_jpg(dir + shot + ".jpg", JPEG_QUALITY)
 			if err != OK:
 				push_error("LookLab: не сохранён %s (код %d)" % [shot, err])
 			var s := _stats(img)
@@ -223,7 +222,7 @@ func run(only: Array = [], quality: StringName = &"high") -> void:
 
 
 ## Матрица: каждый Look × каждый Time на текущих настройках (без вариантов), по закладкам камеры.
-## Снимки <look>_<time>_b<N>.png и metrics.csv (look,time,view,...) в user://look_lab/<время>_matrix_<tier>/. Нужна для L4:
+## Снимки <look>_<time>_b<N>.jpg и metrics.csv (look,time,view,...) в user://look_lab/<время>_matrix_<tier>/. Нужна для L4:
 ## как выглядят и сколько стоят остальные пресеты после правок Clean + Day.
 func run_matrix(quality: StringName = &"high") -> void:
 	if _busy:
@@ -270,7 +269,7 @@ func run_matrix(quality: StringName = &"high") -> void:
 				await RenderingServer.frame_post_draw
 				var img := get_viewport().get_texture().get_image()
 				var shot := "%s_%s_%s" % [l, t, views[i].name]
-				if img.save_png(dir + shot + ".png") != OK:
+				if img.save_jpg(dir + shot + ".jpg", JPEG_QUALITY) != OK:
 					push_error("LookLab: не сохранён " + shot)
 				var st := _stats(img)
 				rows.append("%s,%s,%s,%.3f,%.3f,%.3f,%.1f,%d,%d,%d,%.2f,%.2f,%.0f" % [l, t, views[i].name, st.sat, st.val, st.val_std, st.sat50,
