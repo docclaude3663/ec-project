@@ -10,6 +10,8 @@ class_name RoomBuilder extends Node3D
 
 ## ⚡ Комнату показали или спрятали (CameraBounds выключает ограничение)
 signal room_visible_changed(on: bool)
+## Комнату заменили (switch_room): границы камеры и небо надо перечитать
+signal room_changed(id: StringName)
 
 @export var config: RoomConfig
 ## Стены и потолок не отбрасывают тень: иначе низкое солнце затемнит стол. Окно и рама в S4
@@ -159,6 +161,29 @@ func _build_room() -> void:
 	_apply_detail()
 
 
+## Id текущей комнаты (в сейв)
+func get_room_id() -> StringName:
+	return config.id if config else RoomCatalog.DEFAULT_ID
+
+
+## Заменить комнату целиком (старая освобождается, в памяти одна). Стол пересобирается по паспорту новой комнаты.
+## До _ready только подменяет паспорт (стартовую сборку сделает _ready). Варианты цветов переносятся
+func switch_room(id: StringName) -> void:
+	if Global.fast_debug:
+		return
+	if config != null and config.id == id:
+		return
+	var nc := RoomCatalog.make(id)
+	if config != null:
+		nc.variants = config.variants.duplicate()
+	config = nc
+	if not is_node_ready() or not is_in_group(&"room_root"):
+		return
+	build()
+	room_changed.emit(config.id)
+	GFX.set_state(GFX.get_state())   # небо и лампа пересобранной комнаты
+
+
 ## Смена варианта (слоты wall, bedding, curtains, posters, см. RoomDecor.VARIANTS)
 func set_variant(slot: String, value: String) -> void:
 	if config.variants.get(slot, "") == value:
@@ -216,6 +241,10 @@ func _on_observe_action(_cat: StringName, _id: StringName, _pressed: bool) -> vo
 		&'ceiling':
 			set_ceiling_visible(_pressed)
 			return
+	if String(_id).begins_with("room_") and RoomCatalog.has(StringName(String(_id).trim_prefix("room_"))):
+		if _pressed:
+			switch_room(StringName(String(_id).trim_prefix("room_")))
+		return
 	# Варианты: wall_cream, bed_blue, curt_yellow, poster_trains
 	if not _pressed:
 		return
@@ -286,6 +315,9 @@ func _build_greybox() -> void:
 	_ceiling_mesh = _box(ceiling, "CeilingSlab", Vector3(c.size.x + 2.0 * t, t, c.size.z + 2.0 * t),
 			Vector3(0.0, fy + c.size.y + t * 0.5, 0.0), COL_CEILING, 0, _shell_layer(), false)
 	_apply_ceiling()
+
+	if not c.furnished:
+		return
 
 	# Мебель: коллизия простой коробкой (слой room), внешний вид строит RoomDecor
 	for p in PROPS:

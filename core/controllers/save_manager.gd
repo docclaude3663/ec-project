@@ -23,8 +23,11 @@ func _ready() -> void:
 	#load_game.call_deferred('autosave')
 	DirAccess.make_dir_recursive_absolute(SAVE_DIR)
 	_migrate_legacy_saves()
-	load_game('autosave')
-	pass
+	if FileAccess.file_exists(SAVE_DIR + "autosave.tres"):
+		load_game('autosave')
+	else:
+		# Новая игра: автосейва ещё нет, создаём его из стартового состояния (комната по умолчанию, пустой стол)
+		save_game('autosave')
 
 
 ## Разово копирует сейвы из res://saves/ в user://saves/ (только то, чего там еще нет)
@@ -70,6 +73,11 @@ func _notification(what):
 
 
 
+## Комната мира. null в режиме быстрой загрузки (fast_debug): комнаты нет
+func _room() -> RoomBuilder:
+	return get_node_or_null("/root/GameRoot/RoomBuilder") as RoomBuilder
+
+
 #-------SAVE----------
 
 ## Возвращает true, если файл записан
@@ -92,6 +100,11 @@ func save_game(slot_name: String ='savegame') -> bool:
 		#"entities": []
 	#}
 
+
+	# Комната мира: при старте автосейв поднимает ту же комнату
+	var _rb := _room()
+	if _rb and _rb.is_in_group(&"room_root"):
+		_saved_game.room_id = _rb.get_room_id()
 
 	# Активный стиль траков макета (ATTN_17 §17.13)
 	_saved_game.track_style = TSM.current_id
@@ -177,6 +190,10 @@ func load_game(slot_name: String  ='savegame', dir: String = SAVE_DIR, style_ove
 	#🚩res все данные игры собраны здесь
 	var _saved_game :SavedGame = load(save_path) as SavedGame #автокомплит
 	if not _saved_game: return
+	# 0️⃣ комната мира (в памяти одна): до камеры, чтобы границы камеры были уже новой комнаты
+	var _rb := _room()
+	if _rb:
+		_rb.switch_room(_saved_game.room_id)
 	# 1️⃣ загружаем камеру вызывая ее метод
 	$"/root/GameRoot/Gimbal".load_global_state(_saved_game.gimbal)
 	var root_node = get_node(world_entities_root)

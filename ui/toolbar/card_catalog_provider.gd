@@ -51,6 +51,8 @@ const CARDS := {
 	&"room": [
 		{"id": &"room_visible", "title": "Комната", "toggle": true, "default": true},
 		{"id": &"ceiling", "title": "Потолок", "toggle": true},
+		{"id": &"room_kid_room_10", "title": "Комната: детская", "group": &"room_pick", "default": true, "tip": "Заменяет комнату целиком (в памяти одна)"},
+		{"id": &"room_cube", "title": "Комната: пустой куб", "group": &"room_pick", "tip": "Пустая коробка для текстур и импорта. Заменяет комнату целиком"},
 		{"id": &"wall_cream", "title": "Стены: беж", "group": &"wall"},
 		{"id": &"wall_sky", "title": "Стены: небо", "group": &"wall"},
 		{"id": &"wall_mint", "title": "Стены: мята", "group": &"wall"},
@@ -152,6 +154,12 @@ func set_toggle_state(id: StringName, on: bool) -> void:
 ## Нажата ли карточка при показе: из сохраненного состояния, иначе по "default"
 func _is_on(data: Dictionary) -> bool:
 	var g: StringName = data.get("group", &"")
+	if g == &"room_pick":
+		# Живая комната: её могла сменить загрузка сейва
+		var tree := Engine.get_main_loop() as SceneTree
+		var rb := tree.get_first_node_in_group(&"room_root") as RoomBuilder if tree else null
+		if rb != null:
+			return &"room_" + String(rb.get_room_id()) == String(data.id)
 	if g != &"":
 		if _group_state.has(g):
 			return _group_state[g] == data.id

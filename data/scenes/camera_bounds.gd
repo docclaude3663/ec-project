@@ -23,3 +23,5 @@ func _ready() -> void:
 		return
 	gimbal.set_bounds(room.get_bounds(), true)
 	room.room_visible_changed.connect(func(on: bool): gimbal.set_bounds_enabled(on))
+	# Другая комната: новые границы (включены, если комната показана)
+	room.room_changed.connect(func(_id): gimbal.set_bounds(room.get_bounds(), room.visuals == null or room.visuals.visible))

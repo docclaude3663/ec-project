@@ -16,6 +16,8 @@ class_name SavedGame extends Resource
 	"camera": Transform3D.IDENTITY,
 }
 @export var entities: Array = []
+## Комната мира (RoomCatalog). В сейвах до второй комнаты поля нет: детская
+@export var room_id: StringName = &"kid_room_10"
 ## Активный стиль траков макета (TSM.current_id). Пусто = стиль по умолчанию из набора
 @export var track_style: StringName = &""
 

@@ -9,6 +9,8 @@ class_name RoomConfig extends Resource
 @export var id: StringName = &"kid_room_10"
 ## Арт-версия комнаты. Пусто = greybox, который строит RoomBuilder
 @export var scene: PackedScene
+## false: greybox без мебели и декора (пустая коробка), коллизий мебели тоже нет
+@export var furnished := true
 
 @export_category("Room")
 ## Внутренний размер: X ширина, Y высота, Z глубина
