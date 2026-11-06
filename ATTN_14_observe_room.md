@@ -421,7 +421,7 @@ ObserveObjects:
 | Стеллаж | T1 | 2–4k | заполняется T2 |
 | Дверь | T1 | 1–2k | механизм |
 | Ковёр с дорогами | T1 | <1k | текстура с дорогами, задел Car System |
-| Заполняющий свет «небо» | `SkyFill`: energy `Time.fill_energy` (день 0,6, утро 0,4, вечер 0,25, ночь 0,1) × `Look.fill_mul`, высота `Time.fill_elevation` 65°, `Look.fill_angle` 6°, тень на Medium и High (`Quality.fill_shadow`), один каскад 600 ед., `shadow_bias` 0,4; `light_shadow_caster_mask` без слоя 13 (оболочка комнаты: стены, потолок, рама, шторы, подоконник) | `environment_root.gd`, `time/*.tres` |
+| Заполняющий свет «небо» | `SkyFill`: energy `Time.fill_energy` (день 0,6, утро 0,4, вечер 0,25, ночь 0,1) × `Look.fill_mul`, высота `Time.fill_elevation` 65°, `Look.fill_angle` 6°, тень на Medium и High (`Quality.fill_shadow`), один каскад 400 ед., `shadow_bias` 0,01, `shadow_normal_bias` 2,0 (картинка v1 зафиксирована, дальше правки через редактор настроек); `light_shadow_caster_mask` без слоя 13 (оболочка комнаты: стены, потолок, рама, шторы, подоконник) | `environment_root.gd`, `time/*.tres` |
 | Лампа над столом | T1 | 1–2k | источник света |
 | Коробки от моделей | T2 | 0.3k × N | MultiMesh |
 | Ящик с инструментами и клеем | T2 | 2–3k | |
