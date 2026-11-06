@@ -25,21 +25,21 @@ const SETTLE_VIEW := 12    # кадров после смены закладки
 
 const _WARM := Color(1.0, 0.90, 0.74)
 const _COOL := Color(0.62, 0.70, 0.86)
-## Варианты прогона. База = текущие Clean + Day из .tres/.gd, без переопределений. Сейчас проверяется рассеянный свет
-## из окна (WindowLight): энергия (Time.sky_light_energy), мягкость тени (Look.sky_light_size, ед.) и ambient под него.
-## Хотим: мягкие тени предметов вне прямого луча, стены темнеют с удалением от окна.
+## Варианты прогона. База = текущие Clean + Day из .tres/.gd, без переопределений. Сейчас проверяется заполняющий свет
+## SkyFill (второй directional без стен и потолка): энергия (Time.fill_energy × Look.fill_mul), мягкость (Look.fill_angle, град),
+## ambient под него. Хотим: мягкие тени предметов вне пятна окна, объём без плоского ambient.
 func _variants() -> Array:
 	return [
-		_mk("r6_0_base", {}),
-		_mk("r6_1_off", {"sky_light_mul": 0.0}),
-		_mk("r6_2_half", {"sky_light_mul": 0.5}),
-		_mk("r6_3_x15", {"sky_light_mul": 1.5}),
-		_mk("r6_4_amb50", {"ambient_energy": 0.5}),
-		_mk("r6_5_x15_amb40", {"sky_light_mul": 1.5, "ambient_energy": 0.4}),
-		_mk("r6_6_x15_amb40_size15", {"sky_light_mul": 1.5, "ambient_energy": 0.4, "sky_light_size": 15.0}),
-		_mk("r6_7_x15_amb40_size80", {"sky_light_mul": 1.5, "ambient_energy": 0.4, "sky_light_size": 80.0}),
-		_mk("r6_8_x20_amb30", {"sky_light_mul": 2.0, "ambient_energy": 0.3}),
-		_mk("r6_9_x15_amb40_c115", {"sky_light_mul": 1.5, "ambient_energy": 0.4, "contrast": 1.15}),
+		_mk("r7_0_base", {}),
+		_mk("r7_1_off", {"fill_mul": 0.0}),
+		_mk("r7_2_half", {"fill_mul": 0.5}),
+		_mk("r7_3_x15", {"fill_mul": 1.5}),
+		_mk("r7_4_x15_amb50", {"fill_mul": 1.5, "ambient_energy": 0.5}),
+		_mk("r7_5_x15_amb35", {"fill_mul": 1.5, "ambient_energy": 0.35}),
+		_mk("r7_6_x15_amb50_ang2", {"fill_mul": 1.5, "ambient_energy": 0.5, "fill_angle": 2.0}),
+		_mk("r7_7_x15_amb50_ang14", {"fill_mul": 1.5, "ambient_energy": 0.5, "fill_angle": 14.0}),
+		_mk("r7_8_x15_amb50_el45", {"fill_mul": 1.5, "ambient_energy": 0.5}, {"fill_elevation": 45.0}),
+		_mk("r7_9_x20_amb35_c115", {"fill_mul": 2.0, "ambient_energy": 0.35, "contrast": 1.15}),
 	]
 
 

@@ -21,7 +21,7 @@ func _ready() -> void:
 	_ensure_env()
 	_ensure_sun()
 	_ensure_lamp()
-	_ensure_window_light()
+	_ensure_sky_fill()
 	_ensure_probe()
 
 
@@ -77,28 +77,24 @@ func _ensure_lamp() -> void:
 	l.add_to_group(&"gfx_lamp")
 
 
-## Рассеянный свет из окна: SpotLight3D в плоскости окна, смотрит в комнату, мягкая тень (light_size). Положение и поворот
-## задаёт RoomBuilder по RoomConfig.window, энергию и цвет GFX из Time. Это дешёвая замена GI: предметы вне прямого
-## луча получают мягкую тень от окна, стены темнеют с удалением от окна
-func _ensure_window_light() -> void:
-	if _has(&"gfx_window_light"):
+## Заполняющий направленный свет «небо»: рассеянный свет из окна. cull_mask без слоя оболочки комнаты (Global.ROOM_SHELL_LAYER):
+## стены и потолок его не затеняют и им не освещаются (их освещают солнце и ambient), а пол, мебель и стол получают мягкие тени
+## предметов вне пятна окна. Энергию, цвет и высоту задаёт GFX по Time и Look
+func _ensure_sky_fill() -> void:
+	if _has(&"gfx_sky_fill"):
 		return
-	var l := SpotLight3D.new()
-	l.name = "WindowLight"
-	l.position = Vector3(0.0, 100.0, -180.0)
-	l.rotation_degrees = Vector3(0.0, 180.0, 0.0)   # светит на юг, в комнату
+	var l := DirectionalLight3D.new()
+	l.name = "SkyFill"
+	l.rotation_degrees = Vector3(-65.0, 0.0, 0.0)
 	l.light_color = Color(0.72, 0.84, 1.0)
 	l.light_energy = 0.0
-	l.spot_range = 900.0
-	l.spot_angle = 85.0
-	l.spot_attenuation = 0.6
-	l.light_size = 40.0
+	l.light_cull_mask = 0xFFFFF & ~(1 << (Global.ROOM_SHELL_LAYER - 1))
 	l.shadow_enabled = true
-	l.shadow_bias = 0.6          # мир в см, как у лампы
-	l.shadow_normal_bias = 3.0
+	l.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
+	l.directional_shadow_max_distance = 700.0
 	l.visible = false
 	add_child(l)
-	l.add_to_group(&"gfx_window_light")
+	l.add_to_group(&"gfx_sky_fill")
 
 
 ## Один статичный probe над столом: дешевый пластиковый блик. Обновляется один раз

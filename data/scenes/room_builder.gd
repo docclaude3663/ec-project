@@ -278,14 +278,13 @@ func _build_greybox() -> void:
 	_build_window_frame()
 	_build_sky_card()
 	_build_fake_ao()
-	_place_window_light()
 
 	# Потолок: отдельной нодой, по умолчанию скрыт, без коллизии
 	ceiling = Node3D.new()
 	ceiling.name = "Ceiling"
 	visuals.add_child(ceiling)
 	_ceiling_mesh = _box(ceiling, "CeilingSlab", Vector3(c.size.x + 2.0 * t, t, c.size.z + 2.0 * t),
-			Vector3(0.0, fy + c.size.y + t * 0.5, 0.0), COL_CEILING, 0, vis, false)
+			Vector3(0.0, fy + c.size.y + t * 0.5, 0.0), COL_CEILING, 0, _shell_layer(), false)
 	_apply_ceiling()
 
 	# Мебель: коллизия простой коробкой (слой room), внешний вид строит RoomDecor
@@ -331,7 +330,7 @@ func _wall_x(sgn: float) -> void:
 	var cx := sgn * (c.size.x * 0.5 + c.wall_thickness * 0.5)
 	_walls.append(_box(visuals, "WallE" if sgn > 0.0 else "WallW",
 			Vector3(c.wall_thickness, c.size.y, c.size.z), Vector3(cx, c.floor_y + c.size.y * 0.5, 0.0),
-			_wall_col, Global.active_layers(['room']), _vis_layer(), walls_cast_shadow))
+			_wall_col, Global.active_layers(['room']), _shell_layer(), walls_cast_shadow))
 
 
 ## Паркет процедурным шейдером (без текстур и геометрии): доски 12 × 100 см вразбежку, лёгкий разброс оттенка и тёмные швы.
@@ -381,16 +380,6 @@ func _parquet_mat(color: Color) -> ShaderMaterial:
 	m.shader = _parquet_shader
 	m.set_shader_parameter("base_color", color)   # Color, а не Vector3: иначе source_color не переведёт sRGB в linear и пол выцветает
 	return m
-
-
-## Рассеянный свет из окна ставится в плоскость окна, на 8 см внутрь комнаты (чтобы стена не затеняла источник)
-func _place_window_light() -> void:
-	var l := get_tree().get_first_node_in_group(&"gfx_window_light") as Node3D if is_inside_tree() else null
-	if l == null or config.window.is_empty():
-		return
-	var w: Dictionary = config.window
-	var pos := Vector3(w.x, config.floor_y + w.sill + w.h * 0.5, -config.size.z * 0.5 + 8.0)
-	l.global_position = to_global(pos)
 
 
 ## Ложный AO (ATTN_14 §14.13): мягкое затемнение у плинтуса и в вертикальных углах. SSAO в Clean выключен и почти ничего
@@ -472,7 +461,7 @@ func _slab(nm: String, x0: float, x1: float, y0: float, y1: float, cz: float) ->
 		return
 	_walls.append(_box(visuals, nm, Vector3(x1 - x0, y1 - y0, config.wall_thickness),
 			Vector3((x0 + x1) * 0.5, (y0 + y1) * 0.5, cz), _wall_col,
-			Global.active_layers(['room']), _vis_layer(), walls_cast_shadow))
+			Global.active_layers(['room']), _shell_layer(), walls_cast_shadow))
 
 
 # ==========================================
@@ -490,7 +479,7 @@ func _build_window_frame() -> void:
 	var wh: float = c.window.h
 	var s0: float = c.floor_y + c.window.sill
 	var fb := 4.0
-	var vis := _vis_layer()
+	var vis := _shell_layer()
 	var col := Color(0.93, 0.93, 0.90)
 	_walls.append(_box(visuals, "FrameTop", Vector3(ww, fb, 3.0), Vector3(ox, s0 + wh - fb * 0.5, cz), col, 0, vis, true))
 	_walls.append(_box(visuals, "FrameBottom", Vector3(ww, fb, 3.0), Vector3(ox, s0 + fb * 0.5, cz), col, 0, vis, true))
@@ -556,6 +545,11 @@ func _lamp_height() -> float:
 
 func _vis_layer() -> int:
 	return 1 << (Global.ROOM_VISUAL_LAYER - 1)
+
+
+## Оболочка (стены, потолок, рама окна): отдельный visual layer, заполняющий свет SkyFill её не видит
+func _shell_layer() -> int:
+	return 1 << (Global.ROOM_SHELL_LAYER - 1)
 
 
 func _mat(color: Color) -> StandardMaterial3D:

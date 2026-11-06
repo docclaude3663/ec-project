@@ -40,6 +40,9 @@ var flash_width := 0.2
 
 ## Visual layer комнаты (номер 1..20 для set_layer_mask_value / cull_mask). 15-20 заняты контурами Outline
 const ROOM_VISUAL_LAYER := 12
+## Visual layer оболочки комнаты (стены, потолок, рама окна). Отдельный слой нужен, чтобы заполняющий свет SkyFill
+## (cull_mask без этого слоя) не получал тень от стен и потолка. Камера и основное солнце видят оба слоя
+const ROOM_SHELL_LAYER := 13
 
 var active_ui_category := 1
 

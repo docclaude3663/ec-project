@@ -57,9 +57,9 @@ class_name GraphicsPreset extends Resource
 ## Энергия лампы над столом, когда она включена (включает Time, ручной переключатель или lamp_forced_on)
 @export var lamp_energy := 200.0
 @export var lamp_forced_on := false
-## Множитель к рассеянному свету из окна (Time.sky_light_energy) и размер источника (мягкость теней, ед.)
-@export var sky_light_mul := 1.0
-@export var sky_light_size := 40.0
+## Множитель к заполняющему свету SkyFill (Time.fill_energy) и угловой размер источника в градусах (мягкость теней, PCSS)
+@export var fill_mul := 1.0
+@export var fill_angle := 6.0
 
 @export_category("Miniature (S8, пока не применяется)")
 @export var tilt_shift := 0.0
@@ -97,7 +97,7 @@ static func builtin(_id: StringName) -> GraphicsPreset:
 				"ssao_enabled": true, "ssao_radius": 0.9, "ssao_intensity": 2.8,
 				"ssao_power": 1.6, "ssao_light_affect": 0.1, "ssil": true, "ao_multibounce": true,
 				"sun_energy_mul": 0.4, "sun_shadow_blur": 1.8, "contact_shadows": true,
-				"probe_intensity": 0.6, "lamp_energy": 220.0, "lamp_forced_on": true, "sky_light_mul": 0.3,
+				"probe_intensity": 0.6, "lamp_energy": 220.0, "lamp_forced_on": true, "fill_mul": 0.3,
 				"tilt_shift": 0.5, "vignette": 0.35,
 			})
 		&"clean":

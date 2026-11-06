@@ -48,7 +48,7 @@ var _world_env: WorldEnvironment
 var _env: Environment
 var _sun: DirectionalLight3D
 var _lamp: SpotLight3D
-var _win_light: SpotLight3D   # рассеянный свет из окна (EnvironmentRoot._ensure_window_light)
+var _fill: DirectionalLight3D   # заполняющий свет «небо» (EnvironmentRoot._ensure_sky_fill)
 var _probe: ReflectionProbe
 var _sky: MeshInstance3D
 var _oc: Node   # ObserveController
@@ -330,6 +330,22 @@ func _apply_all(duration: float) -> void:
 		_set_feature(_sun, _p_contact_sun, look.contact_shadows and q.contact_shadows)
 		_turn_sun(tod, duration)
 
+	# --- Заполняющий свет «небо»: энергия и цвет по Time, множитель и мягкость по Look, тень по Quality ---
+	if _fill:
+		var fe := tod.fill_energy * look.fill_mul
+		if fe > 0.001:
+			_fill.visible = true
+		else:
+			later.append(func(): _fill.visible = false)
+		_fill.shadow_enabled = q.fill_shadow
+		_fill.light_angular_distance = look.fill_angle
+		var faz := deg_to_rad(tod.sun_azimuth)
+		var fel := deg_to_rad(tod.fill_elevation)
+		var to_fill := Vector3(sin(faz) * cos(fel), sin(fel), -cos(faz) * cos(fel))
+		_fill.global_basis = Basis.looking_at(-to_fill, Vector3.UP)
+		_to(_fill, &"light_color", tod.fill_color, duration)
+		_to(_fill, &"light_energy", fe, duration)
+
 	# --- Небо в окне ---
 	_tint_sky(tod, duration)
 
@@ -349,18 +365,6 @@ func _apply_all(duration: float) -> void:
 		else:
 			later.append(func(): _lamp.visible = false)
 		_to(_lamp, &"light_energy", look.lamp_energy if lamp_on else 0.0, duration)
-
-	# --- Рассеянный свет из окна: энергия и цвет по Time, множитель и мягкость по Look, тень по Quality ---
-	if _win_light:
-		var we := tod.sky_light_energy * look.sky_light_mul
-		if we > 0.01:
-			_win_light.visible = true
-		else:
-			later.append(func(): _win_light.visible = false)
-		_win_light.shadow_enabled = q.window_light_shadow
-		_win_light.light_size = look.sky_light_size
-		_to(_win_light, &"light_color", tod.sky_light_color, duration)
-		_to(_win_light, &"light_energy", we, duration)
 
 	# --- Миниатюра (S8): только в Observe, Quality режет tilt-shift и DOF ---
 	var ts := look.tilt_shift if (_observe_active and q.tilt_shift) else 0.0
@@ -563,6 +567,10 @@ func _apply_quality_settings() -> void:
 			_:
 				_sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
 		_sun.directional_shadow_max_distance = q.dir_shadow_max_distance
+	if _fill:
+		_fill.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS if q.dir_shadow_splits >= 2 \
+				else DirectionalLight3D.SHADOW_ORTHOGONAL
+		_fill.directional_shadow_max_distance = q.dir_shadow_max_distance
 	Outline.mode = Outline.Mode.ALL if q.outlines_all else Outline.Mode.ESSENTIAL
 
 
@@ -651,7 +659,7 @@ func _resolve() -> bool:
 	_env = _world_env.environment if _world_env else null
 	_sun = get_tree().get_first_node_in_group(&"gfx_sun") as DirectionalLight3D
 	_lamp = get_tree().get_first_node_in_group(&"gfx_lamp") as SpotLight3D
-	_win_light = get_tree().get_first_node_in_group(&"gfx_window_light") as SpotLight3D
+	_fill = get_tree().get_first_node_in_group(&"gfx_sky_fill") as DirectionalLight3D
 	_probe = get_tree().get_first_node_in_group(&"gfx_probe") as ReflectionProbe
 	if _sun:
 		_sun_base_energy = _sun.light_energy
