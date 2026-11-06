@@ -21,6 +21,7 @@ signal room_visible_changed(on: bool)
 
 var visuals: Node3D    # пол, стены, потолок, мебель
 var ceiling: Node3D
+var _ceiling_mesh: MeshInstance3D   # плита потолка: скрытая в Observe, она всё равно отбрасывает тень (закрывает солнце сверху)
 var table: Node3D
 
 var _mats := {}
@@ -153,8 +154,7 @@ func _build_room() -> void:
 		_build_greybox()
 	# Состояние переживает пересборку
 	visuals.visible = _room_visible
-	if ceiling:
-		ceiling.visible = _ceiling_visible
+	_apply_ceiling()
 	set_walls_cast_shadow(_walls_shadow_now)
 	_apply_detail()
 
@@ -183,12 +183,26 @@ func set_walls_cast_shadow(on: bool) -> void:
 	var mode := GeometryInstance3D.SHADOW_CASTING_SETTING_ON if on else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	for m in _walls:
 		m.cast_shadow = mode
+	_apply_ceiling()
+
+
+## Потолок: нода всегда активна, а плита либо видна (и отбрасывает тень), либо скрыта, но отбрасывает тень, когда стены
+## её отбрасывают (Observe). Без этого солнце заходило поверх стен и на стенах была видна верхняя граница тени
+func _apply_ceiling() -> void:
+	if ceiling == null or _ceiling_mesh == null:
+		return
+	ceiling.visible = true
+	if _walls_shadow_now:
+		_ceiling_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if _ceiling_visible \
+				else GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
+	else:
+		_ceiling_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_ceiling_mesh.visible = _ceiling_visible or _walls_shadow_now
 
 
 func set_ceiling_visible(on: bool) -> void:
 	_ceiling_visible = on
-	if ceiling:
-		ceiling.visible = on
+	_apply_ceiling()
 
 
 ## ⚡Сигнал из ObserveController
@@ -269,9 +283,9 @@ func _build_greybox() -> void:
 	ceiling = Node3D.new()
 	ceiling.name = "Ceiling"
 	visuals.add_child(ceiling)
-	_box(ceiling, "CeilingSlab", Vector3(c.size.x + 2.0 * t, t, c.size.z + 2.0 * t),
+	_ceiling_mesh = _box(ceiling, "CeilingSlab", Vector3(c.size.x + 2.0 * t, t, c.size.z + 2.0 * t),
 			Vector3(0.0, fy + c.size.y + t * 0.5, 0.0), COL_CEILING, 0, vis, false)
-	ceiling.visible = false
+	_apply_ceiling()
 
 	# Мебель: коллизия простой коробкой (слой room), внешний вид строит RoomDecor
 	for p in PROPS:

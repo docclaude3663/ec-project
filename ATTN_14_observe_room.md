@@ -716,6 +716,7 @@ ObserveObjects:
 - Цвет в шейдер передаётся как `Color`, не `Vector3`, иначе `source_color` не переводит sRGB в linear и цвет выцветает.
 - Квады ложного AO ставить с отступом 0,3 ед. от стены (z-fighting), на южной стене с дверью не ставить.
 - Виньетка и tilt-shift работают только в Observe (`GFX._observe_active`); ColorRect `MiniatureLayer` должен иметь нулевые смещения (`set_anchors_and_offsets_preset`, не `set_anchors_preset`).
+- Скрытый потолок (Observe) должен отбрасывать тень: плита потолка остаётся в сцене с `SHADOWS_ONLY`, иначе солнце заходит поверх стен и на стенах и на столе видна верхняя граница тени (`RoomBuilder._apply_ceiling`).
 - Dev-видеокарта: fps в окне редактора ненадёжен (V-Sync держится), смотреть GPU/CPU-время в `metrics.csv`.
 
 ### 14.13.4. Look Lab (инструмент прогона)
