@@ -88,7 +88,7 @@ func _ensure_sky_fill() -> void:
 	l.rotation_degrees = Vector3(-65.0, 0.0, 0.0)
 	l.light_color = Color(0.72, 0.84, 1.0)
 	l.light_energy = 0.0
-	l.light_shadow_caster_mask = 0xFFFFF & ~(1 << (Global.ROOM_SHELL_LAYER - 1))
+	l.shadow_caster_mask = 0xFFFFF & ~(1 << (Global.ROOM_SHELL_LAYER - 1))
 	l.shadow_enabled = true
 	l.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
 	l.directional_shadow_max_distance = 700.0
