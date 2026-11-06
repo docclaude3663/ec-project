@@ -90,8 +90,12 @@ func _ensure_sky_fill() -> void:
 	l.light_energy = 0.0
 	l.shadow_caster_mask = 0xFFFFF & ~(1 << (Global.ROOM_SHELL_LAYER - 1))
 	l.shadow_enabled = true
-	l.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
-	l.directional_shadow_max_distance = 700.0
+	# Один каскад на 600 ед. (комната 480 × 380): у мягкого рассеянного света шов между каскадами был заметен
+	# (тень вагона рассекалась на постоянной дистанции от камеры), а разрешения одного каскада для размытой тени хватает
+	l.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
+	l.directional_shadow_max_distance = 600.0
+	l.shadow_bias = 0.4            # мир в см: стандартный bias даёт «грязную» тень под мелкими предметами (домик)
+	l.shadow_normal_bias = 1.5
 	l.visible = false
 	add_child(l)
 	l.add_to_group(&"gfx_sky_fill")

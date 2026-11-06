@@ -421,7 +421,7 @@ ObserveObjects:
 | Стеллаж | T1 | 2–4k | заполняется T2 |
 | Дверь | T1 | 1–2k | механизм |
 | Ковёр с дорогами | T1 | <1k | текстура с дорогами, задел Car System |
-| Заполняющий свет «небо» | `SkyFill`: energy `Time.fill_energy` (день 0,6, утро 0,4, вечер 0,25, ночь 0,1) × `Look.fill_mul`, высота `Time.fill_elevation` 65°, `Look.fill_angle` 6°, тень на Medium и High (`Quality.fill_shadow`); `light_shadow_caster_mask` без слоя 13 (оболочка комнаты: стены, потолок, рама, шторы, подоконник) | `environment_root.gd`, `time/*.tres` |
+| Заполняющий свет «небо» | `SkyFill`: energy `Time.fill_energy` (день 0,6, утро 0,4, вечер 0,25, ночь 0,1) × `Look.fill_mul`, высота `Time.fill_elevation` 65°, `Look.fill_angle` 6°, тень на Medium и High (`Quality.fill_shadow`), один каскад 600 ед., `shadow_bias` 0,4; `light_shadow_caster_mask` без слоя 13 (оболочка комнаты: стены, потолок, рама, шторы, подоконник) | `environment_root.gd`, `time/*.tres` |
 | Лампа над столом | T1 | 1–2k | источник света |
 | Коробки от моделей | T2 | 0.3k × N | MultiMesh |
 | Ящик с инструментами и клеем | T2 | 2–3k | |
@@ -719,6 +719,7 @@ ObserveObjects:
 - Квады ложного AO ставить с отступом 0,3 ед. от стены (z-fighting), на южной стене с дверью не ставить.
 - Виньетка и tilt-shift работают только в Observe (`GFX._observe_active`); ColorRect `MiniatureLayer` должен иметь нулевые смещения (`set_anchors_and_offsets_preset`, не `set_anchors_preset`).
 - Скрытый потолок (Observe) должен отбрасывать тень: плита потолка остаётся в сцене с `SHADOWS_ONLY`, иначе солнце заходит поверх стен и на стенах и на столе видна верхняя граница тени (`RoomBuilder._apply_ceiling`).
+- Мягкий рассеянный свет (`SkyFill`) с несколькими каскадами теней даёт видимый шов на постоянном расстоянии от камеры: ему нужен один каскад. У солнца при 2–4 каскадах включён `directional_shadow_blend_splits`.
 - Dev-видеокарта: fps в окне редактора ненадёжен (V-Sync держится), смотреть GPU/CPU-время в `metrics.csv`.
 
 ### 14.13.4. Look Lab (инструмент прогона)

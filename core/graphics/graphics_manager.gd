@@ -567,10 +567,8 @@ func _apply_quality_settings() -> void:
 			_:
 				_sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
 		_sun.directional_shadow_max_distance = q.dir_shadow_max_distance
-	if _fill:
-		_fill.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS if q.dir_shadow_splits >= 2 \
-				else DirectionalLight3D.SHADOW_ORTHOGONAL
-		_fill.directional_shadow_max_distance = q.dir_shadow_max_distance
+		_sun.directional_shadow_blend_splits = q.dir_shadow_splits >= 2   # плавный переход между каскадами, без шва
+	# SkyFill: один каскад на любом tier (параметры в EnvironmentRoot._ensure_sky_fill), тут только включаем тень
 	Outline.mode = Outline.Mode.ALL if q.outlines_all else Outline.Mode.ESSENTIAL
 
 
