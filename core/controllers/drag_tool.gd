@@ -13,12 +13,16 @@ const ROT_FINE := 5.0 # Градусы, Shift+Q/E (XX claude-terra 13.1.7)
 # Флаг позиции пкм
 var rmb_pressed_pos := Vector2.ZERO
 
+# XX claude-switch: вращение Alt + мышь (см. AltRotate)
+var _alt_rotate := AltRotate.new()
+
 ## Начало драга
 func enter():
 	if not target_entity:
 		controller.switch_tool(controller.select_tool)
 		return
 
+	_alt_rotate.reset()
 	# Вешаем стейт (для визуала)
 	target_entity.add_component(C_Drag.new())
 	
@@ -44,6 +48,9 @@ func _pick_mask() -> int:
 
 ## ⚡Сигнал(почти) о смене позиции в сущность. Там рзберется драгабл
 func process_tick(_delta):
+	# XX claude-switch: пока зажат Alt, объект вращается мышью, позицию не обновляем
+	if _alt_rotate.tick(target_entity, controller.get_viewport()):
+		return
 	#var hit = controller.get_mouse_ray((1 << 0) | (1 << 2)|(1 << 4))
 	var hit = controller.get_mouse_ray(_pick_mask())   # XX claude-terra слои из EntitySetting.pick_layers
 	if hit:

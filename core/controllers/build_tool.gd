@@ -30,6 +30,8 @@ signal last_changed(setting: EntitySetting)
 var last_setting: EntitySetting
 ## Стиль исходного трака при дубле выбранного (пусто: стиль сессии). Берется один раз в enter()
 var _dup_style: StringName = &""
+## XX claude-switch: вращение призрака Alt + мышь (см. AltRotate)
+var _alt_rotate := AltRotate.new()
 var last_entity: Entity
 ## Призрак получил готовую форму (flex): фазу растягивания пропускаем, ставится одним кликом
 var preshaped := false
@@ -39,6 +41,7 @@ var _dup_pending := false
 func enter():
 	stretch_phase = 0
 	preshaped = false   # XX claude-terra 13.1.4
+	_alt_rotate.reset()
 	if ghost: ghost.queue_free()
 	# Дубль выбранного трака берет его стиль, остальные призраки стиль сессии (пустой запрос)
 	ghost = controller.entity_factory.create_from_setting(ghost_setting, _dup_style if _dup_pending else &"")
@@ -375,6 +378,9 @@ func process_tick(_delta):
 		if not plane_hit.is_empty():
 			_poly().set_cursor(plane_hit.position)
 		$"../../UI/ModeLabel".text = name
+		return
+	# XX claude-switch: пока зажат Alt, призрак вращается мышью, позицию не обновляем (не во время растягивания flex)
+	if ghost and stretch_phase == 0 and _alt_rotate.tick(ghost, controller.get_viewport()):
 		return
 	#var hit = controller.get_mouse_ray((1 << 0) | (1 << 2)|(1 << 4))
 	# XX claude-terra слои из EntitySetting.pick_layers
