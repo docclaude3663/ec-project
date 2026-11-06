@@ -147,4 +147,3 @@ static func with_collision_width(st: TrackStyle, width: float) -> TrackStyle:
 	var c := st.duplicate() as TrackStyle
 	c.collision_width = width
 	return c
-

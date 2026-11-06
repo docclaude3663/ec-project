@@ -137,8 +137,8 @@ func _generate_path() -> Path3D:
 
 ## Синхронизируем ноду "Ballast" с нодой сцены внутри C_TrackVisual
 ## Размер сегмента коллизии балласта: глобальный из настроек, но ширина из паспорта, если она задана
-func _ballast_size() -> Vector3:
-	var sz: Vector3 = Global.settings.track_ballast_segment.size
+func _ballast_size() -> Vector2:
+	var sz: Vector2 = Global.settings.track_ballast_segment.size
 	if collision_width > 0.0:
 		sz.x = collision_width
 	return sz
