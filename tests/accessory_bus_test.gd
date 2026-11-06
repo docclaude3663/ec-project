@@ -85,7 +85,7 @@ func _ready() -> void:
 	var s := C_OccupancySensor.new()
 	check("B8 свободно -> занято: смена", s.set_occupied(true) and s.occupied)
 	check("B8 повтор: без смены", not s.set_occupied(true))
-	check("B8 занято -> свободно: смена и проход", s.set_occupied(false) and s.passes == 1 and s.state_text() == "свободно")
+	check("B8 занято -> свободно: смена и проход", s.set_occupied(false) and s.passes == 1 and s.state_text() == "свободен")
 	s.free()
 
 	print("ИТОГ: ", "ВСЕ PASS" if _fails == 0 else "FAIL x%d" % _fails)

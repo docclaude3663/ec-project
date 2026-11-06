@@ -274,8 +274,8 @@ func _update_extras(power_track: C_PowerTrack, clip: C_PowerClip) -> void:
 	_sensor_box.set_pressed_no_signal(sensor != null)
 	_sensor_label.visible = sensor != null
 	if sensor != null:
-		_sensor_label.text = "Участок %s, проходов: %d" % [sensor.state_text(), sensor.passes]
-		_sensor_label.modulate = Color(1.0, 0.45, 0.2) if sensor.occupied else Color(0.4, 0.9, 0.4)
+		_sensor_label.text = "Участок %s. Проходов (освобождений): %d" % [sensor.state_text(), sensor.passes]
+		_sensor_label.modulate = C_OccupancySensor.COLOR_OCCUPIED if sensor.occupied else C_OccupancySensor.COLOR_FREE
 
 	# Состояние: что не так с клипом, треком или цепью
 	var lines: PackedStringArray = []

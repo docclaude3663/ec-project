@@ -108,7 +108,7 @@
 * **API.** `request(route, source)` (route = -1: следующий по кругу), `set_control`, `set_power_routing`, `set_frog_mode`, `is_occupied`, `route_count`.
 * **События.** Входящие: `on_switch_request {route, source}` (в ответ `ok` и `reason`), `on_lever_pressed {collider, consumed}`.
   Исходящие: `on_switch_changed {route, source}`, `on_switch_moving {route}`, `on_switch_rejected {reason}`, `on_switch_short {contour}`.
-  Причины отказа: `moving`, `occupied`, `single_route`, `bad_route`, `manual_only`, `remote_only`.
+  Причины отказа: `moving`, `occupied`, `single_route`, `bad_route`, `manual_only`, `remote_only`, `no_power` (REMOTE: шина аксессуаров обесточена, ATTN_10 §10.7).
   `on_switch_changed` используется как источник сигнала в ATTN_16 (свет `ROUTE`): менять его имя и состав данных нельзя без правки того раздела.
 
 **Въезд.** Вагон попадает на стрелку только у концов активного маршрута. С конца неактивной ветки он не находит трак и сходит.

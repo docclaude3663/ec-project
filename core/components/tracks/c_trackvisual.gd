@@ -26,6 +26,8 @@ var rail_surface_index :int = 1
 static var power_materials_cache: Dictionary = {}
 ## Материал аварии (КЗ полярности): красные сплошные рельсы. Один на все траки
 static var power_fault_material: ShaderMaterial
+## Материалы трака с датчиком занятости: [свободно, занято] (сплошная заливка, как у аварии)
+static var sensor_materials: Array[ShaderMaterial] = [null, null]
 # stripe_density по умолчанию в shader_power_track.gdshader
 const POWER_STRIPE_DENSITY := 4.0
 # Палитра цветов для контуров (0 - ошибка/нейтралка, 1..MAX - рабочие)
@@ -168,7 +170,7 @@ func _set_power_view():
 	
 	var _volt = PGM.get_power(cid) if cid != 0 else 0.0 # вольтаж на рельсах (с учетом стопа и защиты)
 	var is_flipped = power_comp.is_flipped
-	var mat = _fault_material() if power_comp.fault else _get_or_create_power_material(cid, _volt,  is_flipped)
+	var mat := _rail_power_material(power_comp, cid, _volt, is_flipped)
 	
 	for mesh in mesh_nodes:
 	# Проверяем, есть ли у ноды сам ресурс mesh и хватает ли в нем слотов
@@ -223,6 +225,29 @@ func _get_or_create_power_material(cid: int, _volt: float, is_flipped: bool) -> 
 ## Визуалы со стилем переопределяют, null = рельс с UV по умолчанию
 func _power_style() -> TrackStyle:
 	return null
+
+
+## Материал рельса в слое питания: авария красная, трак с датчиком занятости показывает состояние участка
+## (свободно зелёный, занято оранжевый), остальным цвет цепи. Цепь не перекрашивается: цвет датчика только у его трака
+func _rail_power_material(pc: C_PowerTrack, cid: int, volt: float, flip: bool) -> ShaderMaterial:
+	if pc.fault:
+		return _fault_material()
+	var sensor := get_comp(C_OccupancySensor) as C_OccupancySensor
+	if sensor != null and sensor.active:
+		return _sensor_material(sensor.occupied)
+	return _get_or_create_power_material(cid, volt, flip)
+
+
+func _sensor_material(occupied: bool) -> ShaderMaterial:
+	var i := 1 if occupied else 0
+	if sensor_materials[i] == null:
+		var m := ShaderMaterial.new()
+		m.shader = visual_settings.power_shader
+		m.set_shader_parameter("contour_color", C_OccupancySensor.COLOR_OCCUPIED if occupied else C_OccupancySensor.COLOR_FREE)
+		m.set_shader_parameter("is_solid", true)
+		m.set_shader_parameter("scroll_speed", 0.0)
+		sensor_materials[i] = m
+	return sensor_materials[i]
 
 
 ## Красный материал аварии (КЗ полярности). Создается один раз, виден и без напряжения
