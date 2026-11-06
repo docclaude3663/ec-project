@@ -90,6 +90,10 @@ var rot_vel := Vector2.ZERO     # рад/сек (x = yaw, y = pitch)
 
 var follow_target: Node3D
 var _default_limits := {}
+## Свободная камера включена (границы комнаты и пределы сдвига не действуют)
+var free_camera := false
+## Нужны ли границы комнаты, если свободная камера выключена (их задаёт CameraBounds)
+var _bounds_wanted := false
 
 var _grabbing := false
 var _rotating := false
@@ -112,6 +116,7 @@ func _ready() -> void:
 	t_pitch = elevation.rotation.x
 	t_dist = camera.position.z
 	_default_limits = {"limits": limits_enabled, "pitch_max": pitch_max_deg, "zoom_max": zoom_max}
+	_bounds_wanted = bounds_enabled
 	_clamp_target()
 
 
@@ -383,22 +388,26 @@ func _wake() -> void:
 ## Ограничения камеры внутри комнаты (вызывает CameraBounds)
 func set_bounds(aabb: AABB, enabled := true) -> void:
 	bounds = aabb
-	bounds_enabled = enabled
+	_bounds_wanted = enabled
+	bounds_enabled = enabled and not free_camera   # свободная камера границы не соблюдает
 	_clamp_target()
 	_wake()
 
 
 func set_bounds_enabled(enabled: bool) -> void:
-	bounds_enabled = enabled
+	_bounds_wanted = enabled
+	bounds_enabled = enabled and not free_camera
 	_clamp_target()
 	_wake()
 
 
-## Свободная камера (fast_debug, большая поляна): без пределов сдвига, дальний зум, взгляд чуть снизу.
-## off возвращает значения, с которыми Gimbal стартовал
+## Свободная камера (fast_debug и кнопка в панели отладки F3): без пределов сдвига и границ комнаты,
+## дальний зум, взгляд чуть снизу. off возвращает значения, с которыми Gimbal стартовал, и границы комнаты
 func set_free_camera(on: bool) -> void:
 	if _default_limits.is_empty():
 		_default_limits = {"limits": limits_enabled, "pitch_max": pitch_max_deg, "zoom_max": zoom_max}
+	free_camera = on
+	bounds_enabled = _bounds_wanted and not on
 	if on:
 		limits_enabled = false
 		pitch_max_deg = FREE_PITCH_MAX_DEG

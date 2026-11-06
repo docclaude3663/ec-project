@@ -20,6 +20,15 @@ var _bus_label: Label
 
 func _init() -> void:
 	name = &"Toggles"
+	add_child(make_header("Камера"))
+	_add_toggle("Свободная камера", "Без границ комнаты и пределов сдвига, зум до 1000, наклон до +15 градусов (взгляд снизу)", "Gimbal.free_camera",
+			func() -> bool:
+				var g := (Engine.get_main_loop() as SceneTree).root.get_node_or_null("GameRoot/Gimbal") as Gimbal
+				return g != null and g.free_camera,
+			func(on: bool) -> void:
+				var g := (Engine.get_main_loop() as SceneTree).root.get_node_or_null("GameRoot/Gimbal") as Gimbal
+				if g:
+					g.set_free_camera(on))
 	add_child(make_header("Маркеры и рельсы"))
 	_add_toggle("Маркеры (куб над Entity, сокеты)", "Рисуются у объектов, созданных после включения", "Global.debug_markers",
 			func() -> bool: return Global.debug_markers,
