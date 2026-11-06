@@ -18,7 +18,8 @@ class_name RoomConfig extends Resource
 @export var wall_thickness := 10.0
 ## Проёмы: x - центр вдоль стены, w / h - размер, sill - высота низа от пола.
 ## Окно в северной стене (-Z), дверь в южной (+Z)
-@export var window := {"x": 0.0, "w": 120.0, "sill": 90.0, "h": 130.0}
+## Окно в северной стене. Пятно солнца на столе: ширина окна ≈ ширина пятна, высота окна / tan(высота солнца) ≈ глубина пятна
+@export var window := {"x": 0.0, "w": 170.0, "sill": 80.0, "h": 140.0}
 @export var door := {"x": 100.0, "w": 80.0, "sill": 0.0, "h": 200.0}
 
 @export_category("Table (подмакетник v1)")

@@ -26,21 +26,20 @@ const SETTLE_VIEW := 12    # кадров после смены закладки
 const _WARM := Color(1.0, 0.90, 0.74)
 const _COOL := Color(0.62, 0.70, 0.86)
 ## Варианты прогона. База = текущие Clean + Day из .tres/.gd, без переопределений. Сейчас проверяются:
-## куда ложится световое пятно окна (азимут и высота солнца: хотим, чтобы стол был в пятне целиком)
-## и SSAO под масштаб комнаты (мир в см: радиус по умолчанию 1 ед. = 1 см, вокруг мебели нужны десятки).
+## сила солнечного пятна (потолок закрыт, свет идёт только через окно) и заполняющий свет: чтобы тени были заметны
+## и комната не казалась унылой. Окно 170 × 140, солнце 36°: пятно должно ложиться на стол.
 func _variants() -> Array:
-	var ssao := {"ssao_enabled": true, "ssao_intensity": 2.5, "ssao_power": 1.6}
 	return [
-		_mk("r4_0_base", {}),
-		_mk("r4_1_sun_az_m15", {}, {"sun_azimuth": -15.0}),
-		_mk("r4_2_sun_az_m30", {}, {"sun_azimuth": -30.0}),
-		_mk("r4_3_sun_az_p15", {}, {"sun_azimuth": 15.0}),
-		_mk("r4_4_sun_el35", {}, {"sun_elevation": 35.0}),
-		_mk("r4_5_sun_el65", {}, {"sun_elevation": 65.0}),
-		_mk("r4_6_ssao_r10", _m(ssao, {"ssao_radius": 10.0})),
-		_mk("r4_7_ssao_r25", _m(ssao, {"ssao_radius": 25.0})),
-		_mk("r4_8_ssao_r50", _m(ssao, {"ssao_radius": 50.0})),
-		_mk("r4_9_ssao_r25_ssil", _m(ssao, {"ssao_radius": 25.0, "ssil": true})),
+		_mk("r5_0_base", {}),
+		_mk("r5_1_sun20", {"sun_energy_mul": 2.0}),
+		_mk("r5_2_sun25", {"sun_energy_mul": 2.5}),
+		_mk("r5_3_sun20_amb60", {"sun_energy_mul": 2.0, "ambient_energy": 0.6}),
+		_mk("r5_4_sun25_amb50", {"sun_energy_mul": 2.5, "ambient_energy": 0.5}),
+		_mk("r5_5_sun20_amb60_c115", {"sun_energy_mul": 2.0, "ambient_energy": 0.6, "contrast": 1.15}),
+		_mk("r5_6_sun20_amb60_warm", {"sun_energy_mul": 2.0, "ambient_energy": 0.6}, {"sun_color": Color(1.0, 0.84, 0.62)}),
+		_mk("r5_7_sun20_amb60_el30", {"sun_energy_mul": 2.0, "ambient_energy": 0.6}, {"sun_elevation": 30.0}),
+		_mk("r5_8_sun20_amb60_el42", {"sun_energy_mul": 2.0, "ambient_energy": 0.6}, {"sun_elevation": 42.0}),
+		_mk("r5_9_sun20_amb60_blur", {"sun_energy_mul": 2.0, "ambient_energy": 0.6, "sun_shadow_blur": 1.5}),
 	]
 
 
