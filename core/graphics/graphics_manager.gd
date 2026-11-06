@@ -192,6 +192,16 @@ func apply_quality(id: StringName, duration := 0.3, persist := true) -> void:
 	track_shadows_changed.emit(is_track_shadows())
 
 
+## Пересчитать картинку из текущих значений пресетов (правка на лету: вкладка Graphics панели F3).
+## quality_too: заново применить настройки Quality (MSAA, атласы теней, SSAO) и сообщить подписчикам quality_changed
+func reapply(quality_too := false) -> void:
+	if quality_too:
+		_apply_quality_settings()
+	_apply_all(0.0)
+	if quality_too:
+		quality_changed.emit(state.quality)
+
+
 ## Тени от траков: выбор игрока, иначе значение пресета качества (по умолчанию выключены)
 func is_track_shadows() -> bool:
 	if _track_shadows_override >= 0:
