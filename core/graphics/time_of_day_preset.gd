@@ -27,6 +27,12 @@ class_name TimeOfDayPreset extends Resource
 @export var sky_top := Color(0.45, 0.68, 0.95)
 @export var sky_bottom := Color(0.82, 0.92, 1.0)
 
+@export_category("Sky light")
+## Рассеянный свет из окна (SpotLight3D «WindowLight» у окна, мягкие тени): любой предмет в комнате получает мягкую тень от окна,
+## даже вне прямого луча солнца. Энергия как у лампы: мир в см, затухание 1/расстояние, на 200-400 ед. от окна нужно 100-300
+@export var sky_light_color := Color(0.72, 0.84, 1.0)
+@export var sky_light_energy := 200.0
+
 @export_category("Lamp")
 ## Включать лампу над столом автоматически (ручной переключатель в Observe это перекрывает)
 @export var lamp_on := false
@@ -45,6 +51,7 @@ static func builtin(_id: StringName) -> TimeOfDayPreset:
 				"ambient_tint": Color(1.0, 0.93, 0.88), "ambient_energy_mul": 0.9,
 				"background_tint": Color(1.0, 0.9, 0.8),
 				"sky_top": Color(0.62, 0.74, 0.95), "sky_bottom": Color(1.0, 0.82, 0.65),
+				"sky_light_color": Color(0.9, 0.88, 1.0), "sky_light_energy": 130.0,
 			})
 		&"day":
 			return _make(_id, "День", {
@@ -58,6 +65,7 @@ static func builtin(_id: StringName) -> TimeOfDayPreset:
 				"ambient_tint": Color(1.0, 0.82, 0.75), "ambient_energy_mul": 0.8,
 				"background_tint": Color(1.0, 0.75, 0.6),
 				"sky_top": Color(0.35, 0.38, 0.70), "sky_bottom": Color(1.0, 0.55, 0.30),
+				"sky_light_color": Color(1.0, 0.68, 0.5), "sky_light_energy": 80.0,
 			})
 		&"night":
 			# Солнце работает как луна: холодный слабый свет, лампа включена
@@ -67,6 +75,7 @@ static func builtin(_id: StringName) -> TimeOfDayPreset:
 				"ambient_tint": Color(0.58, 0.66, 0.92), "ambient_energy_mul": 0.65,
 				"background_tint": Color(0.3, 0.35, 0.6),
 				"sky_top": Color(0.03, 0.05, 0.15), "sky_bottom": Color(0.10, 0.12, 0.25),
+				"sky_light_color": Color(0.4, 0.5, 0.9), "sky_light_energy": 25.0,
 				"lamp_on": true,
 			})
 	return null

@@ -7,5 +7,6 @@ script = ExtResource("1_oak5y")
 id = &"low"
 title = "Low"
 dir_shadow_max_distance = 450.0
+window_light_shadow = false
 entity_light_max = 3
 entity_light_emissive_only = true

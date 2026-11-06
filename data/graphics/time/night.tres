@@ -14,4 +14,6 @@ ambient_energy_mul = 0.65
 background_tint = Color(0.3, 0.35, 0.6, 1)
 sky_top = Color(0.03, 0.05, 0.15, 1)
 sky_bottom = Color(0.1, 0.12, 0.25, 1)
+sky_light_color = Color(0.4, 0.5, 0.9, 1)
+sky_light_energy = 25.0
 lamp_on = true

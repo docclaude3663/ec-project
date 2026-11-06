@@ -23,6 +23,8 @@ class_name QualityPreset extends Resource
 @export_range(0, 5) var soft_shadow_quality := 1
 ## Атлас теней точечных и spot источников (лампа), Viewport.positional_shadow_atlas_size
 @export var positional_shadow_atlas := 2048
+## Тень от рассеянного света окна (WindowLight). На Low свет остаётся, но без тени
+@export var window_light_shadow := true
 ## Тени от траков (балласт, шпалы, рельсы, опоры). По умолчанию выключены на всех tier: на макете из сотен траков
 ## они давали +6 мс на кадр (каждый трак попадал в теневой проход), а тень рельса в атласе размером в пару пикселей.
 ## Включать осознанно в .tres конкретного tier (например, для high)
@@ -77,7 +79,7 @@ static func builtin(_id: StringName) -> QualityPreset:
 		&"low":
 			return _make(_id, "Low", {
 				"dir_shadow_atlas": 2048, "dir_shadow_splits": 1, "dir_shadow_max_distance": 450.0,
-				"soft_shadow_quality": 1, "positional_shadow_atlas": 2048,
+				"soft_shadow_quality": 1, "positional_shadow_atlas": 2048, "window_light_shadow": false,
 				"msaa": 0, "fxaa": true,
 				"ssao": false, "ssil": false, "contact_shadows": false,
 				"tilt_shift": false, "dof": false, "outlines_all": false, "room_detail_lod": 0,

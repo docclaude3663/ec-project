@@ -30,3 +30,4 @@ lamp_energy = 220.0
 lamp_forced_on = true
 tilt_shift = 0.5
 vignette = 0.35
+sky_light_mul = 0.3

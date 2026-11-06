@@ -278,6 +278,7 @@ func _build_greybox() -> void:
 	_build_window_frame()
 	_build_sky_card()
 	_build_fake_ao()
+	_place_window_light()
 
 	# Потолок: отдельной нодой, по умолчанию скрыт, без коллизии
 	ceiling = Node3D.new()
@@ -380,6 +381,16 @@ func _parquet_mat(color: Color) -> ShaderMaterial:
 	m.shader = _parquet_shader
 	m.set_shader_parameter("base_color", color)   # Color, а не Vector3: иначе source_color не переведёт sRGB в linear и пол выцветает
 	return m
+
+
+## Рассеянный свет из окна ставится в плоскость окна, на 8 см внутрь комнаты (чтобы стена не затеняла источник)
+func _place_window_light() -> void:
+	var l := get_tree().get_first_node_in_group(&"gfx_window_light") as Node3D if is_inside_tree() else null
+	if l == null or config.window.is_empty():
+		return
+	var w: Dictionary = config.window
+	var pos := Vector3(w.x, config.floor_y + w.sill + w.h * 0.5, -config.size.z * 0.5 + 8.0)
+	l.global_position = to_global(pos)
 
 
 ## Ложный AO (ATTN_14 §14.13): мягкое затемнение у плинтуса и в вертикальных углах. SSAO в Clean выключен и почти ничего

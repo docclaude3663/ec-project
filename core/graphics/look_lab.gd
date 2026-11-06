@@ -25,21 +25,21 @@ const SETTLE_VIEW := 12    # кадров после смены закладки
 
 const _WARM := Color(1.0, 0.90, 0.74)
 const _COOL := Color(0.62, 0.70, 0.86)
-## Варианты прогона. База = текущие Clean + Day из .tres/.gd, без переопределений. Сейчас проверяются:
-## сила солнечного пятна (потолок закрыт, свет идёт только через окно) и заполняющий свет: чтобы тени были заметны
-## и комната не казалась унылой. Окно 170 × 140, солнце 36°: пятно должно ложиться на стол.
+## Варианты прогона. База = текущие Clean + Day из .tres/.gd, без переопределений. Сейчас проверяется рассеянный свет
+## из окна (WindowLight): энергия (Time.sky_light_energy), мягкость тени (Look.sky_light_size, ед.) и ambient под него.
+## Хотим: мягкие тени предметов вне прямого луча, стены темнеют с удалением от окна.
 func _variants() -> Array:
 	return [
-		_mk("r5_0_base", {}),
-		_mk("r5_1_sun20", {"sun_energy_mul": 2.0}),
-		_mk("r5_2_sun25", {"sun_energy_mul": 2.5}),
-		_mk("r5_3_sun20_amb60", {"sun_energy_mul": 2.0, "ambient_energy": 0.6}),
-		_mk("r5_4_sun25_amb50", {"sun_energy_mul": 2.5, "ambient_energy": 0.5}),
-		_mk("r5_5_sun20_amb60_c115", {"sun_energy_mul": 2.0, "ambient_energy": 0.6, "contrast": 1.15}),
-		_mk("r5_6_sun20_amb60_warm", {"sun_energy_mul": 2.0, "ambient_energy": 0.6}, {"sun_color": Color(1.0, 0.84, 0.62)}),
-		_mk("r5_7_sun20_amb60_el30", {"sun_energy_mul": 2.0, "ambient_energy": 0.6}, {"sun_elevation": 30.0}),
-		_mk("r5_8_sun20_amb60_el42", {"sun_energy_mul": 2.0, "ambient_energy": 0.6}, {"sun_elevation": 42.0}),
-		_mk("r5_9_sun20_amb60_blur", {"sun_energy_mul": 2.0, "ambient_energy": 0.6, "sun_shadow_blur": 1.5}),
+		_mk("r6_0_base", {}),
+		_mk("r6_1_off", {"sky_light_mul": 0.0}),
+		_mk("r6_2_half", {"sky_light_mul": 0.5}),
+		_mk("r6_3_x15", {"sky_light_mul": 1.5}),
+		_mk("r6_4_amb50", {"ambient_energy": 0.5}),
+		_mk("r6_5_x15_amb40", {"sky_light_mul": 1.5, "ambient_energy": 0.4}),
+		_mk("r6_6_x15_amb40_size15", {"sky_light_mul": 1.5, "ambient_energy": 0.4, "sky_light_size": 15.0}),
+		_mk("r6_7_x15_amb40_size80", {"sky_light_mul": 1.5, "ambient_energy": 0.4, "sky_light_size": 80.0}),
+		_mk("r6_8_x20_amb30", {"sky_light_mul": 2.0, "ambient_energy": 0.3}),
+		_mk("r6_9_x15_amb40_c115", {"sky_light_mul": 1.5, "ambient_energy": 0.4, "contrast": 1.15}),
 	]
 
 

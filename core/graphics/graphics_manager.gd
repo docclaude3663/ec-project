@@ -48,6 +48,7 @@ var _world_env: WorldEnvironment
 var _env: Environment
 var _sun: DirectionalLight3D
 var _lamp: SpotLight3D
+var _win_light: SpotLight3D   # рассеянный свет из окна (EnvironmentRoot._ensure_window_light)
 var _probe: ReflectionProbe
 var _sky: MeshInstance3D
 var _oc: Node   # ObserveController
@@ -349,6 +350,18 @@ func _apply_all(duration: float) -> void:
 			later.append(func(): _lamp.visible = false)
 		_to(_lamp, &"light_energy", look.lamp_energy if lamp_on else 0.0, duration)
 
+	# --- Рассеянный свет из окна: энергия и цвет по Time, множитель и мягкость по Look, тень по Quality ---
+	if _win_light:
+		var we := tod.sky_light_energy * look.sky_light_mul
+		if we > 0.01:
+			_win_light.visible = true
+		else:
+			later.append(func(): _win_light.visible = false)
+		_win_light.shadow_enabled = q.window_light_shadow
+		_win_light.light_size = look.sky_light_size
+		_to(_win_light, &"light_color", tod.sky_light_color, duration)
+		_to(_win_light, &"light_energy", we, duration)
+
 	# --- Миниатюра (S8): только в Observe, Quality режет tilt-shift и DOF ---
 	var ts := look.tilt_shift if (_observe_active and q.tilt_shift) else 0.0
 	var vg := look.vignette if _observe_active else 0.0
@@ -638,6 +651,7 @@ func _resolve() -> bool:
 	_env = _world_env.environment if _world_env else null
 	_sun = get_tree().get_first_node_in_group(&"gfx_sun") as DirectionalLight3D
 	_lamp = get_tree().get_first_node_in_group(&"gfx_lamp") as SpotLight3D
+	_win_light = get_tree().get_first_node_in_group(&"gfx_window_light") as SpotLight3D
 	_probe = get_tree().get_first_node_in_group(&"gfx_probe") as ReflectionProbe
 	if _sun:
 		_sun_base_energy = _sun.light_energy

@@ -21,6 +21,7 @@ func _ready() -> void:
 	_ensure_env()
 	_ensure_sun()
 	_ensure_lamp()
+	_ensure_window_light()
 	_ensure_probe()
 
 
@@ -74,6 +75,30 @@ func _ensure_lamp() -> void:
 	l.visible = false
 	add_child(l)
 	l.add_to_group(&"gfx_lamp")
+
+
+## Рассеянный свет из окна: SpotLight3D в плоскости окна, смотрит в комнату, мягкая тень (light_size). Положение и поворот
+## задаёт RoomBuilder по RoomConfig.window, энергию и цвет GFX из Time. Это дешёвая замена GI: предметы вне прямого
+## луча получают мягкую тень от окна, стены темнеют с удалением от окна
+func _ensure_window_light() -> void:
+	if _has(&"gfx_window_light"):
+		return
+	var l := SpotLight3D.new()
+	l.name = "WindowLight"
+	l.position = Vector3(0.0, 100.0, -180.0)
+	l.rotation_degrees = Vector3(0.0, 180.0, 0.0)   # светит на юг, в комнату
+	l.light_color = Color(0.72, 0.84, 1.0)
+	l.light_energy = 0.0
+	l.spot_range = 900.0
+	l.spot_angle = 85.0
+	l.spot_attenuation = 0.6
+	l.light_size = 40.0
+	l.shadow_enabled = true
+	l.shadow_bias = 0.6          # мир в см, как у лампы
+	l.shadow_normal_bias = 3.0
+	l.visible = false
+	add_child(l)
+	l.add_to_group(&"gfx_window_light")
 
 
 ## Один статичный probe над столом: дешевый пластиковый блик. Обновляется один раз
