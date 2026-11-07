@@ -78,11 +78,11 @@ func _ready() -> void:
 # ==========================================
 
 ## Подходит ли объект: категория (ALL = любая), значения признаков {id: вариант}, подстрока в названии, имени или key
-static func matches(s: EntitySetting, title: String, query: String, cat: StringName, facet_values: Dictionary) -> bool:
+static func matches(s: EntitySetting, title: String, query: String, cat: StringName, wanted: Dictionary) -> bool:
 	if cat != ALL and s.category != cat:
 		return false
-	for fid in facet_values:
-		if s.get_facet(fid) != str(facet_values[fid]):
+	for fid in wanted:
+		if s.get_facet(fid) != str(wanted[fid]):
 			return false
 	var q := query.strip_edges().to_lower()
 	if q != "":

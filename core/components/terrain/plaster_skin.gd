@@ -244,6 +244,7 @@ func _build_mesh(sk: PackedFloat32Array, hh: PackedFloat32Array, own: PackedInt3
 				var st: SurfaceTool = tools[stage]
 				for v: int in tri:
 					var vi := v % w
+					@warning_ignore("integer_division")   # v / w: номер строки сетки, дробная часть не нужна
 					var vj := v / w
 					st.set_normal(PlasterField.normal(sk, w, d, vi, vj, c))
 					st.add_vertex(Vector3(origin.x + (float(vi) + 0.5) * c, sk[v], origin.y + (float(vj) + 0.5) * c))

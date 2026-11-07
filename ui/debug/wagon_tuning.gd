@@ -253,7 +253,11 @@ static func write(entity: Entity, key: String, value: Variant) -> void:
 	var o := _owner(entity, p.owner, true)
 	if o == null:
 		return
-	var v: Variant = bool(value) if p.kind == Kind.TOGGLE else float(value)
+	var v: Variant
+	if p.kind == Kind.TOGGLE:
+		v = bool(value)
+	else:
+		v = float(value)
 	o.set(key, v)
 	if key == "mass":
 		var kin := o as C_Kinematics

@@ -128,15 +128,15 @@ func _load_closed() -> Array:
 	var saved: Variant = Settings.get_value(SETTINGS_SECTION, "closed_" + tab_id, null)
 	if saved is Array:
 		return saved
-	var closed: Array = []
+	var result: Array = []
 	var first := true
 	for g in WagonTuning.GROUPS:
 		if g.tab != tab_id:
 			continue
 		if not first:
-			closed.append(g.id)
+			result.append(g.id)
 		first = false
-	return closed
+	return result
 
 
 func _on_folded(is_folded: bool, group_id: String) -> void:

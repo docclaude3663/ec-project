@@ -253,7 +253,7 @@ func _add_row(grid: GridContainer, res: Resource, p: Dictionary) -> void:
 						step = float(parts[2])
 				var spin := make_spin(lo, hi, step)
 				spin.allow_lesser = true
-				spin.value_changed.connect(func(v: float) -> void: _write(res, field, int(v) if is_int else v))
+				spin.value_changed.connect(func(v: float) -> void: _write(res, field, _as_number(v, is_int)))
 				control = spin
 	grid.add_child(control)
 
@@ -290,6 +290,13 @@ func _read_row(r: Dictionary) -> void:
 			ob.select(i)
 	elif c is SpinBox:
 		set_spin(c as SpinBox, float(v))
+
+
+## int или float по типу поля (тернарник int/float даёт предупреждение INCOMPATIBLE_TERNARY)
+func _as_number(v: float, as_int: bool) -> Variant:
+	if as_int:
+		return int(v)
+	return v
 
 
 func _write(res: Resource, field: String, value: Variant) -> void:

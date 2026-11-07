@@ -96,7 +96,6 @@ func _update_switch_tab() -> void:
 	var sw := _get_switch()
 	if sw == null:
 		return
-	var path := target.get_comp(C_Path) as C_Path
 	var pt := target.get_comp(C_PowerTrack) as C_PowerTrack
 	var route_txt := "Прямо (0)" if sw.route == 0 else "Ответвление (%d)" % sw.route
 	var state_txt := "идет перекладка" if sw.state == C_Switch.State.MOVING else "готова"
