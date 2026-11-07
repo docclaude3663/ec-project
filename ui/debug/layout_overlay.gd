@@ -8,7 +8,8 @@ class_name DebugLayoutOverlay extends Node3D
 ##   желтая: поверхность катания (головка рельса под тележкой, пока тележка на рельсе);
 ##   синяя: низ колеса без реборды = центр оси − (радиус меша − высота реборды);
 ##   голубая: верх колеса с ребордой = центр оси + радиус меша;
-##   фиолетовая: плоскость начала меша кузова (offset_mesh_y).
+##   фиолетовая: плоскость начала меша кузова (offset_mesh_y), тоже поперек пути.
+## Подписи тележек и вагона стоят на высоте центров тележек.
 ## Подпись «колесо-рельс» = синяя минус желтая: 0 колесо стоит на рельсе, плюс колесо в воздухе, минус утоплено.
 ## Радиус меша: самая дальняя от оси вершина колеса (ось колеса это локальный X, как в C_Bogie.wheel_rotate), реборда
 ## входит в нее; высота реборды неизвестна из меша, ее задает панель (flange_height).
@@ -65,11 +66,13 @@ func _process(_delta: float) -> void:
 	var rail_count := 0
 	var top_sum := 0.0
 	var top_count := 0
+	var center_sum := 0.0   # высота центров тележек: на нее садятся подписи
 	for data in bc.bogies_data:
 		var right := data.pivot.global_basis.x.normalized()
 		var on_rail := is_instance_valid(data.current_track)
 		var rail_y: float = data.calculated_global_pos.y
 		var base: Vector3 = data.pivot.global_position
+		center_sum += base.y
 		if on_rail:
 			_line(Vector3(base.x, rail_y, base.z), right, COLOR_RAIL)
 			rail_sum += rail_y
@@ -104,21 +107,18 @@ func _process(_delta: float) -> void:
 				color = COLOR_TREAD_BAD
 		if has_wheel:
 			text += "\nрадиус без реборды: меш %.3f, конфиг %.3f" % [mesh_r - flange_height, cfg_r]
-		_label(label_i, text, base + Vector3(0.0, 1.8, 0.0), color)
+		_label(label_i, text, base, color)   # на уровне центра тележки
 		label_i += 1
 	if not vis.mesh_nodes.is_empty():
 		var m := vis.mesh_nodes[0].global_position
-		var fwd := _entity.global_basis.z.normalized()
-		_imm.surface_set_color(COLOR_MESH)
-		_imm.surface_add_vertex(m - fwd * 2.5)
-		_imm.surface_set_color(COLOR_MESH)
-		_imm.surface_add_vertex(m + fwd * 2.5)
+		_line(m, _entity.global_basis.x.normalized(), COLOR_MESH)   # поперек, как остальные
 		var text := "Меш"
 		if rail_count > 0:
 			text += ": над рельсом %+.3f" % (m.y - rail_sum / rail_count)
 		if top_count > 0:
 			text += "\nнад верхом колеса %+.3f" % (m.y - top_sum / top_count)
-		_label(label_i, text, m + Vector3(0.0, 0.6, 0.0), COLOR_MESH)
+		# Подпись вагона: над центром меша по горизонтали, по высоте на уровне центров тележек
+		_label(label_i, text, Vector3(m.x, center_sum / bc.bogies_data.size(), m.z), COLOR_MESH)
 		label_i += 1
 	_imm.surface_end()
 	for i in range(label_i, _labels.size()):
