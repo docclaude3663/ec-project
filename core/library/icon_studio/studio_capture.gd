@@ -1,7 +1,7 @@
 extends RefCounted
 
 ########################
-## Icon Studio: съёмка, коррекция и запись (ATTN_18 §18.3.5, шаги I5-I6)
+## Icon Studio: съёмка, коррекция и запись (ATTN_18 §18.3.5, шаги I5-I6; SVG из студии убран, решение §18.6)
 ########################
 ## Чистые функции над Image: ничего не знают про сцену. Кадр рисует studio_world.render_image().
 
@@ -124,51 +124,3 @@ static func free_path(dir: String, base: String, ext: String) -> String:
 		p = "%s%s_%d.%s" % [dir, base, i, ext]
 		i += 1
 	return p
-
-
-# ==========================================
-# SVG (сравнение, шаг I6)
-# ==========================================
-
-## Обёртка: PNG внутри SVG. Масштабируется, но остаётся растром
-static func svg_wrapper(img: Image) -> String:
-	var b64 := Marshalls.raw_to_base64(img.save_png_to_buffer())
-	return '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="%d" height="%d" viewBox="0 0 %d %d"><image width="%d" height="%d" xlink:href="data:image/png;base64,%s"/></svg>' % [
-		img.get_width(), img.get_height(), img.get_width(), img.get_height(), img.get_width(), img.get_height(), b64]
-
-
-## Векторизация «пикселями»: квантование до ~colors цветов, горизонтальные серии одного цвета -> rect.
-## Это не трассировка контуров (она отложена), но честная оценка, во что выльется SVG из растра
-static func svg_runs(img: Image, colors: int) -> String:
-	var levels := maxi(2, ceili(pow(float(colors), 1.0 / 3.0)))
-	var w := img.get_width()
-	var h := img.get_height()
-	var groups := {}   # цвет "rrggbb" -> Array строк rect
-	for y in h:
-		var x := 0
-		while x < w:
-			var c := img.get_pixel(x, y)
-			if c.a < 0.5:
-				x += 1
-				continue
-			var key := _quant(c, levels)
-			var x2 := x + 1
-			while x2 < w:
-				var c2 := img.get_pixel(x2, y)
-				if c2.a < 0.5 or _quant(c2, levels) != key:
-					break
-				x2 += 1
-			if not groups.has(key):
-				groups[key] = []
-			groups[key].append("M%d %dh%dv1h-%dz" % [x, y, x2 - x, x2 - x])
-			x = x2
-	var out := '<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" viewBox="0 0 %d %d" shape-rendering="crispEdges">' % [w, h, w, h]
-	for key in groups:
-		out += '<path fill="#%s" d="%s"/>' % [key, "".join(groups[key])]
-	return out + "</svg>"
-
-
-static func _quant(c: Color, levels: int) -> String:
-	var m := float(levels - 1)
-	var q := Color(roundf(c.r * m) / m, roundf(c.g * m) / m, roundf(c.b * m) / m)
-	return q.to_html(false)

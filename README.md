@@ -13,7 +13,7 @@
 - [ATTN_15_track_styles.md](ATTN_15_track_styles.md) — Track Styles:  Стили траков
 - [ATTN_16_mechanisms.md](ATTN_16_mechanisms.md) — Механизмы и свет.
 - [ATTN_17_ui.md](ATTN_17_ui.md) — UI и контроллеры интерфейса: анализ, архитектура, план U0–U20.
-- [ATTN_18_icon_studio.md](ATTN_18_icon_studio.md) — Icon Studio: сцена-инструмент для генерации иконок и скриншотов объектов, план I0–I6.
+- [ATTN_18_icon_studio.md](ATTN_18_icon_studio.md) — Icon Studio: сцена-инструмент для генерации иконок и скриншотов объектов (реализовано).
 - [ATTN_19_game_flow.md](ATTN_19_game_flow.md) — Цикл игры и экраны: меню, пауза, роутер сцен, быстрый запуск (набросок).
 - [ATTN_20_track_studio.md](ATTN_20_track_studio.md) — Track Studio: редактор стилей траков и ресурсов для них (материалы из PBR-наборов, шпалы, профили, хоткеи).
 - [0_ATTN_21_dcc.md](0_ATTN_21_dcc.md) — DCC (заглушка).

@@ -70,8 +70,6 @@ const SLOT_COUNT := 6
 @export_range(0.05, 1.0, 0.01) var file_quality := 0.9
 ## Подстановки: {category} {tag} {name} {key} {size}
 @export var name_pattern := "{category}_{name}_{size}"
-## Сколько цветов оставлять в SVG-пикселях (сравнение форматов)
-@export_range(2, 64) var svg_colors := 16
 
 
 func _init() -> void:

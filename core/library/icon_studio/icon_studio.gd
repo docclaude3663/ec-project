@@ -6,7 +6,7 @@ extends Control
 ## Запуск: открыть icon_studio.tscn и нажать F6 (Run Current Scene).
 ## I0-I1: каркас, окно, настройки, список объектов, объект в мире.
 ## I2-I4: камера и слоты, свет, фон, тень, качество, предпросмотр в размере результата.
-## I5-I6: съёмка в файл (PNG/WebP/JPEG), шаблоны, пакетная съёмка, сравнение форматов и SVG.
+## I5-I6: съёмка в файл (PNG/WebP/JPEG), шаблоны, пакетная съёмка, сравнение форматов.
 ## Интерфейс собирается кодом, чтобы не плодить правки в .tscn.
 
 const StudioSettings := preload("res://core/library/icon_studio/studio_settings.gd")
@@ -991,9 +991,14 @@ func _reset_all() -> void:
 
 func _build_tab_output(box: VBoxContainer) -> void:
 	_add_check(box, "PNG", "fmt_png")
-	_add_check(box, "WebP", "fmt_webp")
 	_add_check(box, "JPEG (на цвете фона)", "fmt_jpg")
-	_add_check(box, "WebP с потерями", "webp_lossy")
+	_add_check(box, "WebP", "fmt_webp")
+	var lossy_row := HBoxContainer.new()
+	box.add_child(lossy_row)
+	var indent := Control.new()
+	indent.custom_minimum_size = Vector2(28, 0)
+	lossy_row.add_child(indent)
+	_add_check(lossy_row, "с потерями", "webp_lossy")
 	_add_slider(box, "Качество файла", "file_quality", 0.05, 1.0, 0.01)
 	_add_slider(box, "Резкость", "sharpen", 0.0, 2.0, 0.05)
 	_add_check(box, "Обрезать по содержимому (прозр. фон)", "trim_to_content")
@@ -1009,7 +1014,6 @@ func _build_tab_output(box: VBoxContainer) -> void:
 	f.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(f)
 	box.add_child(HSeparator.new())
-	_add_slider(box, "SVG, цветов", "svg_colors", 2.0, 64.0, 1.0)
 	var cb := Button.new()
 	cb.text = "Сравнить форматы (текущий кадр)"
 	cb.pressed.connect(_do_compare)
@@ -1107,7 +1111,7 @@ func _refresh_templates() -> void:
 func _use_template(t: Template, keep_output: bool) -> void:
 	var d := t.to_dict()
 	if keep_output:
-		for k in ["output_size", "format", "webp_lossy", "file_quality", "name_pattern", "quality_id", "supersample", "svg_colors"]:
+		for k in ["output_size", "format", "webp_lossy", "file_quality", "name_pattern", "quality_id", "supersample"]:
 			d.erase(k)
 	template.from_dict(d)
 	_sync_controls()
@@ -1192,7 +1196,7 @@ func _do_batch() -> void:
 	_busy = false
 
 
-## Один кадр во всех форматах: файлы и compare.md в icons/_compare/, окно с просмотром ×1/×4
+## Один кадр во всех растровых форматах: файлы и compare.md в icons/_compare/, окно с просмотром ×1/×4
 func _do_compare() -> void:
 	if _busy:
 		return
@@ -1218,19 +1222,6 @@ func _do_compare() -> void:
 	add_raster.call("webp_lossless", "webp", 1, false)
 	add_raster.call("webp_lossy_q%d" % roundi(q * 100.0), "webp", 1, true)
 	add_raster.call("jpg_q%d" % roundi(q * 100.0), "jpg", 2, false)
-
-	var add_svg := func(label: String, text: String):
-		var path: String = dir + base + "_" + label + ".svg"
-		var f := FileAccess.open(path, FileAccess.WRITE)
-		if f == null:
-			return
-		f.store_string(text)
-		f.close()
-		var si := Image.new()
-		si.load_svg_from_string(text)
-		rows.append({"label": label, "path": path, "bytes": Capture.file_size(path), "img": si})
-	add_svg.call("svg_wrapper", Capture.svg_wrapper(img))
-	add_svg.call("svg_runs_%dc" % int(template.svg_colors), Capture.svg_runs(img, int(template.svg_colors)))
 
 	var md := "\n## %s, %dx%d, %s\n\n| Вариант | Байт | %% от PNG |\n|---|---|---|\n" % [base, img.get_width(), img.get_height(), Time.get_datetime_string_from_system()]
 	var png_bytes := maxi(1, int(rows[0].bytes)) if not rows.is_empty() else 1
