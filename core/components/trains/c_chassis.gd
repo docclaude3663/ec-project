@@ -371,10 +371,32 @@ func _check_derailment() -> void:
 
 
 
+## Отладка схода (только debug-сборка): причина, скорость и где стоит каждая тележка в момент схода.
+## Читать в консоли редактора: строки с [DERAIL]
+func _log_derail(data: Dictionary) -> void:
+	_ensure_refs()
+	var parts: Array[String] = []
+	if _bogie:
+		for i in _bogie.bogies_data.size():
+			var b = _bogie.bogies_data[i]
+			if not is_instance_valid(b.current_track):
+				parts.append("b%d: нет трака" % i)
+				continue
+			var pc := b.current_track.get_comp(C_Path) as C_Path
+			var clen: float = pc.curve_of(b.route).get_baked_length() if pc else -1.0
+			var rad: String = str(pc.radius_at(b.track_distance)) if pc else "?"
+			parts.append("b%d: %s route=%d s=%.3f/%.3f r=%s" % [i, b.current_track.name, b.route, b.track_distance, clen, rad])
+	print("[DERAIL] %s | reason=%s | v=%.2f м/с | mass=%.2f grip=%.1f | %s | extra=%s" % [
+		entity.name, data.get("reason", "?"), current_speed, _kin.mass, _kin.max_grip,
+		" ; ".join(parts), str(data.get("force", data.get("radius", "")))])
+
+
 # Событие схода с рельс. Здесь определяем флаги шасси. В кинематикс сделает физику
 func on_derailed(_data: Dictionary) -> void:
 	
 	if not is_on_rails: return
+	if OS.is_debug_build():
+		_log_derail(_data)
 	is_on_rails = false
 	snapped_track = null
 	current_speed = 0.0
