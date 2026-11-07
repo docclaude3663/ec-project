@@ -10,6 +10,10 @@ const SAVE_DIR = "user://saves/"
 # Старое место сейвов (разовый перенос) и эталонная диорама (шаблон только для чтения, грузится по F9 в debug)
 const LEGACY_SAVE_DIR = "res://saves/"
 const REFERENCE_DIR = "res://data/debug/"
+## Сколько физкадров ждем, пока трак под вагоном станет доступен лучу (flex и коллизии строятся не с первого кадра)
+const SNAP_RETRY_FRAMES := 60
+## Сколько физкадров пробуем восстановить сцепки после посадки вагонов
+const LINK_RETRY_FRAMES := 20
 
 # Ссылка на узел дерева, где лежат все рельсы
 @onready var world_entities_root = "/root/GameRoot/EntitiesRoot"
@@ -247,6 +251,12 @@ func load_game(slot_name: String  ='savegame', dir: String = SAVE_DIR, style_ove
 					new_comp.load_data(comp_data_map[comp_type])
 					new_entity.add_component(new_comp) 
 
+		# Вагон до посадки на рельсы стоит замороженным: без этого гравитация и скольжение по пандусу или эстакаде
+		# сдвигают его, пока трак под ним достраивается (трение у вагона 0, рельс держит только расчет)
+		var _kin := new_entity.get_comp(C_Kinematics) as C_Kinematics
+		if _kin and is_instance_valid(_kin.rb):
+			_kin.rb.freeze = true
+
 	if not _skipped.is_empty():
 		var _n := 0
 		for _p in _skipped:
@@ -258,24 +268,62 @@ func load_game(slot_name: String  ='savegame', dir: String = SAVE_DIR, style_ove
 
 	# 4. ВАЖНЕЙШИЙ ТАКТ СИНХРОНИЗАЦИИ ФИЗИКИ (см. Критические нюансы ниже)
 	await get_tree().physics_frame
-	
-	#XX claude  5. Проходим все вагоны на снап (один раз: on_train_snapped асинхронный, повторный вызов только дублирует его)
-	if root_node:
-		# проход по всем ентити 
-		for _entity in root_node.get_children():
-			if _entity is Entity:
-				var _comp = _entity.get_comp(C_Chassis)
-				if _comp:
-					_comp.restore_snap_after_load()
 
-		#XX claude 5б. Сцепки восстанавливаем вторым проходом: нужны финальные позиции ВСЕХ вагонов
+	if root_node:
+		# 5. Вагоны садятся на рельсы (один раз: on_train_snapped асинхронный, повторный вызов только дублирует его).
+		# Flex-трак и коллизии могут быть готовы не с первого кадра: кто не нашел трак под тележкой, пробует снова
+		var wagons: Array[C_Chassis] = []
 		for _entity in root_node.get_children():
 			if _entity is Entity:
-				var _cp = _entity.get_comp(C_Coupler) as C_Coupler
+				var _comp := _entity.get_comp(C_Chassis) as C_Chassis
+				if _comp:
+					wagons.append(_comp)
+		var pending := wagons.duplicate()
+		var attempt := 0
+		while not pending.is_empty():
+			var still: Array = []
+			for _w in pending:
+				if is_instance_valid(_w) and not _w.restore_snap_after_load():
+					still.append(_w)
+			pending = still
+			attempt += 1
+			if pending.is_empty() or attempt > SNAP_RETRY_FRAMES:
+				break
+			await get_tree().physics_frame
+		if not pending.is_empty():
+			var _names: PackedStringArray = []
+			for _w in pending:
+				if is_instance_valid(_w):
+					_names.append(str(_w.entity.name))
+			push_warning("SaveManager: вагоны не нашли трак под тележкой после %d кадров: %s" % [attempt, ", ".join(_names)])
+
+		# Кто не на рельсах (сошедший в сейве или трак не найден), возвращаем физике; севшие вагоны заморозит on_train_snapped
+		for _w in wagons:
+			if is_instance_valid(_w) and not _w.is_on_rails:
+				var _k := _w.entity.get_comp(C_Kinematics) as C_Kinematics
+				if _k and is_instance_valid(_k.rb):
+					_k.rb.freeze = false
+
+		# 5б. Сцепки восстанавливаем вторым проходом: нужны финальные позиции ВСЕХ вагонов. После посадки шасси
+		# выставляет transform в первом физкадре, поэтому ждем кадр и повторяем, пока все сцепки не найдут пару
+		var couplers: Array[C_Coupler] = []
+		for _entity in root_node.get_children():
+			if _entity is Entity:
+				var _cp := _entity.get_comp(C_Coupler) as C_Coupler
 				if _cp:
+					couplers.append(_cp)
+		for _try in LINK_RETRY_FRAMES:
+			await get_tree().physics_frame
+			var open_links := 0
+			for _cp in couplers:
+				if is_instance_valid(_cp):
 					_cp.restore_links_after_load()
+					if _cp.has_unrestored_links():
+						open_links += 1
+			if open_links == 0:
+				break
 	
-	
+
 	#DEBUG повер слой принудительно обновляем
 	#PGM.toggle_power_layer(true)
 	PGM.request_recalculate()

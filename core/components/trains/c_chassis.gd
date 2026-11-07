@@ -532,28 +532,30 @@ func load_data(_data: Dictionary) -> void:
 
 
 
-## Вызывается из SaveManager после того, как все объекты расставлены
-func restore_snap_after_load() -> void:
+## Вызывается из SaveManager после того, как все объекты расставлены.
+## Возвращает false, если вагон был на рельсах, но трак под ним пока не найден (flex или физика еще не готовы):
+## SaveManager повторит попытку через кадр. true: вагон сел или садиться не нужно
+func restore_snap_after_load() -> bool:
 	if not _saved_on_rails:
-		return   # вагон был сошедшим - остаётся в физике Godot
+		return true   # вагон был сошедшим - остаётся в физике Godot
 	_ensure_refs()
 	if not _bogie or _bogie.bogies_data.is_empty():
-		return
+		return true   # нечем искать трак
 
 	# Датчик первой тележки находит трак под ней
 	var b := _bogie.bogies_data[0]
 	if not is_instance_valid(b.raycast) or not is_instance_valid(b.pivot):
-		return
+		return false
 	b.raycast.force_raycast_update()
 	if not b.raycast.is_colliding():
-		return
+		return false
 
 	var track_entity := _find_entity_from_collider(b.raycast.get_collider())
 	if not track_entity:
-		return
+		return false
 	var pc := track_entity.get_comp(C_Path) as C_Path
 	if not pc or not pc.curve or not pc.path_node:
-		return   # под лучом не трак (земля и т.п.) - не садимся, иначе is_on_rails=true без пути
+		return false   # под лучом не трак (земля и т.п.) - не садимся, иначе is_on_rails=true без пути
 
 	# Смещение считаем по ФАКТИЧЕСКОМУ положению тележки, а не из сейва (там значение с момента посадки).
 	# offset - положение ЦЕНТРА вагона на сплайне (так его ждёт set_track_to_bogies_data).
@@ -567,6 +569,7 @@ func restore_snap_after_load() -> void:
 	var offset := s_b - b.pivot.position.z * placement_dir
 
 	on_train_snapped({"track": track_entity, "offset": offset, "route": route})
+	return true
 
 
 

@@ -695,6 +695,14 @@ func restore_links_after_load() -> void:
 			_restore_end(end)
 
 
+## Остались сцепки из сейва, которые еще не удалось восстановить (SaveManager повторяет попытки)
+func has_unrestored_links() -> bool:
+	for end in 2:
+		if _saved_coupled[end] and links[end] == null:
+			return true
+	return false
+
+
 func _restore_end(end: int) -> void:
 	var p := _end_pos(end)
 	for node in get_tree().get_nodes_in_group(GROUP):

@@ -678,3 +678,6 @@ func save_data() -> Dictionary:
 func load_data(data: Dictionary) -> void:
 	_set_state(data)
 	_apply(true)
+	# После загрузки меш и коллизии нужны сразу в финальном виде: иначе C_FlexVisual перестроит их позже по таймеру
+	# (flex_rebuild_period), а SaveManager уже сажает вагоны на рельсы лучом и не находит трак (вагон остается сошедшим)
+	entity.send_event("on_flex_final", {})
