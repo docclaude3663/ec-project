@@ -672,7 +672,8 @@ func _resolve() -> bool:
 	if _sun:
 		_sun_base_energy = _sun.light_energy
 	if _env == null:
-		push_warning("GFX: нет WorldEnvironment в группе gfx_env (добавьте EnvironmentRoot в сцену или свою ноду в группу)")
+		if not _scene_without_gfx():
+			push_warning("GFX: нет WorldEnvironment в группе gfx_env (добавьте EnvironmentRoot в сцену или свою ноду в группу)")
 		return false
 	return true
 
@@ -684,8 +685,14 @@ func _connect_observe() -> void:
 		_oc.observe_entered.connect(func(): _set_observe(true))
 		_oc.observe_exited.connect(func(): _set_observe(false))
 		_sync_cards()
-	else:
+	elif not _scene_without_gfx():
 		push_warning("GFX: ObserveController не найден, карточки Look и Light не работают")
+
+
+## Сцены-инструменты (Icon Studio) без окружения игры помечают корень метой gfx_optional: предупреждения GFX там не нужны
+func _scene_without_gfx() -> bool:
+	var cs := get_tree().current_scene
+	return cs != null and cs.has_meta(&"gfx_optional")
 
 
 ## ⚡Сигнал из ObserveController

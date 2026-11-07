@@ -177,14 +177,12 @@ func _rebuild() -> void:
 	_sig = (a.global_position + b.global_position * 3.0) if is_instance_valid(a) and is_instance_valid(b) else Vector3.ZERO
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = _current_color()
-	var total := 0.0
 	for i in line.size() - 1:
 		var p0 := line[i]
 		var p1 := line[i + 1]
 		var seg_len := p0.distance_to(p1)
 		if seg_len < 0.001:
 			continue
-		total += seg_len
 		var mid := (p0 + p1) * 0.5
 		var bs := Basis.looking_at(p1 - p0, Vector3.UP if absf((p1 - p0).normalized().y) < 0.99 else Vector3.RIGHT)
 		# цилиндр вытянут по Y: поворачиваем ось Y на направление отрезка

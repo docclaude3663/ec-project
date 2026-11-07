@@ -54,6 +54,11 @@ var _look_option: OptionButton
 var _reset_dialog: ConfirmationDialog
 
 
+func _init() -> void:
+	# В студии нет игрового окружения: GFX не должен ругаться на отсутствие gfx_env/Observe
+	set_meta(&"gfx_optional", true)
+
+
 func _ready() -> void:
 	settings = StudioSettings.new()
 	settings.name = "StudioSettings"

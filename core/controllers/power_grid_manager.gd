@@ -256,15 +256,15 @@ func _rebuild_index() -> void:
 
 ## Зарегистрировать источник за владельцем (панель или сущность). Свободный источник той же модели забирается
 ## (старт с одной панелью, смена дизайна панели: питание не пропадает и не дублируется), иначе создаётся новый
-func register_source(model_id: StringName, owner: Object = null) -> PowerSource:
+func register_source(model_id: StringName, owner_obj: Object = null) -> PowerSource:
 	if not PowerModels.has_model(model_id):
 		model_id = PowerModels.MULTI
 	for s in sources:
 		if s.model == model_id and s.is_free():
-			s.owner = owner
+			s.owner = owner_obj
 			return s
 	var src := _create_source(model_id)
-	src.owner = owner
+	src.owner = owner_obj
 	return src
 
 

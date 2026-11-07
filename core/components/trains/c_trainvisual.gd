@@ -143,7 +143,9 @@ func _find_collisions(node):
 
 ## Высота меша кузова над началом вагона (WagonConfig.offset_mesh_y). null, если меша нет
 func get_mesh_offset_y() -> Variant:
-	return mesh_nodes[0].position.y if not mesh_nodes.is_empty() else null
+	if mesh_nodes.is_empty():
+		return null
+	return mesh_nodes[0].position.y
 
 
 ## Двигает меш кузова. Коллизия кузова не двигается (она собрана один раз при создании вагона)

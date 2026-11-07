@@ -60,7 +60,7 @@ static func blocker_for(level_y: float) -> Callable:
 ##  ok - область найдена, иначе why = причина ("" при ok);
 ##  cells - Dictionary Vector2i -> true; count; touches_edge - область дошла до края домена;
 ##  bounds - Rect2 области в мире (ю); dom - Rect2i ячеек домена.
-static func fill(seed: Vector2, level_y: float, domain: Rect2, step: float, blocked: Callable, max_cells: int = MAX_CELLS) -> Dictionary:
+static func fill(seed_pos: Vector2, level_y: float, domain: Rect2, step: float, blocked: Callable, max_cells: int = MAX_CELLS) -> Dictionary:
 	var res := {"ok": false, "why": "", "cells": {}, "count": 0, "touches_edge": false, "bounds": Rect2(), "dom": Rect2i()}
 	var T: float = Global.settings.layer_height
 	if level_y < T - EPS:
@@ -68,7 +68,7 @@ static func fill(seed: Vector2, level_y: float, domain: Rect2, step: float, bloc
 		return res
 	var dom := grid_domain(domain, step)
 	res["dom"] = dom
-	var s := cell_of(seed, step)
+	var s := cell_of(seed_pos, step)
 	if not dom.has_point(s):
 		res["why"] = "Точка за краем стола"
 		return res
