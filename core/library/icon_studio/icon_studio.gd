@@ -667,7 +667,7 @@ func _add_slider(box: VBoxContainer, text: String, key: String, lo: float, hi: f
 	_bindings[key] = {"ctrl": sl, "kind": "slider", "val": val}
 
 
-func _add_check(box: VBoxContainer, text: String, key: String) -> void:
+func _add_check(box: BoxContainer, text: String, key: String) -> void:
 	var cb := CheckBox.new()
 	cb.text = text
 	cb.toggled.connect(func(on: bool): _set_template(key, on))
