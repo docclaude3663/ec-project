@@ -135,6 +135,7 @@ func solve(tree: SceneTree, clips: Array) -> Dictionary:
 	var shorts: Array[int] = []
 	var known_now: Dictionary = {}
 	var tracks_of_root: Dictionary = {}
+	var dead_ref: Dictionary = {}   # корень цепи без питания -> узел-эталон направления (см. ниже)
 	var roots_of: Dictionary = {}   # сущность -> корень связного участка (луч 0), для датчиков занятости (D6)
 	for i in ents.size():
 		var pt := powers[i]
@@ -151,6 +152,13 @@ func solve(tree: SceneTree, clips: Array) -> Dictionary:
 				net = (leaders[root] as C_PowerClip).feed_net()
 				flip = _flip_at(graph, leaders[root], leader_nodes[root], node)
 				tracks_of_root[root] = int(tracks_of_root.get(root, 0)) + 1
+			else:
+				# Без питания. Номер цепи 0, но flip нужен физике: тележка по нему выбирает направление хода по сплайну
+				# (C_Bogie dir_sign). Если оставить false у всех, то на стыке траков, чьи сплайны смотрят навстречу,
+				# катящийся вагон разворачивается на 180. Эталон направления - первый узел компоненты
+				if not dead_ref.has(root):
+					dead_ref[root] = node
+				flip = graph.flip_between(node, dead_ref[root])
 			if pt.contour_of(leg) != net or pt.flip_of(leg) != flip:
 				pt.set_leg(leg, net, flip)
 				touched = true

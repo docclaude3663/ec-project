@@ -22,6 +22,11 @@ var centrifugal_force: float
 var applied_force: float = 0.0  # Постоянная приложенная сила/тяга (от C_Engine или C_Coupler), Н
 var impulse_force: float = 0.0  # Разовый импульс силы (от пинка/удара), Н
 
+# Чтобы сохранить мировое направление хода, если flip трака под передней тележкой сменился на обесточенной цепи
+var _dir_track: Object = null
+var _dir_route: int = 0
+var _dir_flip: bool = false
+
 # Значения из инспектора
 var bogie_configs: Array[BogieConfig] = []
 ## Подвеска из паспорта (WagonConfig.suspension). null = значения по умолчанию. Задает ChassisSetting
@@ -404,6 +409,24 @@ func on_derailed(_data: Dictionary) -> void:
 	if _susp: _susp.reset()
 
 
+## На обесточенной цепи flip пересчитывается вместе с сетью (достроили/убрали трак, переложили стрелку) и может
+## смениться под едущим вагоном. Знак скорости привязан к flip, поэтому без поправки вагон поехал бы обратно.
+## В запитанной цепи так не делаем: смена полярности должна реверсировать движение
+func _keep_world_direction(bc: C_Bogie) -> void:
+	if bc.bogies_data.is_empty():
+		return
+	var b = bc.bogies_data[0]
+	var pt := b.current_track.get_comp(C_PowerTrack) as C_PowerTrack
+	if pt == null:
+		return
+	var f := pt.flip_of(b.route)
+	if b.current_track == _dir_track and b.route == _dir_route and f != _dir_flip and pt.contour_of(b.route) == 0:
+		current_speed = -current_speed
+	_dir_track = b.current_track
+	_dir_route = b.route
+	_dir_flip = f
+
+
 # ==========================================
 # ФИЗИЧЕСКИЙ ЦИКЛ
 # ==========================================
@@ -425,6 +448,8 @@ func _physics_process(delta: float) -> void:
 		if not is_instance_valid(b.current_track):
 			entity.send_event("on_derailed", {"reason": "track_removed", "current_velocity_3d": current_velocity_3d})
 			return
+
+	_keep_world_direction(bogie_comp)
 
 	# 2. Проверяем состояние вагона в движении
 	_check_derailment() 
