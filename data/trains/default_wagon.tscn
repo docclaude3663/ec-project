@@ -101,43 +101,13 @@ _surfaces = [{
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_2r8o1")
 
-[sub_resource type="CylinderMesh" id="CylinderMesh_cvlc5"]
-resource_local_to_scene = true
-top_radius = 0.1
-bottom_radius = 0.1
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_by7bw"]
-albedo_color = Color(0.00546265, 0.699219, 0, 1)
-
-[sub_resource type="CylinderMesh" id="CylinderMesh_rces7"]
-top_radius = 0.01
-bottom_radius = 0.05
-height = 5.0
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_upj0g"]
-albedo_color = Color(0.00546265, 0.699219, 0, 1)
-
-[sub_resource type="CylinderMesh" id="CylinderMesh_by7bw"]
-top_radius = 0.0
-bottom_radius = 0.1
-height = 10.0
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ub3pu"]
-albedo_color = Color(1, 0, 0, 1)
-
-[sub_resource type="CylinderMesh" id="CylinderMesh_80ap4"]
-top_radius = 0.0
-bottom_radius = 0.1
-height = 10.0
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_icru8"]
-albedo_color = Color(0, 0.203125, 1, 1)
-
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cvlc5"]
 albedo_color = Color(1, 0.1882353, 1, 1)
 
 [sub_resource type="SphereMesh" id="SphereMesh_by7bw"]
+lightmap_size_hint = Vector2i(8, 5)
 material = SubResource("StandardMaterial3D_cvlc5")
+add_uv2 = true
 radius = 0.2
 height = 0.4
 
@@ -154,47 +124,6 @@ linear_damp_mode = 1
 
 [node name="Wagon_01" type="MeshInstance3D" parent="." unique_id=1510915459]
 mesh = SubResource("ArrayMesh_j8td7")
-
-[node name="FrontMarker" type="MeshInstance3D" parent="Wagon_01" unique_id=1130341113]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.046753, -4.5809784)
-mesh = SubResource("CylinderMesh_cvlc5")
-surface_material_override/0 = SubResource("StandardMaterial3D_by7bw")
-
-[node name="Ay" type="MeshInstance3D" parent="Wagon_01" unique_id=1600521713]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.348877, 9.141144, -12.650662)
-visible = false
-mesh = SubResource("CylinderMesh_rces7")
-surface_material_override/0 = SubResource("StandardMaterial3D_upj0g")
-
-[node name="y" type="Label3D" parent="Wagon_01/Ay" unique_id=808812208]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
-modulate = Color(0.0552368, 0.707031, 0, 1)
-text = "Y"
-font_size = 122
-
-[node name="Ax" type="MeshInstance3D" parent="Wagon_01" unique_id=1880519199]
-transform = Transform3D(-4.3711385e-08, 0.9999999, 0, -0.9999999, -4.3711385e-08, 0, 0, 0, 1, -4.348877, 6.6411443, -12.650662)
-visible = false
-mesh = SubResource("CylinderMesh_by7bw")
-surface_material_override/0 = SubResource("StandardMaterial3D_ub3pu")
-
-[node name="x" type="Label3D" parent="Wagon_01/Ax" unique_id=588173909]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.66, 0)
-modulate = Color(0.707031, 0, 0, 1)
-text = "X"
-font_size = 122
-
-[node name="Az" type="MeshInstance3D" parent="Wagon_01" unique_id=1272913276]
-transform = Transform3D(1, 0, 0, 0, -4.3711395e-08, 1, 0, -1, -4.3711395e-08, -9.348877, 6.6411443, -17.650661)
-visible = false
-mesh = SubResource("CylinderMesh_80ap4")
-surface_material_override/0 = SubResource("StandardMaterial3D_icru8")
-
-[node name="z" type="Label3D" parent="Wagon_01/Az" unique_id=619505408]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.47, 1.01, 0)
-modulate = Color(0, 0.132813, 1, 1)
-text = "--Z"
-font_size = 122
 
 [node name="sphere" type="MeshInstance3D" parent="." unique_id=1229154046]
 unique_name_in_owner = true
