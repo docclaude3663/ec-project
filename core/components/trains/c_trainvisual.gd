@@ -98,9 +98,13 @@ func _build_bogies():
 			_mesh.set_material_overlay(WHEEL_SHADER.duplicate())
 			
 	#поднимаем кузов
+	# Коллизия кузова в сцене уже подогнана под меш (обнимает его). Поэтому не пересчитываем её высоту
+	# по размеру коробки, а сдвигаем на столько же, на сколько поднимаем меш: взаимная посадка остаётся как в редакторе.
+	# Раньше высота считалась от позиции меша ДО подъема, и коллизия оставалась у пола, а меш уезжал вверх.
 	var wagon_collision = instance.get_node('WagonCollisionShape3D')
-	wagon_collision.position.y = mesh_nodes[0].position.y + wagon_collision.shape.size.y / 2
+	var lift_y: float = offset_mesh_y - mesh_nodes[0].position.y
 	mesh_nodes[0].position.y = offset_mesh_y # из вагон-конфига
+	wagon_collision.position.y += lift_y
 
 
 
