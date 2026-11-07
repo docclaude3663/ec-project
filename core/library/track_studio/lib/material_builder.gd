@@ -300,6 +300,14 @@ static func stamp(mat: Material, role: String, dir: String, params: Dictionary) 
 ## Нет карты: AO и roughness = 1, metallic = 0. Размер по первой найденной карте, остальные подгоняются.
 ## Возвращает Error (OK = 0). В материале ORM заменяет три текстуры одной (меньше памяти и выборок)
 static func pack_orm(found: Dictionary, out_path: String) -> int:
+	var out := orm_image(found)
+	if out == null:
+		return ERR_FILE_NOT_FOUND
+	return out.save_png(out_path)
+
+
+## Картинка ORM из карт набора (R = AO, G = roughness, B = metallic) или null, если карт нет
+static func orm_image(found: Dictionary) -> Image:
 	var maps := {}
 	var w := 0
 	var h := 0
@@ -317,7 +325,7 @@ static func pack_orm(found: Dictionary, out_path: String) -> int:
 			img.resize(w, h, Image.INTERPOLATE_BILINEAR)
 		maps[key] = img.get_data()
 	if maps.is_empty():
-		return ERR_FILE_NOT_FOUND
+		return null
 	var count := w * h
 	var data := PackedByteArray()
 	data.resize(count * 3)
@@ -332,8 +340,7 @@ static func pack_orm(found: Dictionary, out_path: String) -> int:
 		data[o] = ao[i] if has_ao else 255
 		data[o + 1] = ro[i] if has_ro else 255
 		data[o + 2] = me[i] if has_me else 0
-	var out := Image.create_from_data(w, h, false, Image.FORMAT_RGB8, data)
-	return out.save_png(out_path)
+	return Image.create_from_data(w, h, false, Image.FORMAT_RGB8, data)
 
 
 ## Куда писать ORM набора: <имя папки>_ORM.png рядом с картами
@@ -407,3 +414,109 @@ static func delete_files(items: Array, base_dir: String) -> int:
 		if FileAccess.file_exists(path + ".import"):
 			DirAccess.remove_absolute(path + ".import")
 	return n
+
+
+# ==========================================
+# Конвертация набора в WebP
+# ==========================================
+
+## Имя новой папки: токен JPG/JPEG/PNG в имени набора заменяется на WebP (Concrete030_1K-JPG -> Concrete030_1K-WebP),
+## если токена нет, дописывается -WebP
+static func webp_set_name(set_name: String) -> String:
+	var re := RegEx.new()
+	re.compile("(?i)(jpe?g|png)")
+	var m := re.search_all(set_name)
+	if m.is_empty():
+		return set_name + "-WebP"
+	var last: RegExMatch = m[m.size() - 1]
+	return set_name.substr(0, last.get_start()) + "WebP" + set_name.substr(last.get_end())
+
+
+## Пишет рядом с набором dir новую папку с WebP: цвет и нормаль (GL) отдельными файлами, AO, шероховатость и
+## металличность одним ORM (если карт две и больше, иначе каждая отдельным серым файлом). Высота пропускается.
+## opts: quality (0..1, для цвета и всего с потерями), normal_lossless, orm_lossless.
+## Возвращает {ok, dir, files: PackedStringArray, bytes_before, bytes_after, error}
+static func convert_set_to_webp(dir: String, opts: Dictionary = {}) -> Dictionary:
+	var res := {"ok": false, "dir": "", "files": PackedStringArray(), "bytes_before": 0, "bytes_after": 0, "error": ""}
+	var found := scan(dir)
+	if found.is_empty():
+		res["error"] = "в наборе нет карт"
+		return res
+	var q: float = float(opts.get("quality", 0.9))
+	var normal_ll: bool = bool(opts.get("normal_lossless", true))
+	var orm_ll: bool = bool(opts.get("orm_lossless", true))
+	var new_name := webp_set_name(dir.get_file())
+	var out_dir := dir.get_base_dir().path_join(new_name)
+	if out_dir == dir:
+		res["error"] = "не удалось придумать имя новой папки"
+		return res
+	if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out_dir)) not in [OK, ERR_ALREADY_EXISTS]:
+		res["error"] = "не удалось создать " + out_dir
+		return res
+	res["dir"] = out_dir
+	var used := {}   # исходные файлы, попавшие в расчёт размера
+	var jobs: Array = []   # {name, image, lossy}
+
+	if found.has("albedo"):
+		var img := Image.load_from_file(found["albedo"])
+		if img != null and not img.is_empty():
+			jobs.append({"name": "Color", "image": img, "lossy": true})
+			used[found["albedo"]] = true
+	if found.has("normal"):
+		var img := Image.load_from_file(found["normal"])
+		if img != null and not img.is_empty():
+			img.convert(Image.FORMAT_RGB8)
+			if found.get("normal_is_dx", false):
+				var data := img.get_data()
+				var i := 1
+				while i < data.size():
+					data[i] = 255 - data[i]
+					i += 3
+				img = Image.create_from_data(img.get_width(), img.get_height(), false, Image.FORMAT_RGB8, data)
+			jobs.append({"name": "NormalGL", "image": img, "lossy": not normal_ll})
+			used[found["normal"]] = true
+	var packed := {}
+	for k in ["ao", "roughness", "metallic"]:
+		if found.has(k):
+			packed[k] = found[k]
+	if found.has("orm"):
+		var img := Image.load_from_file(found["orm"])
+		if img != null and not img.is_empty():
+			img.convert(Image.FORMAT_RGB8)
+			jobs.append({"name": "ORM", "image": img, "lossy": not orm_ll})
+			used[found["orm"]] = true
+	elif packed.size() >= 2:
+		var orm := orm_image(packed)
+		if orm != null:
+			jobs.append({"name": "ORM", "image": orm, "lossy": not orm_ll})
+			for k in packed:
+				used[packed[k]] = true
+	else:
+		for k in packed:
+			var img := Image.load_from_file(packed[k])
+			if img != null and not img.is_empty():
+				img.convert(Image.FORMAT_L8)
+				jobs.append({"name": {"ao": "AmbientOcclusion", "roughness": "Roughness", "metallic": "Metalness"}[k], "image": img, "lossy": not orm_ll})
+				used[packed[k]] = true
+
+	var files := PackedStringArray()
+	for job in jobs:
+		var path := out_dir.path_join("%s_%s.webp" % [new_name, job["name"]])
+		var err: int = (job["image"] as Image).save_webp(path, bool(job["lossy"]), q)
+		if err != OK:
+			res["error"] = "не записан %s (код %d)" % [path.get_file(), err]
+			return res
+		files.append(path.get_file())
+		res["files"] = files
+		res["bytes_after"] += _file_size(path)
+	for src in used:
+		res["bytes_before"] += _file_size(src)
+	res["ok"] = not files.is_empty()
+	if not res["ok"]:
+		res["error"] = "нечего конвертировать"
+	return res
+
+
+static func _file_size(path: String) -> int:
+	var f := FileAccess.open(path, FileAccess.READ)
+	return f.get_length() if f else 0

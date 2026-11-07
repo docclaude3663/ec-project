@@ -337,6 +337,7 @@ static func normalize(items: Array, opts: Dictionary = {}) -> Dictionary:
 
 	report["after"] = mesh.get_aabb()
 	report["surfaces"] = mesh.get_surface_count()
+	@warning_ignore("integer_division")
 	report["triangles"] = mesh.get_faces().size() / 3
 	return {"mesh": mesh, "report": report}
 
@@ -416,7 +417,9 @@ static func _merge_into(merged: Dictionary, arrays: Array, offset: int) -> void:
 static func info(mesh: Mesh) -> Dictionary:
 	if mesh == null:
 		return {}
-	return {"aabb": mesh.get_aabb(), "size": mesh.get_aabb().size, "triangles": mesh.get_faces().size() / 3, "surfaces": mesh.get_surface_count()}
+	@warning_ignore("integer_division")
+	var tris := mesh.get_faces().size() / 3
+	return {"aabb": mesh.get_aabb(), "size": mesh.get_aabb().size, "triangles": tris, "surfaces": mesh.get_surface_count()}
 
 
 ## Записывает меш в .res и привязывает к файлу (стиль будет хранить ссылку). Возвращает Error

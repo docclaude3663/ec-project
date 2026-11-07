@@ -207,6 +207,7 @@ static func _check_sleeper_mesh(r: Array[Dictionary], style: TrackStyle) -> void
 
 @warning_ignore("integer_division")
 static func _tris(m: Mesh) -> int:
+	@warning_ignore("integer_division")
 	return m.get_faces().size() / 3
 
 

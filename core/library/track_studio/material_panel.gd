@@ -32,6 +32,9 @@ var _info: RichTextLabel
 var _convert_btn: Button
 var _proj_opt: OptionButton
 var _tint: ColorPickerButton
+var _webp_quality: SpinBox
+var _webp_normal_ll: CheckBox
+var _webp_orm_ll: CheckBox
 var _spin := {}                # ключ параметра -> SpinBox
 var _check := {}               # ключ параметра -> CheckBox
 var _tile_x: SpinBox
@@ -123,6 +126,27 @@ func _build() -> void:
 	clean.tooltip_text = "Покажет список файлов набора, которые студии не нужны (NormalDX, превью, маски, .blend, .mtlx, .usdc, готовый .tres), и удалит после подтверждения."
 	clean.pressed.connect(_on_cleanup)
 	r4.add_child(clean)
+
+	var r5 := HBoxContainer.new()
+	v.add_child(r5)
+	var webp := Button.new()
+	webp.text = "Конвертировать в WebP"
+	webp.tooltip_text = "Создаёт рядом новую папку (JPG в имени заменяется на WebP): цвет и нормаль GL в WebP, AO, шероховатость и металличность одним ORM. Карта высоты не копируется. Исходный набор не меняется."
+	webp.pressed.connect(_on_convert_webp)
+	r5.add_child(webp)
+	var ql := Label.new()
+	ql.text = "Качество"
+	r5.add_child(ql)
+	_webp_quality = _make_spin(r5, 0.5, 1.0, 0.01, func(_v: float): pass)
+	_webp_quality.value = 0.9
+	_webp_normal_ll = CheckBox.new()
+	_webp_normal_ll.text = "Нормаль без потерь"
+	_webp_normal_ll.button_pressed = true
+	r5.add_child(_webp_normal_ll)
+	_webp_orm_ll = CheckBox.new()
+	_webp_orm_ll.text = "ORM без потерь"
+	_webp_orm_ll.button_pressed = true
+	r5.add_child(_webp_orm_ll)
 
 	v.add_child(HSeparator.new())
 
@@ -301,9 +325,9 @@ func _on_role_changed(_i: int) -> void:
 	_on_set_changed(false)
 
 
-func _select_set(set_name: String) -> void:
+func _select_set(dir_name: String) -> void:
 	for i in _set_opt.item_count:
-		if _set_opt.get_item_text(i) == set_name:
+		if _set_opt.get_item_text(i) == dir_name:
 			_set_opt.select(i)
 			return
 
@@ -503,3 +527,25 @@ func _on_cleanup_confirmed() -> void:
 	var n := TrackMaterialBuilder.delete_files(_cleanup_items, SETS_DIR)
 	studio.say("Удалено файлов: %d (%s). Вернитесь в редактор, чтобы он обновил список файлов." % [n, _size_text(total)])
 	_on_set_changed(false)
+
+
+func _on_convert_webp() -> void:
+	var dir := _set_dir()
+	if dir.is_empty():
+		return
+	var r := TrackMaterialBuilder.convert_set_to_webp(dir, {
+		"quality": _webp_quality.value,
+		"normal_lossless": _webp_normal_ll.button_pressed,
+		"orm_lossless": _webp_orm_ll.button_pressed,
+	})
+	if not r["ok"]:
+		studio.say("WebP: %s" % r["error"], true)
+		return
+	var before: int = r["bytes_before"]
+	var after: int = r["bytes_after"]
+	var pct := 0 if before == 0 else roundi(100.0 * float(after) / float(before))
+	var keep := dir.get_file()
+	_reload_sets()
+	_select_set(keep)
+	_on_set_changed(false)
+	studio.say("Папка %s: %d файлов, %s вместо %s (%d%%). Вернитесь в редактор, дождитесь импорта, выберите новую папку, «Подготовить импорт» и «Обновить»." % [String(r["dir"]).get_file(), (r["files"] as PackedStringArray).size(), _size_text(after), _size_text(before), pct])

@@ -56,7 +56,6 @@ var _imp_name: LineEdit
 var _report: RichTextLabel
 var _dialog: FileDialog
 var _norm_mesh: ArrayMesh
-var _syncing := false
 
 
 func setup(studio_ref) -> void:
