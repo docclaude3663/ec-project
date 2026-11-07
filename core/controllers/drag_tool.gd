@@ -54,6 +54,7 @@ func process_tick(_delta):
 	#var hit = controller.get_mouse_ray((1 << 0) | (1 << 2)|(1 << 4))
 	var hit = controller.get_mouse_ray(_pick_mask())   # XX claude-terra слои из EntitySetting.pick_layers
 	if hit:
+		_alt_rotate.remember(hit)   # XX claude-switch: позиция, с которой объект стоит (нужна при вращении Alt)
 		# Отправляем приказ в сущность. Оттуда C_TrackDraggable сам разберется.
 		target_entity.send_event("on_drag_moved", hit)
 		pass

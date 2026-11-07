@@ -426,6 +426,7 @@ func process_tick(_delta):
 		if stretch_phase == 1:   # XX claude-terra
 			ghost.send_event("on_stretch_moved", hit)
 		else:
+			_alt_rotate.remember(hit)   # XX claude-switch: позиция призрака (нужна при вращении Alt)
 			ghost.send_event("on_drag_moved", hit)
 			_update_consist_fit()
 
