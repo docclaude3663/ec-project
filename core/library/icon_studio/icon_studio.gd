@@ -1143,7 +1143,7 @@ func _save_current(img: Image, dir: String) -> String:
 		var err := Capture.save(img, path, template, f, bool(template.webp_lossy))
 		if err != OK:
 			return "ошибка записи %s: %s" % [path, error_string(err)]
-		parts.append("%s %d байт" % [path.get_file(), Capture.file_size(path)])
+		parts.append("%s %d байт%s" % [path.get_file(), Capture.file_size(path), " (lossy)" if f == 1 and template.webp_lossy else ""])
 	return "; ".join(parts)
 
 
@@ -1232,7 +1232,7 @@ func _do_compare() -> void:
 	add_svg.call("svg_wrapper", Capture.svg_wrapper(img))
 	add_svg.call("svg_runs_%dc" % int(template.svg_colors), Capture.svg_runs(img, int(template.svg_colors)))
 
-	var md := "\n## %s, %dx%d, %s\n\n| Вариант | Байт | % от PNG |\n|---|---|---|\n" % [base, img.get_width(), img.get_height(), Time.get_datetime_string_from_system()]
+	var md := "\n## %s, %dx%d, %s\n\n| Вариант | Байт | %% от PNG |\n|---|---|---|\n" % [base, img.get_width(), img.get_height(), Time.get_datetime_string_from_system()]
 	var png_bytes := maxi(1, int(rows[0].bytes)) if not rows.is_empty() else 1
 	for r in rows:
 		md += "| %s | %d | %d%% |\n" % [r.label, r.bytes, roundi(100.0 * float(r.bytes) / float(png_bytes))]
@@ -1282,19 +1282,19 @@ func _show_compare(rows: Array) -> void:
 		lab.text = "%s\n%d байт" % [r.label, r.bytes]
 		col.add_child(lab)
 		var im: Image = r.img
-		var tr := TextureRect.new()
+		var trect := TextureRect.new()
 		if im != null and not im.is_empty():
-			tr.texture = ImageTexture.create_from_image(im)
-			tr.custom_minimum_size = Vector2(im.get_size())
-		tr.stretch_mode = TextureRect.STRETCH_SCALE
-		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		tr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		col.add_child(tr)
-		rects.append(tr)
+			trect.texture = ImageTexture.create_from_image(im)
+			trect.custom_minimum_size = Vector2(im.get_size())
+		trect.stretch_mode = TextureRect.STRETCH_SCALE
+		trect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		trect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		col.add_child(trect)
+		rects.append(trect)
 	zo.item_selected.connect(func(_i: int):
 		var z := zo.get_selected_id()
-		for tr in rects:
-			if tr.texture:
-				tr.custom_minimum_size = Vector2(tr.texture.get_size()) * float(z))
+		for r2 in rects:
+			if r2.texture:
+				r2.custom_minimum_size = Vector2(r2.texture.get_size()) * float(z))
 	add_child(w)
 	w.popup_centered()

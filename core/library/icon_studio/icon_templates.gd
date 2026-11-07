@@ -54,6 +54,8 @@ static func list_all() -> Array:
 	var out: Array = []
 	for id in builtin_ids():
 		out.append({"id": id, "title": make_builtin(id).title, "builtin": true})
+	if not DirAccess.dir_exists_absolute(ProjectSettings.globalize_path(USER_DIR)):
+		return out
 	for f in DirAccess.get_files_at(USER_DIR):
 		if f.ends_with(".tres"):
 			var t := load(USER_DIR + f)
