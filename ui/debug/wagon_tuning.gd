@@ -68,7 +68,7 @@ const _SPINS := [
 	["omega", "coupler_feel", "Частота буфера, рад/с", 0.1, 100.0, 0.1, "cpl", "", ""],
 	["buffer_zeta", "coupler_feel", "Демпфирование буфера", 0.0, 2.0, 0.01, "cpl", "", ""],
 	["draw_zeta", "coupler_feel", "Демпфирование на растяжении", 0.0, 2.0, 0.01, "cpl", "", ""],
-	["hard_stop_mult", "coupler_feel", "Жесткость упора, x", 1.0, 50.0, 0.1, "cpl", "", ""],
+	["hard_stop_mult", "coupler_feel", "Жесткость упора, x", 0.0, 50.0, 0.1, "cpl", "", ""],
 	["lateral_tol", "coupler_feel", "Допуск по боку, м", 0.0, 10.0, 0.05, "cpl", "", ""],
 	["align_cos", "coupler_feel", "Соосность торцов (cos)", 0.0, 1.0, 0.01, "cpl", "", ""],
 	["friction", "body", "Трение (physics material)", 0.0, 5.0, 0.01, "mat", "", ""],
