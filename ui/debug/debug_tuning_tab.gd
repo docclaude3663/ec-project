@@ -33,6 +33,7 @@ var _copy_btn: Button
 var _status: Label
 var _confirm: ConfirmationDialog
 var _levels_check: CheckBox
+var _flange_spin: SpinBox
 var _overlay: DebugLayoutOverlay
 
 
@@ -59,7 +60,19 @@ func _init(p_tab_id: String = WagonTuning.TAB_TUNING) -> void:
 		_levels_check.tooltip_text = "Линии и числа в 3D: колесо должно стоять на рельсе (разница 0)"
 		_levels_check.toggled.connect(func(_on: bool) -> void: _update_overlay())
 		_body.add_child(_levels_check)
-		_body.add_child(make_note("Поставьте вагон на рельс и меняйте высоту тележки, пока у «колесо-рельс» не будет 0, затем высоту меша. Паспорт не меняется, пока не нажмете «В паспорт»."))
+		var flange_row := HBoxContainer.new()
+		_body.add_child(flange_row)
+		var flange_label := Label.new()
+		flange_label.text = "Высота реборды, м"
+		flange_label.tooltip_text = "Из меша колеса высота реборды неизвестна: задайте ее сами. Низ колеса без реборды считается от нее"
+		flange_label.mouse_filter = Control.MOUSE_FILTER_PASS
+		flange_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		flange_row.add_child(flange_label)
+		_flange_spin = make_spin(0.0, 1.0, 0.005)
+		_flange_spin.set_value_no_signal(float(Settings.get_value(SETTINGS_SECTION, "flange_height", 0.13)))
+		_flange_spin.value_changed.connect(_on_flange_changed)
+		flange_row.add_child(_flange_spin)
+		_body.add_child(make_note("Желтая линия: поверхность катания (головка рельса). Синяя: низ колеса без реборды. Голубая: верх колеса с ребордой. Фиолетовая: плоскость меша. «Колесо-рельс» = синяя минус желтая: 0 колесо стоит на рельсе, плюс в воздухе, минус утоплено. Крутите высоту тележки, пока не будет 0, затем высоту меша. Паспорт не меняется, пока не нажмете «В паспорт»."))
 
 	var reset_all := Button.new()
 	reset_all.text = "Вернуть все (как при выборе)"
@@ -214,8 +227,15 @@ func _update_overlay() -> void:
 	if _levels_check == null or not _levels_check.button_pressed or not WagonTuning.is_wagon(target):
 		return
 	_overlay = DebugLayoutOverlay.new()
+	_overlay.flange_height = _flange_spin.value
 	target.get_tree().current_scene.add_child(_overlay)
 	_overlay.setup(target)
+
+
+func _on_flange_changed(value: float) -> void:
+	Settings.set_value(SETTINGS_SECTION, "flange_height", value)
+	if is_instance_valid(_overlay):
+		_overlay.flange_height = value
 
 
 func _free_overlay() -> void:
