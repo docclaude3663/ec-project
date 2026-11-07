@@ -1,26 +1,26 @@
-[gd_resource type="Resource" script_class="EntitySetting" format=3 uid="uid://c5jotdbswex6r"]
+[gd_resource type="Resource" script_class="EntitySetting" format=3]
 
-[ext_resource type="Script" uid="uid://m4g5jbfwmaa0" path="res://core/component_setting.gd" id="1_h3v5j"]
-[ext_resource type="Script" uid="uid://7vuxuiiysiji" path="res://setting/bogie_config.gd" id="2_hp0cg"]
-[ext_resource type="PackedScene" uid="uid://dpl2u278hhocd" path="res://data/trains/bogie_03.tscn" id="3_hp0cg"]
-[ext_resource type="PackedScene" uid="uid://gwsdt87qd0o8" path="res://data/trains/wheel_pair_03.tscn" id="4_ek6gf"]
-[ext_resource type="Script" uid="uid://daeylhso0elsx" path="res://setting/light_config.gd" id="5_40tj6"]
-[ext_resource type="Script" uid="uid://gv2lrhu17dtf" path="res://setting/mechanism_config.gd" id="5_ek6gf"]
-[ext_resource type="PackedScene" uid="uid://drd21qffg53gs" path="res://data/trains/wagon_02.tscn" id="5_h3v5j"]
-[ext_resource type="Script" uid="uid://bicjny5dv1h3s" path="res://setting/wagon_config.gd" id="6_dmkgj"]
-[ext_resource type="Script" uid="uid://bwaluvayi2o8k" path="res://setting/suspension_config.gd" id="7_hp0cg"]
-[ext_resource type="Script" uid="uid://mpakwrr6lum8" path="res://core/components/comp_settings/identity_setting.gd" id="7_yn17b"]
-[ext_resource type="Script" uid="uid://b830vi2lx3hl5" path="res://core/components/comp_settings/trainvisual_setting.gd" id="8_a1n1p"]
-[ext_resource type="Script" uid="uid://bkdny7eq5jthn" path="res://core/components/comp_settings/traindraggable_setting.gd" id="10_uycbt"]
-[ext_resource type="Script" uid="uid://cuumo0qj7r7gb" path="res://core/components/comp_settings/hoverable_setting.gd" id="11_hjlnm"]
-[ext_resource type="Script" uid="uid://deljgsmo4bpow" path="res://core/components/comp_settings/selectable_setting.gd" id="12_vlxgf"]
-[ext_resource type="Script" uid="uid://chprgtlxn3aub" path="res://core/components/comp_settings/blockable_setting.gd" id="13_te08j"]
-[ext_resource type="Script" uid="uid://bhvk4o3qrvslv" path="res://core/components/comp_settings/chassis_setting.gd" id="14_iktg5"]
-[ext_resource type="Script" uid="uid://cpuhrycuvnuar" path="res://core/components/comp_settings/kinematics_setting.gd" id="15_io1r0"]
-[ext_resource type="Script" uid="uid://b5kx0oyxhiaux" path="res://core/components/comp_settings/bogie_setting.gd" id="16_xlol7"]
-[ext_resource type="Script" uid="uid://mqrnwkjfweqr" path="res://core/components/comp_settings/coupler_setting.gd" id="17_h3v5j"]
-[ext_resource type="Texture2D" uid="uid://c7opn7g5dyq4d" path="res://ui/icons/transport/coal-wagon.svg" id="18_b5x2k"]
-[ext_resource type="Script" uid="uid://do5hjkm3r2pdg" path="res://core/entity_setting.gd" id="19_v5rfl"]
+[ext_resource type="Script" path="res://core/component_setting.gd" id="1_h3v5j"]
+[ext_resource type="Script" path="res://setting/bogie_config.gd" id="2_hp0cg"]
+[ext_resource type="PackedScene" path="res://data/trains/bogie_03.tscn" id="3_hp0cg"]
+[ext_resource type="PackedScene" path="res://data/trains/wheel_pair_03.tscn" id="4_ek6gf"]
+[ext_resource type="Script" path="res://setting/light_config.gd" id="5_40tj6"]
+[ext_resource type="Script" path="res://setting/mechanism_config.gd" id="5_ek6gf"]
+[ext_resource type="PackedScene" path="res://data/trains/wagon_02.tscn" id="5_h3v5j"]
+[ext_resource type="Script" path="res://setting/wagon_config.gd" id="6_dmkgj"]
+[ext_resource type="Script" path="res://setting/suspension_config.gd" id="7_hp0cg"]
+[ext_resource type="Script" path="res://core/components/comp_settings/identity_setting.gd" id="7_yn17b"]
+[ext_resource type="Script" path="res://core/components/comp_settings/trainvisual_setting.gd" id="8_a1n1p"]
+[ext_resource type="Script" path="res://core/components/comp_settings/traindraggable_setting.gd" id="10_uycbt"]
+[ext_resource type="Script" path="res://core/components/comp_settings/hoverable_setting.gd" id="11_hjlnm"]
+[ext_resource type="Script" path="res://core/components/comp_settings/selectable_setting.gd" id="12_vlxgf"]
+[ext_resource type="Script" path="res://core/components/comp_settings/blockable_setting.gd" id="13_te08j"]
+[ext_resource type="Script" path="res://core/components/comp_settings/chassis_setting.gd" id="14_iktg5"]
+[ext_resource type="Script" path="res://core/components/comp_settings/kinematics_setting.gd" id="15_io1r0"]
+[ext_resource type="Script" path="res://core/components/comp_settings/bogie_setting.gd" id="16_xlol7"]
+[ext_resource type="Script" path="res://core/components/comp_settings/coupler_setting.gd" id="17_h3v5j"]
+[ext_resource type="Texture2D" path="res://ui/icons/transport/coal-wagon.svg" id="18_b5x2k"]
+[ext_resource type="Script" path="res://core/entity_setting.gd" id="19_v5rfl"]
 
 [sub_resource type="Resource" id="Resource_u60jt"]
 script = ExtResource("2_hp0cg")
@@ -44,6 +44,7 @@ metadata/_custom_type_script = "uid://bwaluvayi2o8k"
 
 [sub_resource type="Resource" id="Resource_pgcyc"]
 script = ExtResource("6_dmkgj")
+min_curve_radius = 10.0
 suspension = SubResource("Resource_yrtcf")
 scene = ExtResource("5_h3v5j")
 offset_mesh_y = 1.52

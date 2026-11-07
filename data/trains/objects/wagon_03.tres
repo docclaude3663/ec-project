@@ -60,6 +60,7 @@ metadata/_custom_type_script = "uid://bwaluvayi2o8k"
 
 [sub_resource type="Resource" id="Resource_pgcyc"]
 script = ExtResource("6_pj1o1")
+min_curve_radius = 10.0
 suspension = SubResource("Resource_yrtcf")
 scene = ExtResource("5_t6luf")
 offset_mesh_y = 1.15

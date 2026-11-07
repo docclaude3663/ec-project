@@ -68,32 +68,11 @@ _surfaces = [{
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_ldqha")
 
-[sub_resource type="BoxMesh" id="BoxMesh_bye0f"]
-size = Vector3(1, 0.008911133, 4.7994385)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ybgll"]
-albedo_color = Color(1, 0.25490198, 0, 1)
-
-[sub_resource type="SphereMesh" id="SphereMesh_ybgll"]
-material = SubResource("StandardMaterial3D_ybgll")
-radius = 0.2
-height = 0.4
-
 [node name="Bogie_01" type="Node3D" unique_id=1797205713]
 
 [node name="BogieMesh" type="MeshInstance3D" parent="." unique_id=315207505]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
 mesh = SubResource("ArrayMesh_j6fwd")
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="BogieMesh" unique_id=409760307]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
-visible = false
-mesh = SubResource("BoxMesh_bye0f")
-
-[node name="sphere" type="MeshInstance3D" parent="BogieMesh" unique_id=420637982]
-unique_name_in_owner = true
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -3)
-mesh = SubResource("SphereMesh_ybgll")
 
 [node name="RayCast3D" type="RayCast3D" parent="." unique_id=159467373]
 target_position = Vector3(0, -2, 0)

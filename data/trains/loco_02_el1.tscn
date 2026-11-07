@@ -161,6 +161,5 @@ mesh = SubResource("SphereMesh_by7bw")
 
 [node name="WagonCollisionShape3D" type="CollisionShape3D" parent="." unique_id=1520040488]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0009558201, 2.19596, -0.00085163116)
-visible = false
 shape = SubResource("BoxShape3D_3owqy")
 debug_color = Color(0, 0.6, 0.69803923, 1)
