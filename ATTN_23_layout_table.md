@@ -1,7 +1,7 @@
 # ATTN 23. Подмакетник (Layout Table): кастомизация, модули, крепление **[план, решений автора ещё нет]**
 
 Продолжение [TDD.md](ATTN_TDD.md) §13d, по структуре как [ATTN_14_observe_room.md](ATTN_14_observe_room.md) и [ATTN_22_library.md](ATTN_22_library.md).
-Связанные разделы: [ATTN_13](ATTN_13_TerrainTools.md) (листы пенопласта лежат на столе), [ATTN_14](ATTN_14_observe_room.md) (комната, §14.4.1, §14.12), [ATTN_10](ATTN_10_dc_power_system.md) (пульты и провода D4–D6), [ATTN_22](ATTN_22_library.md) (Customization, покраска), [ATTN_19](ATTN_19_game_flow.md) (`sandbox_setup`), [ATTN_17](ATTN_17_ui.md) (интерфейс).
+Связанные разделы: [ATTN_13](docs/ATTN_13_TerrainTools.md) (листы пенопласта лежат на столе), [ATTN_14](ATTN_14_observe_room.md) (комната, §14.4.1, §14.12), [ATTN_10](docs/ATTN_10_dc_power_system.md) (пульты и провода D4–D6), [ATTN_22](ATTN_22_library.md) (Customization, покраска), [ATTN_19](ATTN_19_game_flow.md) (`sandbox_setup`), [ATTN_17](ATTN_17_ui.md) (интерфейс).
 
 Код этим документом не меняется. Документ закрывает пункт roadmap «Подмакетник (Layout Table)» (TDD §Roadmap п. 9): раньше от него был только абзац намерений.
 
@@ -287,8 +287,8 @@
 ## Related Documents
 - [ATTN_GDD.md](ATTN_GDD.md): game vision, core loop, modes, progression.
 - [ATTN_TDD.md](ATTN_TDD.md): техническая архитектура (§13d, Roadmap п. 9).
-- [ATTN_13_TerrainTools.md](ATTN_13_TerrainTools.md): листы пенопласта, домен воды.
+- [ATTN_13_TerrainTools.md](docs/ATTN_13_TerrainTools.md): листы пенопласта, домен воды.
 - [ATTN_14_observe_room.md](ATTN_14_observe_room.md): комната, §14.4.1, §14.12.
-- [ATTN_10_dc_power_system.md](ATTN_10_dc_power_system.md): пульты, провода, привод стрелок.
+- [ATTN_10_dc_power_system.md](docs/ATTN_10_dc_power_system.md): пульты, провода, привод стрелок.
 - [ATTN_22_library.md](ATTN_22_library.md): Customization, покраска.
 - [ATTN_19_game_flow.md](ATTN_19_game_flow.md): `sandbox_setup`.

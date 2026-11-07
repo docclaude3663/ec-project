@@ -1,6 +1,6 @@
 # 15. Стили траков: flex сделан, дальше жёсткие траки. **[решено]**
 
-Продолжение [ATTN_13_terraintools.md](ATTN_13_terraintools.md) (§13.4: flex, эстакада).
+Продолжение [ATTN_13_terraintools.md](ATTN_13_TerrainTools.md) (§13.4: flex, эстакада).
 
 Статус пунктов: **[решено]** принято и реализовано, **[решено, не реализовано]** принято, но кода ещё нет, **[предложение]** требует подтверждения, **[открыто]** вопрос без ответа.
 
@@ -348,8 +348,8 @@ head_height = ballast_height + (sleeper_height - sleeper_embed) + rail_height
 ---
 
 ## Related Documents
-- [ATTN_GDD.md](ATTN_GDD.md) — game vision, core loop, modes, progression.
-- [ATTN_TDD.md](ATTN_TDD.md) — техническая архитектура и реализация.
-- [ATTN_13_TerrainTools.md](ATTN_13_terraintools.md) — Конструктор рельефа (Terrain Tools)
-- [ATTN_14_observe_room.md](ATTN_14_observe_room.md) — Observe: атмосфера, свет и комната
+- [ATTN_GDD.md](../ATTN_GDD.md) — game vision, core loop, modes, progression.
+- [ATTN_TDD.md](../ATTN_TDD.md) — техническая архитектура и реализация.
+- [ATTN_13_TerrainTools.md](ATTN_13_TerrainTools.md) — Конструктор рельефа (Terrain Tools)
+- [ATTN_14_observe_room.md](../ATTN_14_observe_room.md) — Observe: атмосфера, свет и комната
 - [ATTN_15_track_styles.md](ATTN_15_track_styles.md) — Track Styles:  Стили траков

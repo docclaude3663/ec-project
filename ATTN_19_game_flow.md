@@ -1,6 +1,6 @@
 # 19. Цикл игры и экраны: от запуска до выхода
 
-Набросок. Продолжение [ATTN_17_ui.md](ATTN_17_ui.md) (§17.12.3 и шаг U21), по структуре как [ATTN_14_observe_room.md](ATTN_14_observe_room.md) и [ATTN_15_track_styles.md](ATTN_15_track_styles.md). Геймплейная часть: [GDD.md](GDD.md).
+Набросок. Продолжение [ATTN_17_ui.md](ATTN_17_ui.md) (§17.12.3 и шаг U21), по структуре как [ATTN_14_observe_room.md](ATTN_14_observe_room.md) и [ATTN_15_track_styles.md](docs/ATTN_15_track_styles.md). Геймплейная часть: [GDD.md](ATTN_GDD.md).
 
 Статус пунктов: **[решено]** принято, **[предложение]** требует подтверждения, **[открыто]** вопрос без ответа. Чекбоксы в шагах: `[x]` сделано в коде, `[ ]` не сделано. Пока всё в документе, кроме отмеченного **[решено]**, это предложение разработчику на правку.
 
@@ -27,7 +27,7 @@
 | Сохранение | `SaveManager` (F5, F9 в debug, меню в `TopPanel`), автосейв `autosave` | один макет, имя файла из кода |
 | Быстрая загрузка | аргумент `--fast`, настройка `ec/fast_debug` (`Global.fast_debug`) | без комнаты и карточек Observe |
 | Настройки | автолоад `Settings` (`user://settings.cfg`) | есть, окна настроек нет (U11) |
-| Icon Studio | `core/library/icon_studio/` ([ATTN_18](ATTN_18_icon_studio.md)) | отдельная сцена, запуск F6 из редактора |
+| Icon Studio | `core/library/icon_studio/` ([ATTN_18](docs/ATTN_18_icon_studio.md)) | отдельная сцена, запуск F6 из редактора |
 | Выход | закрытие окна | без вопроса о несохранённом |
 
 ## 19.2. Экраны
@@ -116,7 +116,7 @@ game ←→ pause (Esc): Продолжить | Сохранить | Загру�
 
 ## 19.8. Model Studio
 
-Прототип уже есть: Icon Studio ([ATTN_18](ATTN_18_icon_studio.md)). Как экран `studio` он получает своё окно и выход в `menu`. Название **[решено]**: режим «Library», экран мастерской «Model Studio» ([ATTN_22](ATTN_22_library.md) §22.0). В игре кнопка Library в `ModePanel` остаётся заглушкой, пока Studio не станет полноценным экраном.
+Прототип уже есть: Icon Studio ([ATTN_18](docs/ATTN_18_icon_studio.md)). Как экран `studio` он получает своё окно и выход в `menu`. Название **[решено]**: режим «Library», экран мастерской «Model Studio» ([ATTN_22](ATTN_22_library.md) §22.0). В игре кнопка Library в `ModePanel` остаётся заглушкой, пока Studio не станет полноценным экраном.
 
 ## 19.9. Кампания (P3, набросок)
 

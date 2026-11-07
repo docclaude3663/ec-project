@@ -1,7 +1,7 @@
 # 14. Observe: атмосфера, свет и комната
 
-Продолжение [TDD.md](TDD.md), по структуре как [ATTN_13_terraintools.md](ATTN_13_terraintools.md).
-Геймплейная часть: [GDD.md](GDD.md) §7 Observe, §12 Visual Direction.
+Продолжение [TDD.md](ATTN_TDD.md), по структуре как [ATTN_13_terraintools.md](docs/ATTN_13_TerrainTools.md).
+Геймплейная часть: [GDD.md](ATTN_GDD.md) §7 Observe, §12 Visual Direction.
 Подмакетник (стол, опоры, задник, подстольный слой, модули): [ATTN_23_layout_table.md](ATTN_23_layout_table.md). Источники контента комнаты (процедурно, готовые модели, гибрид) и план R0–R7: §14.12.
 
 ## 14.0. Концепт и границы

@@ -1,7 +1,7 @@
 # 17. UI и контроллеры интерфейса
 
-Продолжение [TDD.md](TDD.md) (§7 InfoPanel, §12 Info Panel, §17.1 Hints), по структуре как [ATTN_14_observe_room.md](ATTN_14_observe_room.md) и [ATTN_15_track_styles.md](ATTN_15_track_styles.md).
-Геймплейная часть: [GDD.md](GDD.md).
+Продолжение [TDD.md](ATTN_TDD.md) (§7 InfoPanel, §12 Info Panel, §17.1 Hints), по структуре как [ATTN_14_observe_room.md](ATTN_14_observe_room.md) и [ATTN_15_track_styles.md](docs/ATTN_15_track_styles.md).
+Геймплейная часть: [GDD.md](ATTN_GDD.md).
 
 Статус пунктов: **[решено]** принято, **[предложение]** требует подтверждения, **[открыто]** вопрос без ответа. Чекбоксы в шагах: `[x]` сделано в коде, `[ ]` не сделано.
 

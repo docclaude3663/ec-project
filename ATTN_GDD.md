@@ -160,15 +160,15 @@ Build UI, Operate UI, InfoPanel, Power Layer, диагностические п�
 ## Related Documents
 - [ATTN_GDD.md](ATTN_GDD.md) — game vision, core loop, modes, progression.
 - [ATTN_TDD.md](ATTN_TDD.md) — техническая архитектура и реализация.
-- [ATTN_10_dc_power_system.md](ATTN_10_dc_power_system.md) — DCS: электропитание, правила режимов
-- [ATTN_12_switches.md](ATTN_12_switches.md) — Стрелки, кроссы и другие объекты
-- [ATTN_13_TerrainTools.md](ATTN_13_TerrainTools.md) — Конструктор рельефа (Terrain Tools)
+- [ATTN_10_dc_power_system.md](docs/ATTN_10_dc_power_system.md) — DCS: электропитание, правила режимов
+- [ATTN_12_switches.md](docs/ATTN_12_switches.md) — Стрелки, кроссы и другие объекты
+- [ATTN_13_TerrainTools.md](docs/ATTN_13_TerrainTools.md) — Конструктор рельефа (Terrain Tools)
 - [ATTN_14_observe_room.md](ATTN_14_observe_room.md) — Observe: атмосфера, свет и комната
-- [ATTN_15_track_styles.md](ATTN_15_track_styles.md) — Track Styles:  Стили траков
+- [ATTN_15_track_styles.md](docs/ATTN_15_track_styles.md) — Track Styles:  Стили траков
 - [ATTN_16_mechanisms.md](ATTN_16_mechanisms.md) - Механизмы и свет
 - [ATTN_17_ui.md](ATTN_17_ui.md) — UI и контроллеры интерфейса
-- [ATTN_18_icon_studio.md](ATTN_18_icon_studio.md) — Icon Studio
+- [ATTN_18_icon_studio.md](docs/ATTN_18_icon_studio.md) — Icon Studio
 - [ATTN_19_game_flow.md](ATTN_19_game_flow.md) — Цикл игры и экраны
-- [ATTN_20_track_studio.md](ATTN_20_track_studio.md) — Track Studio
+- [ATTN_20_track_studio.md](docs/ATTN_20_track_studio.md) — Track Studio
 - [ATTN_22_library.md](ATTN_22_library.md) — Library (Model Studio): коллекция, кастомизация, сборка и генерация зданий
 - [ATTN_23_layout_table.md](ATTN_23_layout_table.md) — Подмакетник (Layout Table): кастомизация, модули, задник, подстольный слой

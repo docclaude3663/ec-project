@@ -1,7 +1,7 @@
 # 16. Механизмы и свет
 
 Продолжение [TDD.md](ATTN_TDD.md), по структуре как [ATTN_14_observe_room.md](ATTN_14_observe_room.md).
-Связанные разделы: [ATTN_12_switches.md](ATTN_12_switches.md) (стрелки), [ATTN_14_observe_room.md](ATTN_14_observe_room.md) (время суток, лампа стола, S10).
+Связанные разделы: [ATTN_12_switches.md](docs/ATTN_12_switches.md) (стрелки), [ATTN_14_observe_room.md](ATTN_14_observe_room.md) (время суток, лампа стола, S10).
 
 ## 16.0. Концепт и границы
 

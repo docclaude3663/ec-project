@@ -1,7 +1,7 @@
 # ATTN 10. DCS — DC [power] System **[решено]**
 
-Продолжение [ATTN_TDD.md](ATTN_TDD.md), раздел 10 (DC Power System).
-Связанные разделы: [ATTN_12_switches.md](ATTN_12_switches.md) (стрелки, кросс, E0–E3), [ATTN_16_mechanisms.md](ATTN_16_mechanisms.md) (механизмы и свет, §16.11), [ATTN_17_ui.md](ATTN_17_ui.md) (панели, подсказки), [ATTN_19_game_flow.md](ATTN_19_game_flow.md) (`sandbox_setup`), [ATTN_22_library.md](ATTN_22_library.md) (правила режимов), [0_ATTN_21_dcc.md](0_ATTN_21_dcc.md) (цифровое управление DCC и переход DC → DCC), [ATTN_GDD.md](ATTN_GDD.md) (§4 цикл, §7 Operate, §9 Progression).
+Продолжение [ATTN_TDD.md](../ATTN_TDD.md), раздел 10 (DC Power System).
+Связанные разделы: [ATTN_12_switches.md](ATTN_12_switches.md) (стрелки, кросс, E0–E3), [ATTN_16_mechanisms.md](../ATTN_16_mechanisms.md) (механизмы и свет, §16.11), [ATTN_17_ui.md](../ATTN_17_ui.md) (панели, подсказки), [ATTN_19_game_flow.md](../ATTN_19_game_flow.md) (`sandbox_setup`), [ATTN_22_library.md](../ATTN_22_library.md) (правила режимов), [0_ATTN_21_dcc.md](../0_ATTN_21_dcc.md) (цифровое управление DCC и переход DC → DCC), [ATTN_GDD.md](../ATTN_GDD.md) (§4 цикл, §7 Operate, §9 Progression).
 
 Замечания разработчика в тексте помечены **[=атн=]** и выполняются сразу после чего помечаются **[<mark>сделано</mark>]**.
 
@@ -25,7 +25,7 @@
 
 ## 10.1. Назначение и состав
 
-`DCS` это вся электрика макета: источники и пульты, цепи рельсов, проводка, коммутаторы, потребители, защита, питание периферии. Аналоговое DC в приоритете; цифровое управление DCC строится на том же каркасе ([0_ATTN_21_dcc.md](0_ATTN_21_dcc.md)). Принцип GDD «от готового к собранному»: игрок может ездить на готовых клипах без проводов, а может уйти в разводку и защиту, набор объектов один.
+`DCS` это вся электрика макета: источники и пульты, цепи рельсов, проводка, коммутаторы, потребители, защита, питание периферии. Аналоговое DC в приоритете; цифровое управление DCC строится на том же каркасе ([0_ATTN_21_dcc.md](../0_ATTN_21_dcc.md)). Принцип GDD «от готового к собранному»: игрок может ездить на готовых клипах без проводов, а может уйти в разводку и защиту, набор объектов один.
 
 **Вне объёма:** протокол DCC (адреса, CV, декодеры); трёхрельсовый AC; настоящий расчёт цепей (Кирхгоф, SPICE): модель агрегированная «цепь, ток, лимит»; звук (электрика только отдаёт события).
 
@@ -311,7 +311,7 @@
 * Слой питания у стрелки с `power_routing` и в зоне носка: рельсы двух веток лежат друг на друге, цвет там может мерцать (ATTN_12).
 * Датчик занятости считает тележки на рельсах, оси и ток не моделируются; участок это связный набор траков без изостыков.
 * Порты света и шины работают только при `load_for_lights`.
-* DCC (`kind`, `signal`, `drive`, декодеры, модернизация) описан в [0_ATTN_21_dcc.md](0_ATTN_21_dcc.md), в DCS не реализован.
+* DCC (`kind`, `signal`, `drive`, декодеры, модернизация) описан в [0_ATTN_21_dcc.md](../0_ATTN_21_dcc.md), в DCS не реализован.
 
 ## 10.15. Замечания и доработки
 
@@ -365,7 +365,7 @@
 
 **DCC**
 
-План этапа «Основа DCC» (бывший D8) перенесён в [0_ATTN_21_dcc.md](0_ATTN_21_dcc.md).
+План этапа «Основа DCC» (бывший D8) перенесён в [0_ATTN_21_dcc.md](../0_ATTN_21_dcc.md).
 
 ### Замечания по тестам
 
@@ -375,11 +375,11 @@
 
 ## Related
 
-- [ATTN_TDD.md](ATTN_TDD.md) §10, §11, §21, Roadmap п. 6, 7, 8, 15
-- [ATTN_GDD.md](ATTN_GDD.md) §4, §7, §9, §13
+- [ATTN_TDD.md](../ATTN_TDD.md) §10, §11, §21, Roadmap п. 6, 7, 8, 15
+- [ATTN_GDD.md](../ATTN_GDD.md) §4, §7, §9, §13
 - [ATTN_12_switches.md](ATTN_12_switches.md) E0–E3, REMOTE-стрелка
-- [ATTN_16_mechanisms.md](ATTN_16_mechanisms.md) §16.11, C3–C8
-- [ATTN_17_ui.md](ATTN_17_ui.md) U15, D10
-- [ATTN_19_game_flow.md](ATTN_19_game_flow.md) `sandbox_setup`
-- [ATTN_22_library.md](ATTN_22_library.md) правила режимов
-- [0_ATTN_21_dcc.md](0_ATTN_21_dcc.md)
+- [ATTN_16_mechanisms.md](../ATTN_16_mechanisms.md) §16.11, C3–C8
+- [ATTN_17_ui.md](../ATTN_17_ui.md) U15, D10
+- [ATTN_19_game_flow.md](../ATTN_19_game_flow.md) `sandbox_setup`
+- [ATTN_22_library.md](../ATTN_22_library.md) правила режимов
+- [0_ATTN_21_dcc.md](../0_ATTN_21_dcc.md)

@@ -1,7 +1,7 @@
 # ATTN 20. Track Studio: редактор стилей траков и ресурсов для них **[реализовано]**
 
-Продолжение [TDD.md](ATTN_TDD.md), раздел 20 (Track Studio).
-Связанные разделы: [ATTN_15_track_styles.md](ATTN_15_track_styles.md) (стили траков, `TrackStyle`), [ATTN_12_switches.md](ATTN_12_switches.md) (стрелки и кросс используют `TrackStyle`), [ATTN_18_icon_studio.md](ATTN_18_icon_studio.md) (Icon Studio, общий образец студии), [ATTN_10_dc_power_system.md](ATTN_10_dc_power_system.md) (слой питания на рельсах), [ATTN_22_library.md](ATTN_22_library.md) (режим Library, куда студия войдёт).
+Продолжение [TDD.md](../ATTN_TDD.md), раздел 20 (Track Studio).
+Связанные разделы: [ATTN_15_track_styles.md](ATTN_15_track_styles.md) (стили траков, `TrackStyle`), [ATTN_12_switches.md](ATTN_12_switches.md) (стрелки и кросс используют `TrackStyle`), [ATTN_18_icon_studio.md](ATTN_18_icon_studio.md) (Icon Studio, общий образец студии), [ATTN_10_dc_power_system.md](ATTN_10_dc_power_system.md) (слой питания на рельсах), [ATTN_22_library.md](../ATTN_22_library.md) (режим Library, куда студия войдёт).
 
 ## Оглавление
 
@@ -21,7 +21,7 @@ Track Studio это отдельная сцена-инструмент (не ч�
 правят параметры, делают материалы из PBR-наборов текстур, делают и нормализуют меши шпал, рисуют профили рельса и балласта, проверяют контракт и сохраняют обычный `.tres`.
 Результат это стандартные ресурсы Godot, которые лежат в полях `TrackStyle`: `rail_profile`, `rail_material`, `sleeper_mesh`, `sleeper_material`, `ballast_profile`, `ballast_material`.
 
-Студия это прототип будущего режима Library ([ATTN_22_library.md](ATTN_22_library.md)): логика (материалы, шпалы, профили, проверки) лежит в `lib/` без интерфейса,
+Студия это прототип будущего режима Library ([ATTN_22_library.md](../ATTN_22_library.md)): логика (материалы, шпалы, профили, проверки) лежит в `lib/` без интерфейса,
 чтобы её мог вызвать игровой редактор кастомизации.
 
 **Запуск:** открыть `res://core/library/track_studio/track_studio.tscn`, F6. Запись результата в `res://` работает только при запуске из редактора Godot.
@@ -338,7 +338,7 @@ Track Studio это отдельная сцена-инструмент (не ч�
 - [ ] Открытие материала, собранного вне студии (нет метаданных `track_params`): вкладка берёт пресет роли и не читает параметры из `StandardMaterial3D`.
 - [ ] Тестовый объект только для прямой 23.9; нужны дуга, стрелка, кросс. **[устарело, см. ATTN_17 §17.13]** Снимается U3d.
 - [ ] Упаковка ORM и конвертация нормали синхронные: прогресс или фоновая задача для крупных наборов.
-- [ ] Название `Track Studio`: вопрос с `model_studio` решается при наполнении Library ([ATTN_22_library.md](ATTN_22_library.md)).
+- [ ] Название `Track Studio`: вопрос с `model_studio` решается при наполнении Library ([ATTN_22_library.md](../ATTN_22_library.md)).
 
 **Материалы и текстуры**
 
