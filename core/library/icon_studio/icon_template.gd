@@ -6,7 +6,7 @@ extends Resource
 ## Всё, что не зависит от размера объекта: углы, проекция, свет, фон, качество, коррекция, размер.
 ## Размер объекта (дистанция камеры, size орто) вычисляется кнопкой Fit по AABB.
 ## Пока шаблон один, рабочий, хранится в user://icon_studio.cfg (to_dict / from_dict).
-## Именованные шаблоны (.tres, список, «Сохранить как…») появятся в шаге I6.
+## Именованные шаблоны: встроенные (icon_templates.gd) и свои в user://icon_studio/templates/*.tres (шаг I6).
 
 const SLOT_COUNT := 6
 
@@ -57,8 +57,21 @@ const SLOT_COUNT := 6
 @export var contrast := 1.0
 @export var saturation := 1.0
 @export var sharpen := 0.0
+## Обрезка по прозрачности: объект масштабируется до размера кадра минус padding (нужен прозрачный фон)
 @export var trim_to_content := false
-@export var padding := 0.0
+@export_range(0.0, 0.4, 0.01) var padding := 0.0
+
+@export_category("Output")
+## Какие форматы писать за одну съёмку
+@export var fmt_png := true
+@export var fmt_webp := false
+@export var fmt_jpg := false
+@export var webp_lossy := false
+@export_range(0.05, 1.0, 0.01) var file_quality := 0.9
+## Подстановки: {category} {tag} {name} {key} {size}
+@export var name_pattern := "{category}_{name}_{size}"
+## Сколько цветов оставлять в SVG-пикселях (сравнение форматов)
+@export_range(2, 64) var svg_colors := 16
 
 
 func _init() -> void:

@@ -619,6 +619,42 @@ func _update_camera() -> void:
 		_pcam.global_transform = _cam.global_transform
 
 
+## Кадр для сохранения: отдельный SubViewport в том же мире, размер = результат × supersample.
+## Главная камера и свет не трогаются. Возвращает null, если мир не готов
+func render_image(out_size: Vector2i, supersample: int) -> Image:
+	if _views.is_empty() or _cam == null or not is_inside_tree():
+		return null
+	var ss := maxi(1, supersample)
+	while ss > 1 and maxi(out_size.x, out_size.y) * ss > 8192:
+		ss -= 1
+	var src := _views[0]
+	var vp := SubViewport.new()
+	vp.world_3d = src.world_3d
+	vp.size = out_size * ss
+	vp.transparent_bg = src.transparent_bg
+	vp.msaa_3d = src.msaa_3d
+	vp.screen_space_aa = src.screen_space_aa
+	vp.positional_shadow_atlas_size = src.positional_shadow_atlas_size
+	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	var cam := Camera3D.new()
+	vp.add_child(cam)
+	add_child(vp)
+	cam.projection = _cam.projection
+	cam.fov = _cam.fov
+	cam.size = _cam.size
+	cam.near = _cam.near
+	cam.far = _cam.far
+	cam.global_transform = _cam.global_transform
+	cam.current = true
+	# два кадра: первый - установка размера и камеры, второй - готовая картинка
+	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	await RenderingServer.frame_post_draw
+	var img := vp.get_texture().get_image()
+	vp.queue_free()
+	return img
+
+
 ## Поворот света относительно базиса (градусы). -Z света = направление луча
 func _aim(l: DirectionalLight3D, base: Basis, pitch_deg: float, yaw_deg: float) -> void:
 	l.global_basis = base * Basis.from_euler(Vector3(deg_to_rad(pitch_deg), deg_to_rad(yaw_deg), 0.0))

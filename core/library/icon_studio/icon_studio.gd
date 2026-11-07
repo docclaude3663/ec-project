@@ -6,11 +6,14 @@ extends Control
 ## Запуск: открыть icon_studio.tscn и нажать F6 (Run Current Scene).
 ## I0-I1: каркас, окно, настройки, список объектов, объект в мире.
 ## I2-I4: камера и слоты, свет, фон, тень, качество, предпросмотр в размере результата.
+## I5-I6: съёмка в файл (PNG/WebP/JPEG), шаблоны, пакетная съёмка, сравнение форматов и SVG.
 ## Интерфейс собирается кодом, чтобы не плодить правки в .tscn.
 
 const StudioSettings := preload("res://core/library/icon_studio/studio_settings.gd")
 const StudioWorld := preload("res://core/library/icon_studio/studio_world.gd")
 const Template := preload("res://core/library/icon_studio/icon_template.gd")
+const Capture := preload("res://core/library/icon_studio/studio_capture.gd")
+const Templates := preload("res://core/library/icon_studio/icon_templates.gd")
 
 const DEFAULT_SETTLE := 2
 const LAST_OBJECT_KEY := "last_object"
@@ -52,6 +55,17 @@ var _out_w: SpinBox
 var _out_h: SpinBox
 var _look_option: OptionButton
 var _reset_dialog: ConfirmationDialog
+var _status: Label
+var _name_edit: LineEdit
+var _tpl_option: OptionButton
+var _tpl_auto: CheckBox
+var _tpl_save_dialog: ConfirmationDialog
+var _tpl_save_edit: LineEdit
+var _batch_cat: OptionButton
+var _batch_progress: Label
+var _batch_cancel := false
+var _busy := false
+var _compare_window: Window
 
 
 func _init() -> void:
@@ -70,6 +84,7 @@ func _ready() -> void:
 	_load_template()
 	_build_ui()
 	_load_objects()
+	_fill_batch_cats()
 	_apply_saved_ui()
 	_sync_controls()
 	_apply_template()
@@ -95,6 +110,9 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		return
 	if k.keycode == KEY_F:
 		world.fit()
+		get_viewport().set_input_as_handled()
+	elif k.keycode == KEY_P:
+		_do_capture()
 		get_viewport().set_input_as_handled()
 	elif k.keycode >= KEY_1 and k.keycode < KEY_1 + Template.SLOT_COUNT:
 		_on_slot(k.keycode - KEY_1)
@@ -378,6 +396,21 @@ func _build_right_panel() -> void:
 	_info.text = "Выберите объект в списке."
 	rv.add_child(_info)
 
+	var cap_row := HBoxContainer.new()
+	rv.add_child(cap_row)
+	var cap_btn := Button.new()
+	cap_btn.text = "Снять (P)"
+	cap_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cap_btn.pressed.connect(_do_capture)
+	cap_row.add_child(cap_btn)
+	var open_btn := Button.new()
+	open_btn.text = "Открыть папку"
+	open_btn.pressed.connect(_open_out_dir)
+	cap_row.add_child(open_btn)
+	_status = Label.new()
+	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	rv.add_child(_status)
+
 	# --- Вкладки настроек ---
 	var tabs := TabContainer.new()
 	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -386,6 +419,8 @@ func _build_right_panel() -> void:
 	_build_tab_light(_tab(tabs, "Свет"))
 	_build_tab_background(_tab(tabs, "Фон"))
 	_build_tab_quality(_tab(tabs, "Качество"))
+	_build_tab_output(_tab(tabs, "Съёмка"))
+	_build_tab_templates(_tab(tabs, "Шаблоны"))
 
 	var reset_btn := Button.new()
 	reset_btn.text = "Сброс…"
@@ -680,6 +715,8 @@ func _sync_controls() -> void:
 					(b.ctrl as OptionButton).select(idx)
 	_out_w.set_value_no_signal(template.output_size.x)
 	_out_h.set_value_no_signal(template.output_size.y)
+	if _name_edit and _name_edit.text != template.name_pattern:
+		_name_edit.text = template.name_pattern
 	_refresh_slots()
 
 
@@ -714,6 +751,7 @@ func _apply_saved_ui() -> void:
 	_settle.set_value_no_signal(int(settings.get_value("ui", "settle", DEFAULT_SETTLE)))
 	_auto_fit.set_pressed_no_signal(bool(settings.get_value("ui", "auto_fit", true)))
 	_per_object.set_pressed_no_signal(bool(settings.get_value("ui", "per_object", false)))
+	_tpl_auto.set_pressed_no_signal(bool(settings.get_value("ui", "tpl_auto", false)))
 	var z := int(settings.get_value("ui", "preview_zoom", 1))
 	for i in _preview_zoom.item_count:
 		if _preview_zoom.get_item_id(i) == z:
@@ -876,10 +914,19 @@ func _show_object(s: EntitySetting, force := false) -> void:
 	settings.set_value("state", LAST_OBJECT_KEY, s.resource_path)
 	_info.text = "Загрузка: %s ..." % s.name
 	_flex_box.visible = false
+	var auto_slot := false
+	if _tpl_auto != null and _tpl_auto.button_pressed:
+		var tid: StringName = Templates.BY_CATEGORY.get(s.category, &"")
+		if tid != &"":
+			_use_template(Templates.make_builtin(tid), true)
+			auto_slot = true
 	var t0 := Time.get_ticks_msec()
 	var info: Dictionary = await world.set_subject(s, _source.get_selected_id(), int(_settle.value))
 	if info.stale or s != _current:
 		return
+	if info.ok and auto_slot and template.slots[0] is Dictionary:
+		world.go_slot(template.slots[0], false)
+		_sync_camera_controls()
 	if info.ok and _auto_fit.button_pressed:
 		world.fit()
 	_flex_box.visible = world.has_flex()
@@ -936,3 +983,318 @@ func _reset_all() -> void:
 	_rebuild_tree()
 	settings.flush()
 	_reload_current()
+
+
+# ==========================================
+# СЪЁМКА И ШАБЛОНЫ (I5, I6)
+# ==========================================
+
+func _build_tab_output(box: VBoxContainer) -> void:
+	_add_check(box, "PNG", "fmt_png")
+	_add_check(box, "WebP", "fmt_webp")
+	_add_check(box, "JPEG (на цвете фона)", "fmt_jpg")
+	_add_check(box, "WebP с потерями", "webp_lossy")
+	_add_slider(box, "Качество файла", "file_quality", 0.05, 1.0, 0.01)
+	_add_slider(box, "Резкость", "sharpen", 0.0, 2.0, 0.05)
+	_add_check(box, "Обрезать по содержимому (прозр. фон)", "trim_to_content")
+	_add_slider(box, "Поля при обрезке", "padding", 0.0, 0.4, 0.01)
+	var row := _row(box, "Имя файла")
+	_name_edit = LineEdit.new()
+	_name_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_name_edit.tooltip_text = "{category} {tag} {name} {key} {size}. Если файл есть, добавится _2, _3"
+	_name_edit.text_changed.connect(func(t: String): _set_template("name_pattern", t))
+	row.add_child(_name_edit)
+	var f := Label.new()
+	f.text = "Папка: " + Capture.OUT_DIR
+	f.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	box.add_child(f)
+	box.add_child(HSeparator.new())
+	_add_slider(box, "SVG, цветов", "svg_colors", 2.0, 64.0, 1.0)
+	var cb := Button.new()
+	cb.text = "Сравнить форматы (текущий кадр)"
+	cb.pressed.connect(_do_compare)
+	box.add_child(cb)
+
+
+func _build_tab_templates(box: VBoxContainer) -> void:
+	var row := HBoxContainer.new()
+	box.add_child(row)
+	_tpl_option = OptionButton.new()
+	_tpl_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(_tpl_option)
+	var apply_b := Button.new()
+	apply_b.text = "Применить"
+	apply_b.pressed.connect(func():
+		var t: Template = Templates.load_template(_tpl_option.get_item_metadata(_tpl_option.selected))
+		if t:
+			_use_template(t, false))
+	row.add_child(apply_b)
+	var row2 := HBoxContainer.new()
+	box.add_child(row2)
+	var save_b := Button.new()
+	save_b.text = "Сохранить как…"
+	save_b.pressed.connect(func():
+		_tpl_save_edit.text = template.title
+		_tpl_save_dialog.popup_centered())
+	row2.add_child(save_b)
+	var del_b := Button.new()
+	del_b.text = "Удалить"
+	del_b.pressed.connect(func():
+		var i := _tpl_option.selected
+		if i >= 0 and not bool(_tpl_option.get_item_metadata(i) in Templates.builtin_ids()):
+			Templates.delete_user(_tpl_option.get_item_metadata(i))
+			_refresh_templates())
+	row2.add_child(del_b)
+	_tpl_auto = CheckBox.new()
+	_tpl_auto.text = "Авто по категории при выборе объекта"
+	_tpl_auto.toggled.connect(func(on: bool): settings.set_value("ui", "tpl_auto", on))
+	box.add_child(_tpl_auto)
+	var n := Label.new()
+	n.text = "Шаблон меняет камеру, свет, фон, слоты. Размер, формат и имя файла остаются."
+	n.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	box.add_child(n)
+
+	box.add_child(HSeparator.new())
+	var bl := Label.new()
+	bl.text = "Пакетная съёмка категории"
+	box.add_child(bl)
+	var brow := HBoxContainer.new()
+	box.add_child(brow)
+	_batch_cat = OptionButton.new()
+	_batch_cat.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	brow.add_child(_batch_cat)
+	var bb := Button.new()
+	bb.text = "Снять все"
+	bb.pressed.connect(_do_batch)
+	brow.add_child(bb)
+	var bc := Button.new()
+	bc.text = "Отмена"
+	bc.pressed.connect(func(): _batch_cancel = true)
+	brow.add_child(bc)
+	_batch_progress = Label.new()
+	box.add_child(_batch_progress)
+
+	_tpl_save_dialog = ConfirmationDialog.new()
+	_tpl_save_dialog.title = "Сохранить шаблон"
+	_tpl_save_edit = LineEdit.new()
+	_tpl_save_dialog.add_child(_tpl_save_edit)
+	_tpl_save_dialog.confirmed.connect(func():
+		var title := _tpl_save_edit.text.strip_edges()
+		if title != "":
+			Templates.save_user(template, title)
+			_refresh_templates())
+	add_child(_tpl_save_dialog)
+	_refresh_templates()
+
+
+func _fill_batch_cats() -> void:
+	_batch_cat.clear()
+	var cats := {}
+	for s in _all:
+		cats[String(s.category)] = true
+	for c in cats:
+		_batch_cat.add_item(c)
+
+
+func _refresh_templates() -> void:
+	_tpl_option.clear()
+	for e in Templates.list_all():
+		_tpl_option.add_item(("%s" if e.builtin else "%s *") % e.title)
+		_tpl_option.set_item_metadata(_tpl_option.item_count - 1, e.id)
+
+
+## Подставляет шаблон в рабочий. keep_output: размер, формат, имя, качество и суперсэмплинг остаются
+func _use_template(t: Template, keep_output: bool) -> void:
+	var d := t.to_dict()
+	if keep_output:
+		for k in ["output_size", "format", "webp_lossy", "file_quality", "name_pattern", "quality_id", "supersample", "svg_colors"]:
+			d.erase(k)
+	template.from_dict(d)
+	_sync_controls()
+	_template_changed()
+	world.fit()
+	_sync_camera_controls()
+
+
+func _open_out_dir() -> void:
+	Capture.ensure_dir(Capture.OUT_DIR)
+	OS.shell_open(ProjectSettings.globalize_path(Capture.OUT_DIR))
+
+
+## Кадр, обработанный по шаблону. null, если снимать нечего
+func _capture_image() -> Image:
+	if _current == null or world.subject == null:
+		return null
+	var raw: Image = await world.render_image(template.output_size, template.supersample)
+	if raw == null:
+		return null
+	return Capture.process(raw, template)
+
+
+func _save_current(img: Image, dir: String) -> String:
+	Capture.ensure_dir(dir)
+	var fmts := Capture.selected_formats(template)
+	if fmts.is_empty():
+		return "ошибка: не выбран ни один формат"
+	var base := Capture.make_name(template.name_pattern, _current, template.output_size)
+	var parts: Array[String] = []
+	for f in fmts:
+		var path := Capture.free_path(dir, base, Capture.FORMATS[f])
+		var err := Capture.save(img, path, template, f, bool(template.webp_lossy))
+		if err != OK:
+			return "ошибка записи %s: %s" % [path, error_string(err)]
+		parts.append("%s %d байт" % [path.get_file(), Capture.file_size(path)])
+	return "; ".join(parts)
+
+
+func _do_capture() -> void:
+	if _busy:
+		return
+	_busy = true
+	_status.text = "Съёмка…"
+	var img := await _capture_image()
+	if img == null:
+		_status.text = "Нечего снимать: выберите объект и дождитесь загрузки."
+	else:
+		_status.text = "Сохранено: " + _save_current(img, Capture.OUT_DIR)
+	_busy = false
+
+
+func _do_batch() -> void:
+	if _busy or _batch_cat.item_count == 0:
+		return
+	_busy = true
+	_batch_cancel = false
+	var cat := _batch_cat.get_item_text(_batch_cat.selected)
+	var list: Array[EntitySetting] = []
+	for s in _all:
+		if String(s.category) == cat:
+			list.append(s)
+	var ok := 0
+	var fail: Array[String] = []
+	for i in list.size():
+		if _batch_cancel:
+			break
+		_batch_progress.text = "%d / %d: %s" % [i + 1, list.size(), list[i].name]
+		await _show_object(list[i], true)
+		await get_tree().process_frame
+		var img := await _capture_image()
+		if img == null:
+			fail.append(list[i].name)
+			continue
+		var res := _save_current(img, Capture.OUT_DIR)
+		if res.begins_with("ошибка"):
+			fail.append(list[i].name)
+		else:
+			ok += 1
+	_batch_progress.text = "%s: снято %d из %d%s" % ["Отменено" if _batch_cancel else "Готово", ok, list.size(),
+			("; не вышло: " + ", ".join(fail)) if not fail.is_empty() else ""]
+	_busy = false
+
+
+## Один кадр во всех форматах: файлы и compare.md в icons/_compare/, окно с просмотром ×1/×4
+func _do_compare() -> void:
+	if _busy:
+		return
+	_busy = true
+	_status.text = "Сравнение форматов…"
+	var img := await _capture_image()
+	if img == null:
+		_status.text = "Нечего снимать: выберите объект."
+		_busy = false
+		return
+	var dir := Capture.OUT_DIR + "_compare/"
+	Capture.ensure_dir(dir)
+	var base := Capture.make_name(template.name_pattern, _current, template.output_size)
+	var q := float(template.file_quality)
+	var rows: Array = []   # {label, path, bytes, img}
+
+	var add_raster := func(label: String, ext: String, fmt: int, lossy: bool):
+		var path: String = dir + base + "_" + label + "." + ext
+		if Capture.save(img, path, template, fmt, lossy) == OK:
+			rows.append({"label": label, "path": path, "bytes": Capture.file_size(path),
+					"img": Image.load_from_file(ProjectSettings.globalize_path(path))})
+	add_raster.call("png", "png", 0, false)
+	add_raster.call("webp_lossless", "webp", 1, false)
+	add_raster.call("webp_lossy_q%d" % roundi(q * 100.0), "webp", 1, true)
+	add_raster.call("jpg_q%d" % roundi(q * 100.0), "jpg", 2, false)
+
+	var add_svg := func(label: String, text: String):
+		var path: String = dir + base + "_" + label + ".svg"
+		var f := FileAccess.open(path, FileAccess.WRITE)
+		if f == null:
+			return
+		f.store_string(text)
+		f.close()
+		var si := Image.new()
+		si.load_svg_from_string(text)
+		rows.append({"label": label, "path": path, "bytes": Capture.file_size(path), "img": si})
+	add_svg.call("svg_wrapper", Capture.svg_wrapper(img))
+	add_svg.call("svg_runs_%dc" % int(template.svg_colors), Capture.svg_runs(img, int(template.svg_colors)))
+
+	var md := "\n## %s, %dx%d, %s\n\n| Вариант | Байт | % от PNG |\n|---|---|---|\n" % [base, img.get_width(), img.get_height(), Time.get_datetime_string_from_system()]
+	var png_bytes := maxi(1, int(rows[0].bytes)) if not rows.is_empty() else 1
+	for r in rows:
+		md += "| %s | %d | %d%% |\n" % [r.label, r.bytes, roundi(100.0 * float(r.bytes) / float(png_bytes))]
+	var mdp := dir + "compare.md"
+	var mf := FileAccess.open(mdp, FileAccess.READ_WRITE if FileAccess.file_exists(mdp) else FileAccess.WRITE)
+	if mf:
+		mf.seek_end()
+		mf.store_string(md)
+		mf.close()
+	_status.text = "Сравнение записано в icons/_compare/ (файлы и compare.md)"
+	_show_compare(rows)
+	_busy = false
+
+
+func _show_compare(rows: Array) -> void:
+	if _compare_window != null:
+		_compare_window.queue_free()
+	var w := Window.new()
+	w.title = "Сравнение форматов"
+	w.size = Vector2i(1000, 520)
+	w.close_requested.connect(func(): w.queue_free())
+	_compare_window = w
+	var pc := PanelContainer.new()
+	pc.set_anchors_preset(Control.PRESET_FULL_RECT)
+	w.add_child(pc)
+	var v := VBoxContainer.new()
+	pc.add_child(v)
+	var zrow := HBoxContainer.new()
+	v.add_child(zrow)
+	var zl := Label.new()
+	zl.text = "Масштаб просмотра:"
+	zrow.add_child(zl)
+	var zo := OptionButton.new()
+	zo.add_item("×1", 1)
+	zo.add_item("×4", 4)
+	zrow.add_child(zo)
+	var sc := ScrollContainer.new()
+	sc.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	v.add_child(sc)
+	var hb := HBoxContainer.new()
+	sc.add_child(hb)
+	var rects: Array[TextureRect] = []
+	for r in rows:
+		var col := VBoxContainer.new()
+		hb.add_child(col)
+		var lab := Label.new()
+		lab.text = "%s\n%d байт" % [r.label, r.bytes]
+		col.add_child(lab)
+		var im: Image = r.img
+		var tr := TextureRect.new()
+		if im != null and not im.is_empty():
+			tr.texture = ImageTexture.create_from_image(im)
+			tr.custom_minimum_size = Vector2(im.get_size())
+		tr.stretch_mode = TextureRect.STRETCH_SCALE
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		col.add_child(tr)
+		rects.append(tr)
+	zo.item_selected.connect(func(_i: int):
+		var z := zo.get_selected_id()
+		for tr in rects:
+			if tr.texture:
+				tr.custom_minimum_size = Vector2(tr.texture.get_size()) * float(z))
+	add_child(w)
+	w.popup_centered()
