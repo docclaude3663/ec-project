@@ -580,8 +580,10 @@ func load_data(_data: Dictionary) -> void:
 
 
 ## Вызывается из SaveManager после того, как все объекты расставлены.
-## Возвращает false, если вагон был на рельсах, но трак под ним пока не найден (flex или физика еще не готовы):
-## SaveManager повторит попытку через кадр. true: вагон сел или садиться не нужно
+## Каждая тележка находит свой трак лучом: вагон может стоять на стыке, и тогда тележки на разных траках
+## (раньше все тележки ставились на трак первой и вагон на стыке сжимался).
+## Возвращает false, если вагон был на рельсах, но трак под первой тележкой пока не найден (flex или физика еще не
+## готовы): SaveManager повторит попытку через кадр. true: вагон сел или садиться не нужно
 func restore_snap_after_load() -> bool:
 	if not _saved_on_rails:
 		return true   # вагон был сошедшим - остаётся в физике Godot
@@ -589,34 +591,57 @@ func restore_snap_after_load() -> bool:
 	if not _bogie or _bogie.bogies_data.is_empty():
 		return true   # нечем искать трак
 
-	# Датчик первой тележки находит трак под ней
-	var b := _bogie.bogies_data[0]
-	if not is_instance_valid(b.raycast) or not is_instance_valid(b.pivot):
-		return false
-	b.raycast.force_raycast_update()
-	if not b.raycast.is_colliding():
+	var hits: Array[Dictionary] = []
+	for b in _bogie.bogies_data:
+		var hit := _track_under_bogie(b)
+		if not hit.is_empty():
+			hits.append(hit)
+	# Первая тележка обязательна (по ней считаем направление и положение центра). Остальные без трака
+	# ставятся как раньше, относительно трака первой
+	var first: Dictionary = {}
+	for h in hits:
+		if h.bogie_id == _bogie.bogies_data[0].id:
+			first = h
+	if first.is_empty():
 		return false
 
-	var track_entity := _find_entity_from_collider(b.raycast.get_collider())
-	if not track_entity:
-		return false
-	var pc := track_entity.get_comp(C_Path) as C_Path
-	if not pc or not pc.curve or not pc.path_node:
-		return false   # под лучом не трак (земля и т.п.) - не садимся, иначе is_on_rails=true без пути
-
-	# Смещение считаем по ФАКТИЧЕСКОМУ положению тележки, а не из сейва (там значение с момента посадки).
-	# offset - положение ЦЕНТРА вагона на сплайне (так его ждёт set_track_to_bogies_data).
-	var route := pc.route_at(pc.path_node.to_local(b.pivot.global_position))   # XX claude-switch: кросс, маршрут под тележкой
-	var crv := pc.curve_of(route)
-	var s_b := crv.get_closest_offset(pc.path_node.to_local(b.pivot.global_position))
-	var t := crv.sample_baked_with_rotation(s_b)
+	var b0 := _bogie.bogies_data[0]
+	var pc := first.track.get_comp(C_Path) as C_Path
+	var crv := pc.curve_of(first.route)
+	var t := crv.sample_baked_with_rotation(first.distance)
 	var tangent := (pc.path_node.global_basis * -t.basis.z).normalized()
 	var flipped := (-entity.global_basis.z).dot(tangent) < 0.0
 	var placement_dir := 1.0 if flipped else -1.0
-	var offset := s_b - b.pivot.position.z * placement_dir
+	# offset - положение ЦЕНТРА вагона на сплайне (так его ждёт set_track_to_bogies_data)
+	var offset: float = first.distance - b0.pivot.position.z * placement_dir
 
-	on_train_snapped({"track": track_entity, "offset": offset, "route": route})
+	on_train_snapped({"track": first.track, "offset": offset, "route": first.route, "bogie_hits": hits})
 	return true
+
+
+## Трак под тележкой по лучу датчика: {bogie_id, track, route, distance}. Пусто, если под лучом не трак
+## (земля, воздух, коллизии еще не готовы). distance считается по ФАКТИЧЕСКОМУ положению тележки, а не из сейва
+## (там значение с момента посадки)
+func _track_under_bogie(b: C_Bogie.BogieData) -> Dictionary:
+	if not is_instance_valid(b.raycast) or not is_instance_valid(b.pivot):
+		return {}
+	b.raycast.force_raycast_update()
+	if not b.raycast.is_colliding():
+		return {}
+	var track_entity := _find_entity_from_collider(b.raycast.get_collider())
+	if not track_entity:
+		return {}
+	var pc := track_entity.get_comp(C_Path) as C_Path
+	if not pc or not pc.curve or not pc.path_node:
+		return {}   # под лучом не трак (земля и т.п.) - не садимся, иначе is_on_rails=true без пути
+	var local_pos := pc.path_node.to_local(b.pivot.global_position)
+	var route := pc.route_at(local_pos)   # XX claude-switch: кросс, маршрут под тележкой
+	return {
+		"bogie_id": b.id,
+		"track": track_entity,
+		"route": route,
+		"distance": pc.curve_of(route).get_closest_offset(local_pos),
+	}
 
 
 

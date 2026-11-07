@@ -83,8 +83,24 @@ func set_track_to_bogies_data(track_data: Dictionary, w_flipped: bool) -> Dictio
 	var path_comp = track.get_comp(C_Path)
 	var route: int = track_data.get("route", 0)   # XX claude-switch
 	var curve_len = path_comp.curve_of(route).get_baked_length()
+
+	# "bogie_hits" (посадка после загрузки): у каждой тележки свой трак и свое положение на нем. Так вагон на стыке
+	# траков (тележки на разных траках, обычное дело на коротких пандусах и эстакадах) не сжимается на трак первой тележки
+	var hits := {}
+	for h in track_data.get("bogie_hits", []):
+		hits[h.bogie_id] = h
 	
 	for bogie in bogies_data:
+		if hits.has(bogie.id):
+			var hit: Dictionary = hits[bogie.id]
+			var hit_track: Entity = hit.track
+			if is_instance_valid(hit_track) and hit_track.has_comp(C_Path):
+				var hit_path := hit_track.get_comp(C_Path) as C_Path
+				bogie.current_track = hit_track
+				bogie.route = hit.route
+				bogie.track_distance = clampf(hit.distance, 0.0, hit_path.curve_of(hit.route).get_baked_length())
+				_assist_update_calc_global_pos(bogie)
+				continue
 		bogie.current_track = track
 		bogie.route = route
 		
