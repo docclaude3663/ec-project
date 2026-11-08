@@ -51,9 +51,7 @@ const CARDS := {
 	&"room": [
 		{"id": &"room_visible", "title": "Комната", "toggle": true, "default": true},
 		{"id": &"ceiling", "title": "Потолок", "toggle": true},
-		{"id": &"room_kid_room_10", "title": "Комната: детская", "group": &"room_pick", "default": true, "tip": "Заменяет комнату целиком (в памяти одна)"},
-		{"id": &"room_cube", "title": "Комната: пустой куб", "group": &"room_pick", "tip": "Пустая коробка для текстур и импорта. Заменяет комнату целиком"},
-		{"id": &"room_attic", "title": "Комната: мансарда", "group": &"room_pick", "tip": "Скос крыши, окна закрыты, свет только лампы дневного света. Заменяет комнату целиком"},
+		# Здесь стоят карточки выбора комнаты (группа room_pick): их строит _cards_for из RoomCatalog (встроенные и папки data/rooms)
 		{"id": &"wall_cream", "title": "Стены: беж", "group": &"wall"},
 		{"id": &"wall_sky", "title": "Стены: небо", "group": &"wall"},
 		{"id": &"wall_mint", "title": "Стены: мята", "group": &"wall"},
@@ -100,7 +98,7 @@ func create_buttons(category: StringName, _tag: StringName, on_pressed: Callable
 	var out: Array[Button] = []
 	_groups.clear()
 	_cards.clear()
-	for data in CARDS.get(category, []):
+	for data in _cards_for(category):
 		var card := ObserveCard.new()
 		card.config(category, data, _group_for(data))
 		if card.toggle_mode:
@@ -170,8 +168,27 @@ func _is_on(data: Dictionary) -> bool:
 	return false
 
 
+## Карточки категории. В Room после «Потолок» вставляются комнаты из RoomCatalog (радио-группа room_pick), а в редакторе
+## ещё и кнопка записи комнаты в сцену
+func _cards_for(category: StringName) -> Array:
+	var base: Array = CARDS.get(category, [])
+	if category != &"room":
+		return base
+	var out: Array = []
+	for d in base:
+		out.append(d)
+		if d.id == &"ceiling":
+			for e in RoomCatalog.entries():
+				out.append({"id": StringName("room_" + String(e.id)), "title": "Комната: " + String(e.title).to_lower(),
+						"group": &"room_pick", "default": e.id == RoomCatalog.DEFAULT_ID, "tip": e.tip})
+			if OS.has_feature("editor"):
+				out.append({"id": &"room_save_scene", "title": "Комнату в сцену",
+						"tip": "Только из редактора. Записывает текущую процедурную комнату в data/rooms/<id>/ (сцена и паспорт). Со следующего запуска комната берётся из сцены"})
+	return out
+
+
 func _card_data(category: StringName, id: StringName) -> Dictionary:
-	for d in CARDS.get(category, []):
+	for d in _cards_for(category):
 		if d.id == id:
 			return d
 	return {}

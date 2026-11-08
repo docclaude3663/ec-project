@@ -30,6 +30,7 @@ var _room_lights: Node3D   # потолочные лампы RoomConfig.lamps: �
 var _mats := {}
 var _walls: Array[MeshInstance3D] = []   # стены, рама, шторы и подоконник: тень только в Observe
 var _decor: RoomDecor
+var _root: RoomRoot   # корень сцены комнаты (RoomConfig.scene), null у процедурной комнаты
 var _wall_col := Color(0.80, 0.79, 0.76)
 var _room_visible := true
 var _ceiling_visible := false
@@ -103,19 +104,25 @@ func _connect_gfx() -> void:
 	GFX.quality_changed.connect(func(_id): _apply_detail())
 	if _decor:
 		_decor.set_lamp_glow(GFX.is_lamp_on())
+	if _root:
+		_root.set_lamp_glow(GFX.is_lamp_on())
 	_apply_detail()
 
 
 func _on_lamp_changed(on: bool) -> void:
 	if _decor:
 		_decor.set_lamp_glow(on)
+	if _root:
+		_root.set_lamp_glow(on)
 
 
 func _apply_detail() -> void:
-	if _decor == null:
-		return
 	var q: QualityPreset = GFX.get_quality()
-	_decor.set_detail(q.room_detail_lod if q else 1)
+	var lod := q.room_detail_lod if q else 1
+	if _decor:
+		_decor.set_detail(lod)
+	if _root:
+		_root.set_detail(lod)
 
 
 ## Тень стен, рамы и штор: рисунок окна на столе только в Observe
@@ -152,23 +159,134 @@ func rebuild_room() -> void:
 	_build_room()
 
 
+## Dev (только запуск из редактора): записывает текущую процедурную комнату в сцену data/rooms/<id>/<id>.tscn
+## и паспорт <id>.tres рядом. Со следующего запуска RoomCatalog берёт сцену вместо кода. Возвращает путь сцены или "".
+## Структура сцены описана в RoomRoot. Живую комнату это не меняет: в сцену уходят копии нод (ресурсы общие)
+func save_room_scene() -> String:
+	if not OS.has_feature("editor"):
+		push_warning("RoomBuilder: сохранить комнату в сцену можно только при запуске из редактора")
+		return ""
+	if _root != null:
+		push_warning("RoomBuilder: комната %s уже из сцены, правьте её tscn в редакторе" % config.id)
+		return ""
+	if visuals == null or not is_instance_valid(visuals):
+		return ""
+	var id := String(config.id)
+	var dir := "res://data/rooms/%s" % id
+	var scene_path := "%s/%s.tscn" % [dir, id]
+	var passport_path := "%s/%s.tres" % [dir, id]
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(dir))
+
+	var root := RoomRoot.new()
+	root.name = id
+	var named := {}   # Floor, Ceiling, DecorT2, DecorT3, FakeAO
+	var shell := Node3D.new()
+	shell.name = RoomRoot.SHELL
+	var decor := Node3D.new()
+	decor.name = "Decor"
+	for n in visuals.get_children():
+		var copy := n.duplicate()
+		if String(n.name) in ["Floor", "Ceiling", "DecorT2", "DecorT3", "FakeAO"]:
+			named[String(n.name)] = copy
+		elif _has_shell_mesh(n):
+			shell.add_child(copy)
+		else:
+			decor.add_child(copy)
+	for key in ["Floor", "Shell", "Ceiling", "Decor", "DecorT2", "DecorT3", "FakeAO"]:
+		if key == "Shell":
+			root.add_child(shell)
+		elif key == "Decor":
+			root.add_child(decor)
+		elif named.has(key):
+			root.add_child(named[key])
+	if is_instance_valid(_room_lights):
+		var lights := _room_lights.duplicate()
+		lights.name = RoomRoot.LIGHTS
+		root.add_child(lights)
+	_set_owner_rec(root, root)
+
+	var packed := PackedScene.new()
+	var err := packed.pack(root)
+	if err != OK:
+		push_warning("RoomBuilder: PackedScene.pack не удался (%d)" % err)
+		root.free()
+		return ""
+	err = ResourceSaver.save(packed, scene_path)
+	root.free()
+	if err != OK:
+		push_warning("RoomBuilder: не записан %s (%d)" % [scene_path, err])
+		return ""
+
+	var pc := config.duplicate() as RoomConfig
+	pc.lamps = []
+	pc.variants = {}
+	for b in RoomCatalog.BUILTIN:
+		if b.id == config.id:
+			pc.title = b.title
+			pc.tip = b.tip
+	pc.scene = ResourceLoader.load(scene_path, "PackedScene", ResourceLoader.CACHE_MODE_REPLACE) as PackedScene
+	err = ResourceSaver.save(pc, passport_path)
+	if err != OK:
+		push_warning("RoomBuilder: не записан %s (%d)" % [passport_path, err])
+		return ""
+	print("[ROOM] записано: %s и %s. Перезапустите игру: комната возьмётся из сцены" % [scene_path, passport_path])
+	return scene_path
+
+
+func _has_shell_mesh(n: Node) -> bool:
+	if n is MeshInstance3D and ((n as MeshInstance3D).layers & _shell_layer()):
+		return true
+	for c in n.get_children():
+		if _has_shell_mesh(c):
+			return true
+	return false
+
+
+func _set_owner_rec(n: Node, o: Node) -> void:
+	for c in n.get_children():
+		c.owner = o
+		_set_owner_rec(c, o)
+
+
 func _build_room() -> void:
 	_walls.clear()
 	ceiling = null
+	_ceiling_mesh = null
 	_decor = null
+	_root = null
 	visuals = Node3D.new()
 	visuals.name = "Room"
 	add_child(visuals)
-	_build_room_lights()
+	_clear_room_lights()
 	if config.scene:
-		visuals.add_child(config.scene.instantiate())
+		_build_from_scene()
 	else:
+		_build_room_lights()
 		_build_greybox()
 	# Состояние переживает пересборку
 	visuals.visible = _room_visible
 	_apply_ceiling()
 	set_walls_cast_shadow(_walls_shadow_now)
 	_apply_detail()
+
+
+## Комната из сцены (RoomConfig.scene, корень RoomRoot): лампы выносятся рядом с Room, остальное лежит в visuals
+func _build_from_scene() -> void:
+	var inst := config.scene.instantiate()
+	var r := inst as RoomRoot
+	if r == null:
+		push_warning("RoomBuilder: корень сцены комнаты %s не RoomRoot, слои, потолок и лампы не настроены" % config.id)
+		visuals.add_child(inst)
+		return
+	_root = r
+	r.setup(_vis_layer(), _shell_layer())
+	_room_lights = r.take_lights()
+	if _room_lights:
+		add_child(_room_lights)
+	visuals.add_child(r)
+	_walls.append_array(r.get_wall_meshes())
+	ceiling = r.get_ceiling()
+	_ceiling_mesh = r.get_ceiling_mesh()
 
 
 ## Id текущей комнаты (в сейв)
@@ -259,6 +377,10 @@ func _on_observe_action(_cat: StringName, _id: StringName, _pressed: bool) -> vo
 			return
 		&'ceiling':
 			set_ceiling_visible(_pressed)
+			return
+		&'room_save_scene':
+			if _pressed:
+				save_room_scene()
 			return
 	if String(_id).begins_with("room_") and RoomCatalog.has(StringName(String(_id).trim_prefix("room_"))):
 		if _pressed:
@@ -587,12 +709,15 @@ func _collider(parent: Node, nm: String, size: Vector3, center: Vector3, layers:
 
 ## Потолочные лампы дневного света из RoomConfig.lamps. SpotLight3D вниз, тень только у ламп с shadow = true (тень дорогая).
 ## Свет живёт в RoomLights рядом с Room, а не внутри: кнопка «Комната» прячет стены, но не должна гасить свет над макетом
-func _build_room_lights() -> void:
+func _clear_room_lights() -> void:
 	if is_instance_valid(_room_lights):
 		if _room_lights.get_parent() == self:
 			remove_child(_room_lights)
 		_room_lights.queue_free()
 	_room_lights = null
+
+
+func _build_room_lights() -> void:
 	if config.lamps.is_empty():
 		return
 	_room_lights = Node3D.new()
@@ -618,6 +743,8 @@ func _build_room_lights() -> void:
 
 
 func _lamp_height() -> float:
+	if not is_inside_tree():
+		return 120.0
 	var l := get_tree().get_first_node_in_group(&"gfx_lamp") as Node3D
 	return l.position.y if l else 120.0
 
