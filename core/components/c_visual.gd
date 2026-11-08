@@ -48,6 +48,8 @@ func update_visual(_removing_type: Script = null) -> void:
 		_set_overlay(visual_settings.ghost_material)
 	elif has_comp(C_Selected) and _removing_type != C_Selected:
 		_set_overlay(visual_settings.selected_material)
+	elif has_comp(C_MultiSelected) and _removing_type != C_MultiSelected:   # XX claude-switch: группа, выбранная рамкой
+		_set_overlay(visual_settings.selected_material)
 	elif has_comp(C_Hovered) and _removing_type != C_Hovered:
 		_set_overlay(visual_settings.hover_material)
 	else:
@@ -62,7 +64,8 @@ func _pick_outline_state(removing: Script) -> int:
 		return Outline.S.BLOCKED
 	if has_comp(C_Ghost) and removing != C_Ghost:
 		return Outline.S.GHOST
-	# TODO мультиселект: if has_comp(C_MultiSelected) and removing != C_MultiSelected: return Outline.S.MULTI
+	if has_comp(C_MultiSelected) and removing != C_MultiSelected:   # XX claude-switch: группа, выбранная рамкой
+		return Outline.S.MULTI
 	if has_comp(C_Selected) and removing != C_Selected:
 		return Outline.S.SELECTED
 	if has_comp(C_Hovered) and removing != C_Hovered:

@@ -262,6 +262,8 @@ func get_mouse_ray_vec() -> Dictionary:
 func on_current_mode_changed(_new_mode):
 	# Global.current_mode уже записал ModeController
 	Hints.set_mode(_new_mode)
+	if _new_mode != &'build':
+		select_tool.clear_group()   # XX claude-switch: группа, выбранная рамкой, живет только в Build
 	# Observe: инструмент без выбора и драга. Выход из прежнего инструмента сам снимает выделение и призрака
 	if observe_tool:
 		if _new_mode == &'observe':

@@ -22,7 +22,8 @@ const SEPARATOR := "   ·   "
 
 ## Пары [клавиша, действие]
 const HINTS := {
-	"select_none": [["ЛКМ", "выбрать объект"], ["Категория → объект", "построить новый"], ["V", "дубль последнего"]],
+	"select_group": [["Del", "удалить выбранное"], ["Галки в панели", "какие категории в группе"], ["ПКМ", "снять выбор"], ["ЛКМ по пустому месту", "новая рамка"]],
+	"select_none": [["ЛКМ", "выбрать объект"], ["Рамка", "ЛКМ тащить по пустому месту (Ctrl: поверх объектов)"], ["Категория → объект", "построить новый"], ["V", "дубль последнего"]],
 	"operate/select_none": [["ЛКМ", "выбрать вагон или локомотив"], ["Тащить ЛКМ", "переместить выбранный"]],
 	"select_sel": [["Тащить ЛКМ", "переместить"], ["V", "дубль выбранного"], ["Del", "удалить"], ["PgUp/PgDn", "пинок вагона"], ["U", "тоннель (трак)"], ["B", "насыпь (трак)"], ["Z", "зоны flex"]],
 	"operate/select_sel": [["Ручка на панели", "ЛКМ вращать, ПКМ обнулить"], ["PgUp/PgDn", "пинок вагона"], ["Тащить ЛКМ", "переместить"], ["Del", "удалить"]],
@@ -149,6 +150,8 @@ func _context_key() -> String:
 			if _ctx.get(&"strip", false):   # XX claude-terra 13.2 B5: лист-полоса
 				return "build_strip"
 			return "build_polygon" if _ctx.get(&"polygon", false) else "build"
+	if _ctx.get(&"group", false):   # XX claude-switch: группа, выбранная рамкой
+		return "select_group"
 	return "select_sel" if _ctx.get(&"selected", false) else "select_none"
 
 
@@ -163,7 +166,7 @@ func _compose() -> String:
 		return ""
 	var text := _format(items)
 	# Вторая строка про камеру: когда ею управляет игрок (не Follow, POV, Orbit и не фоторежим)
-	var own_camera := key in ["select_none", "select_sel", "build", "build_polygon", "build_strip", "cut_rect", "cut_polygon", "cut_strip", "cut_line", "cut_bevel", "water_pour", "plaster", "wire", "wire_started", "drag", "observe"]
+	var own_camera := key in ["select_none", "select_group", "select_sel", "build", "build_polygon", "build_strip", "cut_rect", "cut_polygon", "cut_strip", "cut_line", "cut_bevel", "water_pour", "plaster", "wire", "wire_started", "drag", "observe"]
 	if own_camera:
 		text += "\n[color=%s]%s[/color]" % [DIM_COLOR, _format(CAMERA_LINE, false)]
 	return "[center]" + text + "[/center]"

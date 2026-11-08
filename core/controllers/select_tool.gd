@@ -20,6 +20,20 @@ var lmb_consumed := false   # нажатие забрал компонент (р
 var rmb_consumed := false
 var handle_dragging := false
 
+# XX claude-switch: выделение рамкой. Шаг 1: выбрать группу (по категориям) и удалить. Только режим Build
+const MARQUEE_MIN_PX := 8.0   # рамка начинается, когда мышь ушла дальше этого от точки нажатия
+var _group := GroupSelection.new()
+var _marquee_armed := false   # ЛКМ нажата на пустом месте (или с Ctrl): может начаться рамка
+var _marquee_active := false  # рамка тянется
+var _marquee_start := Vector2.ZERO
+var _group_layer: CanvasLayer
+var _marquee: MarqueeOverlay
+var _tooltip: InfoToolTip
+
+func _ready() -> void:
+	_ensure_group_ui()
+
+
 func enter():
 
 	if selected_entity and controller.to_drag:
@@ -63,9 +77,25 @@ func handle_input(event: InputEvent):
 			if lmb_consumed:
 				return
 			clicked_entity = _get_entity_under_mouse()
+			# XX claude-switch: рамка начинается на пустом месте или с зажатым Ctrl (поверх объектов и листов террейна)
+			_marquee_armed = false
+			_marquee_active = false
+			if Global.current_mode == &'build' and (clicked_entity == null or Input.is_key_pressed(KEY_CTRL)):
+				_marquee_armed = true
+				_marquee_start = event.position
+				if Input.is_key_pressed(KEY_CTRL):
+					clicked_entity = null   # Ctrl+ЛКМ только рамка, объект под курсором не выбираем
 			if clicked_entity:
 				set_selection(clicked_entity)
 		else:
+			# XX claude-switch: рамка отпущена, собираем группу
+			if _marquee_active:
+				_finish_marquee(event.position)
+				_marquee_armed = false
+				_marquee_active = false
+				clicked_entity = null
+				return
+			_marquee_armed = false
 			if lmb_consumed:
 				if handle_dragging and selected_entity:
 					selected_entity.send_event("on_handle_released", {})
@@ -76,6 +106,15 @@ func handle_input(event: InputEvent):
 				_clear_selection()
 			clicked_entity = null
 
+	# XX claude-switch: рамка тянется
+	if event is InputEventMouseMotion and _marquee_armed and Input.is_action_pressed("lmb"):
+		if not _marquee_active and _marquee_start.distance_to(event.position) > MARQUEE_MIN_PX:
+			_marquee_active = true
+			clicked_entity = null
+			_clear_selection()   # группа заменяет одиночный выбор
+		if _marquee_active:
+			_marquee.set_rect(Rect2(_marquee_start, Vector2.ZERO).expand(event.position))
+
 	# --- ЛКМ: Движение (Переход в Драг) ---
 	if event is InputEventMouseMotion and Input.is_action_pressed("lmb"):
 		if clicked_entity and clicked_entity == selected_entity:
@@ -84,6 +123,10 @@ func handle_input(event: InputEvent):
 				_start_drag(clicked_entity)
 				clicked_entity = null
 
+	# XX claude-switch: Del удаляет группу, выбранную рамкой
+	if not _group.members.is_empty() and Input.is_action_just_pressed("ui_graph_delete"):
+		_group.delete_members()
+		return
 	if selected_entity and Input.is_action_just_pressed("ui_graph_delete"):
 		selected_entity.kill_me() #entity сама почистит за собой
 		#selected_entity.free()
@@ -136,6 +179,7 @@ func _pick_ray() -> Dictionary:
 
 
 func set_selection(entity_to_select: Entity):
+	_group.clear()   # XX claude-switch: одиночный выбор заменяет группу
 
 	if selected_entity == entity_to_select: return 
 	if selected_entity: 
@@ -239,6 +283,7 @@ func _try_handle_remove() -> bool:
 
 # Снимает селекшн при лкм пкм без драга
 func _clear_selection():
+	_group.clear()   # XX claude-switch: снимаем и группу
 	if selected_entity: 
 		selected_entity.remove_component(C_Selected)
 		# ⚡Сигнал в visual о смене слоя
@@ -260,8 +305,22 @@ func _find_entity(node):
 
 
 
+## XX claude-switch: снять группу и рамку (смена режима)
+func clear_group() -> void:
+	_group.clear()
+	_marquee_armed = false
+	_marquee_active = false
+	if _marquee != null:
+		_marquee.set_rect(Rect2())
+
+
 # при выходе из селекта чистим 
 func exit(_to_drag : bool = false):
+	# XX claude-switch: рамка и группа при выходе из выбора снимаются
+	_group.clear()
+	_marquee_armed = false
+	_marquee_active = false
+	_marquee.set_rect(Rect2())
 	
 	if selected_entity: 
 		selected_entity.remove_component(C_Hovered)
@@ -276,3 +335,38 @@ func exit(_to_drag : bool = false):
 		hovered_entity = null
 	
 	handle_dragging = false
+
+
+# ==========================================
+# XX claude-switch. Выделение рамкой: интерфейс и обработчики
+# ==========================================
+
+## Рамка и панель сводки живут в своем CanvasLayer (ниже слоя подсказок Hints = 10)
+func _ensure_group_ui() -> void:
+	if _group_layer != null:
+		return
+	_group_layer = CanvasLayer.new()
+	_group_layer.name = "GroupSelectionLayer"
+	_group_layer.layer = 5
+	add_child(_group_layer)
+	_marquee = MarqueeOverlay.new()
+	_group_layer.add_child(_marquee)
+	_tooltip = InfoToolTip.new()
+	_group_layer.add_child(_tooltip)
+	_tooltip.category_toggled.connect(func(cat: StringName, on: bool): _group.set_category_enabled(cat, on))
+	_tooltip.delete_pressed.connect(func(): _group.delete_members())
+	_group.changed.connect(_on_group_changed)
+	_on_group_changed()
+
+
+func _on_group_changed() -> void:
+	_tooltip.set_state(_group.members.size(), _group.counts(), _group.enabled)
+	_tooltip.visible = not _group.candidates.is_empty()
+	Hints.set_context(&"group", not _group.candidates.is_empty())
+
+
+func _finish_marquee(end_pos: Vector2) -> void:
+	var rect := Rect2(_marquee_start, Vector2.ZERO).expand(end_pos)
+	_marquee.set_rect(Rect2())
+	_group.select_in_rect(rect, controller.entities_root, get_viewport().get_camera_3d())
+
