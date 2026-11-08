@@ -135,8 +135,8 @@ func _ready() -> void:
 	_connect_observe()
 	_debug_perf()
 	if Global.debug_mode:
-		add_child(LookLab.new())   # Ctrl+Shift+L: прогон вариантов картинки (ATTN_14 §14.13)
-
+		# add_child(LookLab.new())   # Ctrl+Shift+L: прогон вариантов картинки (ATTN_14 §14.13)
+		pass
 
 func _unhandled_input(event: InputEvent) -> void:
 	# Ctrl+Shift+V (действие debug_vsync_toggle, debug): V-Sync вкл/выкл. По умолчанию V-Sync включён, поэтому fps

@@ -372,7 +372,7 @@ func wheel_rotate(delta):
 		wheel_speed =  comp_chassis.wheel_surface_speed 
 	else: 
 		# Продольная скорость кузова, как в C_Kinematics._update_wheel_speed: вертикаль падения и боковой юз колёса не крутят
-		var rb := comp_kinem.rb
+		var rb = comp_kinem.rb
 		speed_real = rb.linear_velocity.dot(-rb.global_basis.z)
 		wheel_speed = comp_kinem.wheel_surface_speed 
 		# Драг мышью гонит тело своей скоростью, колёса при этом не крутятся: это не проскальзывание
