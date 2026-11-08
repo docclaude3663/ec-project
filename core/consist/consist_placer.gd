@@ -16,23 +16,61 @@ class_name ConsistPlacer extends RefCounted
 ## (головная не на рельсах или путь кончился раньше хвоста).
 ## snap: {"track": Entity, "offset": float, "route": int} - посадка головной
 static func plan(cs: ConsistSetting, head: Entity, snap: Dictionary) -> Array[Dictionary]:
+	if cs == null:
+		return [] as Array[Dictionary]
+	return plan_parts(cs.template.parts, 0, head, snap)
+
+
+## То же для любой цепочки частей {reversed, spacing} от головной. index - какая часть стоит в точке snap
+## (у шаблона головная, 0; у группы при перетаскивании та, что под курсором), anchor - её Entity.
+## Части до index идут назад по пути, после - вперёд. Результат по индексам частей
+static func plan_parts(parts: Array[Dictionary], index: int, anchor: Entity, snap: Dictionary) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
-	if cs == null or head == null or snap.is_empty():
+	if parts.is_empty() or anchor == null or snap.is_empty() or index < 0 or index >= parts.size():
 		return out
-	var parts := cs.template.parts
-	var head_fwd := -head.global_basis.z
-	var tail_dir := head_fwd if parts[0].get("reversed", false) else -head_fwd
+	var fwd := -anchor.global_basis.z
+	var tail_dir := fwd if parts[index].get("reversed", false) else -fwd
 	var st := RailWalker.from_snap(snap.track, snap.route, snap.offset, tail_dir)
 	if st.is_empty():
 		return out
-	out.append(st)
-	for i in range(1, parts.size()):
-		st = RailWalker.advance(st, float(parts[i].get("spacing", 0.0)))
-		if st.is_empty():
+	out.resize(parts.size())
+	out[index] = st
+	var cur := st
+	for i in range(index + 1, parts.size()):
+		cur = RailWalker.advance(cur, float(parts[i].get("spacing", 0.0)))
+		if cur.is_empty():
 			out.clear()
 			return out
-		out.append(st)
+		out[i] = cur
+	cur = RailWalker.reversed(st)
+	for i in range(index - 1, -1, -1):
+		cur = RailWalker.advance(cur, float(parts[i + 1].get("spacing", 0.0)))
+		if cur.is_empty():
+			out.clear()
+			return out
+		out[i] = RailWalker.reversed(cur)   # dir снова «в сторону хвоста»
 	return out
+
+
+## Сажает на рельсы уже стоящую группу (после перетаскивания). entities и parts по порядку от головной,
+## index - часть, севшая под курсором. false: группа не поместилась, остальные части остаются как были
+static func seat_group(entities: Array[Entity], parts: Array[Dictionary], index: int, snap: Dictionary) -> bool:
+	var states := plan_parts(parts, index, entities[index], snap)
+	if states.is_empty():
+		return false
+	for i in entities.size():
+		_seat(entities[i], parts[i], states[i], i != index)
+	return true
+
+
+## Ставит часть в точку состояния, без посадки на рельсы (группа в драге висит над путём)
+static func pose(e: Entity, part: Dictionary, state: Dictionary) -> void:
+	var heading := RailWalker.heading(state)
+	var fwd := heading if part.get("reversed", false) else -heading
+	var basis := e.global_basis
+	if absf(fwd.y) < 0.99:
+		basis = Basis.looking_at(fwd, Vector3.UP)
+	e.global_transform = Transform3D(basis, RailWalker.body_point(state))
 
 
 ## Ставит остальные части и сцепляет состав. head - уже поставленная головная часть.
@@ -76,10 +114,7 @@ static func _seat(e: Entity, part: Dictionary, state: Dictionary, place: bool) -
 	var heading := RailWalker.heading(state)
 	var fwd := heading if part.get("reversed", false) else -heading
 	if place:
-		var basis := e.global_basis
-		if absf(fwd.y) < 0.99:
-			basis = Basis.looking_at(fwd, Vector3.UP)
-		e.global_transform = Transform3D(basis, RailWalker.body_point(state))
+		pose(e, part, state)
 	elif ch.is_on_rails:
 		return
 

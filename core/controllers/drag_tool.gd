@@ -16,6 +16,13 @@ var rmb_pressed_pos := Vector2.ZERO
 # XX claude-switch: вращение Alt + мышь (см. AltRotate)
 var _alt_rotate := AltRotate.new()
 
+# Группа на вечной сцепке тащится целиком: все части по порядку от головной, их {reversed, spacing},
+# индекс схваченной и её положение относительно каждой (для свободного перетаскивания без рельс)
+var _group: Array[Entity] = []
+var _group_parts: Array[Dictionary] = []
+var _group_index := -1
+var _group_rel: Array[Transform3D] = []
+
 ## Начало драга
 func enter():
 	if not target_entity:
@@ -35,6 +42,7 @@ func enter():
 		hit = controller.get_mouse_plane_hit()
 	if hit:
 		target_entity.send_event("on_drag_started", hit)
+		_group_begin(hit)
 		
 
 
@@ -57,6 +65,7 @@ func process_tick(_delta):
 		_alt_rotate.remember(hit)   # XX claude-switch: позиция, с которой объект стоит (нужна при вращении Alt)
 		# Отправляем приказ в сущность. Оттуда C_TrackDraggable сам разберется.
 		target_entity.send_event("on_drag_moved", hit)
+		_group_move()
 		pass
 
 
@@ -102,3 +111,77 @@ func exit(_to_drag : bool = false):
 	if target_entity:
 		target_entity.remove_component(C_Drag)
 		target_entity.send_event("on_drag_ended", {})
+		_group_end()
+
+
+## Схваченный вагон на вечной сцепке: берём всю группу, остальным частям тоже драг (связи между ними не рвутся)
+func _group_begin(hit: Dictionary) -> void:
+	_group_clear()
+	var coupler := target_entity.get_comp(C_Coupler) as C_Coupler
+	if coupler == null:
+		return
+	var chain := coupler.get_ordered_consist(true)
+	if chain.size() < 2:
+		return
+	var start := target_entity.global_transform
+	var prev: Entity = null
+	for i in chain.size():
+		var e: Entity = chain[i]["entity"]
+		_group.append(e)
+		_group_parts.append({
+			"reversed": chain[i]["reversed"],
+			"spacing": 0.0 if prev == null else prev.global_position.distance_to(e.global_position),
+		})
+		_group_rel.append(start.affine_inverse() * e.global_transform)
+		if e == target_entity:
+			_group_index = i
+		else:
+			e.add_component(C_Drag.new())
+			e.send_event("on_drag_started", hit)
+		prev = e
+
+
+## Посадка схваченной части на трак: пусто, если она не на рельсах
+func _group_snap() -> Dictionary:
+	var dr := target_entity.get_comp(C_TrainDraggable) as C_TrainDraggable
+	if dr == null or not dr.is_snapped_to_track or not is_instance_valid(dr.current_track):
+		return {}
+	return {"track": dr.current_track, "offset": dr.current_curve_point, "route": dr.current_route}
+
+
+## Части группы за схваченной: по пути, если она на рельсах и группа помещается, иначе жёстко за ней
+func _group_move() -> void:
+	if _group.size() < 2:
+		return
+	var states: Array[Dictionary] = ConsistPlacer.plan_parts(_group_parts, _group_index, target_entity, _group_snap())
+	for i in _group.size():
+		var e := _group[i]
+		if i == _group_index or not is_instance_valid(e):
+			continue
+		if states.is_empty():
+			e.global_transform = target_entity.global_transform * _group_rel[i]
+		else:
+			ConsistPlacer.pose(e, _group_parts[i], states[i])
+
+
+## Дроп: остальные части получают конец драга, группа садится на рельсы вслед за схваченной
+func _group_end() -> void:
+	if _group.size() >= 2:
+		for e in _group:
+			if e != target_entity and is_instance_valid(e):
+				e.send_event("on_drag_ended", {})
+		var snap := _group_snap()
+		if not snap.is_empty():
+			ConsistPlacer.seat_group(_group, _group_parts, _group_index, snap)
+		# C_Drag снимаем после посадки: пока он есть, вечные связи на паузе, а не рвутся
+		for e in _group:
+			if e != target_entity and is_instance_valid(e):
+				e.remove_component(C_Drag)
+	_group_clear()
+
+
+func _group_clear() -> void:
+	_group.clear()
+	_group_parts.clear()
+	_group_rel.clear()
+	_group_index = -1

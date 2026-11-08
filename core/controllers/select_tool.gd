@@ -155,6 +155,12 @@ func handle_input(event: InputEvent):
 		_group.delete_members()
 		return
 	if selected_entity and Input.is_action_just_pressed("ui_graph_delete"):
+		# Вечная группа (паровоз с тендером, секции) удаляется целиком
+		var coupler := selected_entity.get_comp(C_Coupler) as C_Coupler
+		if coupler != null:
+			for member in coupler.get_permanent_group():
+				if member != selected_entity and is_instance_valid(member):
+					member.kill_me()
 		selected_entity.kill_me() #entity сама почистит за собой
 		#selected_entity.free()
 		#INFO ДЕРГАЕМ ПАНЕЛЬ!

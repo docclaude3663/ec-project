@@ -189,8 +189,9 @@ func get_consist() -> Array[Entity]:
 
 ## Состав по порядку от головной части. Головная: крайняя в сторону FRONT выбранного вагона.
 ## Элемент: {"entity": Entity, "reversed": bool}; reversed - часть повёрнута передом назад относительно
-## направления записи (в неё вошли через торец REAR). Нужна шаблонам составов (ConsistTemplate)
-func get_ordered_consist() -> Array[Dictionary]:
+## направления записи (в неё вошли через торец REAR). Нужна шаблонам составов (ConsistTemplate).
+## only_permanent: идти только по вечным сцепкам (группа, которая ездит, тащится и удаляется целиком)
+func get_ordered_consist(only_permanent := false) -> Array[Dictionary]:
 	# 1. От этого вагона вперёд до головной части
 	var cur: C_Coupler = self
 	var out_end := FRONT
@@ -198,7 +199,7 @@ func get_ordered_consist() -> Array[Dictionary]:
 	var seen := {self: true}
 	while true:
 		var l: Link = cur.links[out_end]
-		if l == null or not l.coupled:
+		if l == null or not l.coupled or (only_permanent and not l.permanent):
 			break
 		var nxt := l.other(cur)
 		if seen.has(nxt):
@@ -217,7 +218,7 @@ func get_ordered_consist() -> Array[Dictionary]:
 		visited[cur] = true
 		result.append({"entity": cur.entity, "reversed": entered == REAR})
 		var l2: Link = cur.links[exit_end]
-		if l2 == null or not l2.coupled:
+		if l2 == null or not l2.coupled or (only_permanent and not l2.permanent):
 			break
 		var nxt2 := l2.other(cur)
 		if visited.has(nxt2):
@@ -265,8 +266,9 @@ func get_debug_info() -> Array[String]:
 # ==========================================
 
 ## Игрок схватил вагон - он отцепляется (состав целиком не тащим)
+## Схватили вагон: обычные связи рвём, вечные остаются (группа тащится целиком, DragTool)
 func on_drag_started(_data: Dictionary) -> void:
-	_drop_all(&"drag")
+	_drop_loose(&"drag")
 
 
 ## Сход: связи рвём. Дальше физику между сошедшим и остальными ведёт Godot (RigidBody)
@@ -285,7 +287,7 @@ func _physics_process(delta: float) -> void:
 	var ch := _chassis()
 	if not ch or not ch.is_on_rails:
 		if links[FRONT] or links[REAR]:
-			_drop_all(&"off_rails")
+			_drop_loose(&"off_rails")
 		return
 
 	_refresh_neighbors(delta, ch)
@@ -416,6 +418,8 @@ func _solve_link(l: Link, dt: float) -> void:
 		return
 	var ch_a := _chassis()
 	var ch_b := cb._chassis()
+	if l.permanent and _pair_dragging(l):
+		return   # группу тащат: вечная связь ждёт посадки на рельсы
 	if not ch_a or not ch_b or not ch_b.is_on_rails:
 		_drop_link(l, &"partner_off_rails")
 		return
@@ -674,6 +678,26 @@ func _drop_link(l: Link, reason: StringName) -> void:
 			c.links[end] = null
 		if l.coupled and is_instance_valid(c.entity) and c.entity.is_inside_tree():
 			c.entity.send_event("on_coupler_released", {"reason": reason})
+
+
+## Рвёт все связи, кроме вечных, пока вагон или его сосед по ней в драге (групповое перетаскивание)
+func _drop_loose(reason: StringName) -> void:
+	for end in 2:
+		var l: Link = links[end]
+		if l and not (l.permanent and _pair_dragging(l)):
+			_drop_link(l, reason)
+
+
+func _pair_dragging(l: Link) -> bool:
+	return l.a.entity.has_comp(C_Drag) or l.b.entity.has_comp(C_Drag)
+
+
+## Вагоны, связанные с этим вечными сцепками (включая его), по порядку от головной
+func get_permanent_group() -> Array[Entity]:
+	var out: Array[Entity] = []
+	for item in get_ordered_consist(true):
+		out.append(item["entity"])
+	return out
 
 
 func _drop_all(reason: StringName) -> void:
