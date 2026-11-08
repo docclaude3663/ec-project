@@ -33,7 +33,6 @@ var _drag_offset := Vector2.ZERO
 
 func _ready() -> void:
 	hide()
-	_ensure_action()
 	mouse_filter = Control.MOUSE_FILTER_STOP   # клик по панели не доходит до мира
 	custom_minimum_size.x = PANEL_WIDTH
 
@@ -98,16 +97,6 @@ func _process(delta: float) -> void:
 	var tab := _active_tab()
 	if tab:
 		tab.refresh()
-
-
-## Если действия нет в InputMap (проект открыт без записи в project.godot), заводим F3 сами
-func _ensure_action() -> void:
-	if InputMap.has_action(ACTION):
-		return
-	InputMap.add_action(ACTION)
-	var ev := InputEventKey.new()
-	ev.physical_keycode = KEY_F3
-	InputMap.action_add_event(ACTION, ev)
 
 
 func _add_tab(tab: DebugTab) -> void:

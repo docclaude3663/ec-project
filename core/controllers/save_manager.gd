@@ -49,7 +49,7 @@ func _migrate_legacy_saves() -> void:
 	
 
 func _unhandled_input(_event: InputEvent) -> void:
-	if Input.is_action_just_pressed("key_ctrl_s"):
+	if Input.is_action_just_pressed(&"quick_save"):
 		save_game('autosave')
 	# F9 (debug): загрузить эталонную диораму
 	if Global.debug_mode and _event is InputEventKey and _event.pressed and not _event.echo and _event.keycode == KEY_F9:
