@@ -7,6 +7,8 @@ class_name ConsistStore extends RefCounted
 ## Запись берёт весь сцепленный состав, в котором стоит выбранный вагон (C_Coupler.get_ordered_consist).
 
 const USER_DIR := "user://library/consists/"
+## Шаблоны автора, поставляются с игрой (тот же формат, что у шаблонов игрока)
+const BUILTIN_DIR := "res://data/trains/consists/"
 const MAX_NAME_PARTS := 2   # сколько названий частей показывать в подписи по умолчанию
 
 
@@ -48,17 +50,14 @@ static func record(entity: Entity) -> Dictionary:
 	return {"ok": true, "name": tpl.name, "path": path, "error": ""}
 
 
-## Все шаблоны игрока, по имени файла
-static func load_user() -> Array[ConsistTemplate]:
+## Все шаблоны: сначала встроенные, потом игрока, каждая папка по имени файла
+static func load_all() -> Array[ConsistTemplate]:
 	var out: Array[ConsistTemplate] = []
-	var names := DirAccess.get_files_at(USER_DIR)
-	names.sort()
-	for n in names:
-		if not n.ends_with(".tres"):
-			continue
-		var tpl := load(USER_DIR + n) as ConsistTemplate
-		if tpl != null:
-			out.append(tpl)
+	for dir in [BUILTIN_DIR, USER_DIR]:
+		for path in EntityCatalogProvider.list_resources(dir):
+			var tpl := load(path) as ConsistTemplate
+			if tpl != null:
+				out.append(tpl)
 	return out
 
 

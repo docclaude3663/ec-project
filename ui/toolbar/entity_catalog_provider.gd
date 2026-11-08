@@ -93,9 +93,10 @@ func get_categories() -> Array[Dictionary]:
 
 func get_tags(category: StringName) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
-	if not _data.has(category):
-		return out
-	for tag in CatalogMeta.sort_tags(category, _data[category].keys()):
+	var tags: Array = _data.get(category, {}).keys()
+	if not _consists(category).is_empty():
+		tags.append(ConsistSetting.TAG)
+	for tag in CatalogMeta.sort_tags(category, tags):
 		var tag_name: String = CatalogMeta.tag_info(category, tag).get("name", str(tag))
 		out.append({"id": tag, "name": tag_name, "icon": _tag_icon(category, tag), "tooltip": CatalogMeta.tag_info(category, tag).get("tooltip", "")})
 	return out
@@ -104,7 +105,7 @@ func get_tags(category: StringName) -> Array[Dictionary]:
 ## Фильтры тега: только те, чьи признаки есть хотя бы у одного объекта тега
 func get_filters(category: StringName, tag: StringName) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
-	var items: Array = _data.get(category, {}).get(tag, [])
+	var items: Array = _items(category, tag)
 	for spec in CatalogMeta.filter_specs(category):
 		for item in items:
 			if item.get_facet(spec["id"]) != "":
@@ -116,7 +117,7 @@ func get_filters(category: StringName, tag: StringName) -> Array[Dictionary]:
 ## Кнопки объектов, прошедших фильтры. Нажатие: on_pressed.call(setting)
 func create_buttons(category: StringName, tag: StringName, on_pressed: Callable, filters: Dictionary = {}) -> Array[Button]:
 	var out: Array[Button] = []
-	for item in _data.get(category, {}).get(tag, []):
+	for item in _items(category, tag):
 		if not _passes(item, filters):
 			continue
 		var btn: ObjectButton = _obj_btn_scene.instantiate()
@@ -140,5 +141,28 @@ func _tag_icon(category: StringName, tag: StringName) -> Texture2D:
 	var meta_icon: Texture2D = CatalogMeta.tag_info(category, tag).get("icon", null)
 	if meta_icon != null:
 		return meta_icon
-	var items: Array = _data[category][tag]
+	var items: Array = _items(category, tag)
 	return items[0].icon if not items.is_empty() else null
+
+
+## Объекты тега: из .tres, для тега «Составы» кнопки шаблонов
+func _items(category: StringName, tag: StringName) -> Array:
+	if tag == ConsistSetting.TAG:
+		return _consists(category)
+	return _data.get(category, {}).get(tag, [])
+
+
+## Кнопки шаблонов составов (категория train режима стройки). Читаются при каждом обращении,
+## поэтому только что записанный состав появляется без перезапуска игры
+func _consists(category: StringName) -> Array:
+	var out: Array = []
+	if category != &"train" or not CatalogMeta.categories_for_mode(mode).has(category):
+		return out
+	var by_key := {}
+	for obj in load_all():
+		by_key[obj.get_key()] = obj
+	for tpl in ConsistStore.load_all():
+		var s := ConsistSetting.from_template(tpl, by_key)
+		if s != null:
+			out.append(s)
+	return out

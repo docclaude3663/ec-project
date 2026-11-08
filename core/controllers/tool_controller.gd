@@ -170,6 +170,11 @@ func select_build_object(setting: EntitySetting, variant: Dictionary = {}) -> vo
 		build_selection_cleared.emit()
 		return
 
+	# Кнопка состава: пока ставится только головная часть, остальные части достраиваются в этапе 3
+	if setting is ConsistSetting:
+		print("[Consist] ", setting.name, ": ставится головная часть, остальные части будут в этапе 3")
+		setting = (setting as ConsistSetting).head
+
 	# XX claude-terra 13.3 S2: кнопка терморезака включает инструмент, призрака нет. Форма выреза из facet "shape"
 	if setting.build_behavior == EntitySetting.BuildBehavior.CUT_TOOL:
 		cut_tool.shape = StringName(setting.get_facet(&"shape")) if setting.get_facet(&"shape") != "" else ThermoCutTool.SHAPE_RECT
