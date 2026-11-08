@@ -12,11 +12,15 @@ class_name LibraryScreen extends Control
 ## При закрытии объект убирается через kill_me (снимает регистрацию в PGM), пауза и 3D возвращаются.
 
 signal closed
+## Поставить выбранную модель в игре (L4): ModeController закрывает экран и включает Build с этим исполнением.
+## variant пуст, если покраски нет
+signal place_requested(setting: EntitySetting, variant: Dictionary)
 
 const StudioWorld := preload("res://core/library/icon_studio/studio_world.gd")
 const StudioSettings := preload("res://core/library/icon_studio/studio_settings.gd")
 const StageClean := preload("res://core/library/stage/stage_clean.gd")
 const Overview := preload("res://core/library/workspace/overview.gd")
+const Paint := preload("res://core/library/workspace/paint.gd")
 
 const SETTINGS_PATH := "user://library.cfg"
 ## Кадров «settle» после создания объекта (как DEFAULT_SETTLE в Icon Studio)
@@ -28,7 +32,7 @@ const SILHOUETTE_COLOR := Color(0.13, 0.14, 0.16)
 ## Области экрана: id, название, включена ли (остальные включаются шагами L3 и дальше)
 const WORKSPACE_TABS := [
 	[&"overview", "Осмотр", true],
-	[&"paint", "Покраска", false],
+	[&"paint", "Покраска", true],
 	[&"parts", "Детали", false],
 	[&"fit", "Свет", false],
 	[&"test", "Стенд", false],
@@ -45,6 +49,12 @@ var world: StudioWorld
 var stage: LibraryStage
 var workspace: LibraryWorkspace
 var catalog: LibraryCatalog
+## Буфер исполнения показанной модели: его правит рабочая область «Покраска». Сбрасывается при выборе другой модели
+var variant: ModelVariant = ModelVariant.new()
+## Показанная модель (null, пока ничего не выбрано)
+var current_setting: EntitySetting:
+	get:
+		return _current
 
 var _embedded := false
 var _prev_paused := false
@@ -56,6 +66,11 @@ var _right_box: VBoxContainer
 var _rules_label: Label
 var _current: EntitySetting
 var _closing := false
+var _tab_buttons := {}      # id области -> Button
+var _place_btn: Button
+var _subject_ready := false
+var _last_info: Dictionary = {}
+var _last_ms := 0
 
 
 func _ready() -> void:
@@ -213,6 +228,9 @@ func _build_header() -> Control:
 		b.button_pressed = t[0] == &"overview"
 		if b.disabled:
 			b.tooltip_text = "Включится в следующих шагах (ATTN_22 §22.9)"
+		else:
+			b.pressed.connect(_on_tab.bind(t[0]))
+		_tab_buttons[t[0]] = b
 		h.add_child(b)
 
 	var spacer := Control.new()
@@ -254,8 +272,18 @@ func _build_center() -> Control:
 func _build_right() -> Control:
 	var p := PanelContainer.new()
 	p.custom_minimum_size = Vector2(320, 0)
+	var v := VBoxContainer.new()
+	p.add_child(v)
 	_right_box = VBoxContainer.new()
-	p.add_child(_right_box)
+	_right_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	v.add_child(_right_box)
+	v.add_child(HSeparator.new())
+	_place_btn = Button.new()
+	_place_btn.text = "В игру"
+	_place_btn.disabled = true
+	_place_btn.tooltip_text = "Поставить выбранную модель в игре вместе с покраской. Доступно при запуске из игры"
+	_place_btn.pressed.connect(_on_place_pressed)
+	v.add_child(_place_btn)
 	return p
 
 
@@ -302,10 +330,15 @@ func _select_last() -> void:
 		catalog.select_key(first)
 
 
-func _show_object(s: EntitySetting) -> void:
+## keep_variant: оставить буфер исполнения (перезагрузка той же модели при смене правил)
+func _show_object(s: EntitySetting, keep_variant := false) -> void:
 	if s == _current:
 		return
 	_current = s
+	_subject_ready = false
+	if not keep_variant:
+		variant = ModelVariant.new()
+		variant.base = String(s.get_key())
 	settings.set_value("state", "last_key", String(s.get_key()))
 	if workspace != null:
 		workspace.on_loading(s)
@@ -318,8 +351,14 @@ func _show_object(s: EntitySetting) -> void:
 		# Закрытая модель: тёмный силуэт без материалов (ATTN_22 §22.7.1)
 		if catalog.is_locked(s.get_key()):
 			_apply_silhouette(world.subject)
+		elif not PaintData.is_empty(variant.paint):
+			apply_variant()
+	_subject_ready = info.ok
+	_last_info = info
+	_last_ms = Time.get_ticks_msec() - t0
+	_place_btn.disabled = not _embedded or not info.ok or catalog.is_locked(s.get_key())
 	if workspace != null:
-		workspace.on_subject(s, info, Time.get_ticks_msec() - t0)
+		workspace.on_subject(s, info, _last_ms)
 
 
 func _apply_silhouette(root: Node) -> void:
@@ -338,6 +377,41 @@ func _silhouette_walk(n: Node, mat: Material) -> void:
 
 
 # ==========================================
+# ИСПОЛНЕНИЕ МОДЕЛИ (L3, L4)
+# ==========================================
+
+## Меши кузова показанной модели (C_Visual.mesh_nodes). Тележки и колёса строятся позже и сюда не входят
+func body_meshes() -> Array[MeshInstance3D]:
+	var out: Array[MeshInstance3D] = []
+	var ent := world.subject as Entity if world != null else null
+	if ent == null or not is_instance_valid(ent):
+		return out
+	var vis := ent.get_comp(C_Visual) as C_Visual
+	if vis == null:
+		return out
+	for m in vis.mesh_nodes:
+		if is_instance_valid(m):
+			out.append(m)
+	return out
+
+
+## Применить буфер исполнения к показанной модели (идемпотентно: повторное применение не наслаивает материалы)
+func apply_variant() -> void:
+	VariantApplier.apply(body_meshes(), variant.to_dict())
+
+
+func is_current_locked() -> bool:
+	return _current != null and catalog.is_locked(_current.get_key())
+
+
+func _on_place_pressed() -> void:
+	if _current == null or not _subject_ready or catalog.is_locked(_current.get_key()):
+		return
+	var v: Dictionary = {} if PaintData.is_empty(variant.paint) else variant.to_dict()
+	place_requested.emit(_current, v)
+
+
+# ==========================================
 # ОБЛАСТИ И ПРАВИЛА
 # ==========================================
 
@@ -353,6 +427,24 @@ func _set_workspace(ws: LibraryWorkspace) -> void:
 	workspace.enter()
 
 
+## Вкладка области. Если у текущей области несохранённая работа, она может не пустить
+func _on_tab(id: StringName) -> void:
+	if workspace != null and workspace.id == id:
+		return
+	if workspace != null and not workspace.can_leave():
+		(_tab_buttons[workspace.id] as Button).button_pressed = true
+		return
+	var ws: LibraryWorkspace
+	match id:
+		&"paint":
+			ws = Paint.new()
+		_:
+			ws = Overview.new()
+	_set_workspace(ws)
+	if _current != null and _subject_ready:
+		ws.on_subject(_current, _last_info, _last_ms)
+
+
 func _on_cycle_rules() -> void:
 	rules.cycle_debug()
 	_rules_label.text = "Правила: " + rules.label()
@@ -363,4 +455,4 @@ func _on_cycle_rules() -> void:
 	if _current != null:
 		var cur := _current
 		_current = null
-		_show_object(cur)
+		_show_object(cur, true)

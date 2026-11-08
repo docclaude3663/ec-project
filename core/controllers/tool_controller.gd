@@ -163,7 +163,8 @@ func publish_selection(entity: Entity) -> void:
 
 
 ## Выбран объект для стройки (из панели инструментов). null: снять выбор
-func select_build_object(setting: EntitySetting) -> void:
+## variant: исполнение модели из Library (ATTN_22): призрак и поставленный объект получают его. Пусто: вид по умолчанию
+func select_build_object(setting: EntitySetting, variant: Dictionary = {}) -> void:
 	if setting == null :
 		# Очищаем селекта в UI если null
 		build_selection_cleared.emit()
@@ -190,6 +191,7 @@ func select_build_object(setting: EntitySetting) -> void:
 		return
 
 	build_tool.ghost_setting = setting
+	build_tool.ghost_variant = variant   # XX claude-library L4
 	# переключение в build_tool
 	switch_tool(build_tool)
 

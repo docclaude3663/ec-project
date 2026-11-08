@@ -11,6 +11,11 @@ extends EditorScript
 
 const GRID := 512
 const CATEGORIES: Array[StringName] = [&"train", &"building"]
+## Папки объектов. Свой список, а не Global.object_dirs: в редакторе автолоад Global не работает (так же сделан catalog_lint)
+const DIRS := [
+	"res://data/trains/objects/",
+	"res://data/buildings/objects/",
+]
 ## Доля перекрытых ячеек, допустимая как погрешность растеризации
 const OVERLAP_LIMIT := 0.005
 const BOUNDS_EPS := 0.001
@@ -20,7 +25,13 @@ func _run() -> void:
 	var checked := 0
 	var flagged := 0
 	var done := {}   # путь сцены -> true: одну сцену не проверяем дважды
-	for s in EntityCatalogProvider.load_all():
+	var settings: Array[EntitySetting] = []
+	for dir in DIRS:
+		for path in EntityCatalogProvider.list_resources(dir):
+			var res := load(path) as EntitySetting
+			if res != null:
+				settings.append(res)
+	for s in settings:
 		if not CATEGORIES.has(s.category):
 			continue
 		var packed := _scene_of(s)

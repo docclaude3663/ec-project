@@ -31,6 +31,9 @@ const LIBRARY_LAYER := 50
 var _library_screen: Control
 var _library_layer: CanvasLayer
 var _library_prev_mode: StringName = &"build"
+## Запрос «В игру» из Library: модель и исполнение, которые надо взять в руку после закрытия экрана (ATTN_22 L4)
+var _library_place_setting: EntitySetting
+var _library_place_variant: Dictionary = {}
 
 
 func _ready() -> void:
@@ -133,6 +136,7 @@ func _open_library() -> void:
 	_library_layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	_library_screen = LIBRARY_SCREEN.instantiate()
 	_library_screen.closed.connect(_on_library_closed)
+	_library_screen.place_requested.connect(_on_library_place)
 	_library_layer.add_child(_library_screen)
 	get_parent().add_child(_library_layer)
 
@@ -146,3 +150,26 @@ func _on_library_closed() -> void:
 	var btn := %ModePanel.get_node_or_null("VBoxContainer/" + String(_library_prev_mode).capitalize() + "Button") as Button
 	if btn:
 		btn.button_pressed = true
+	if _library_place_setting != null:
+		var setting := _library_place_setting
+		var variant := _library_place_variant
+		_library_place_setting = null
+		_library_place_variant = {}
+		_start_build_from_library.call_deferred(setting, variant)
+
+
+## «В игру» в Library: закрыть экран и включить Build с этой моделью и её исполнением
+func _on_library_place(setting: EntitySetting, variant: Dictionary) -> void:
+	_library_place_setting = setting
+	_library_place_variant = variant
+	if is_instance_valid(_library_screen):
+		_library_screen.close()
+
+
+func _start_build_from_library(setting: EntitySetting, variant: Dictionary) -> void:
+	if Global.current_mode != &"build":
+		var build_btn := %ModePanel.get_node_or_null("VBoxContainer/BuildButton") as Button
+		if build_btn:
+			build_btn.button_pressed = true
+		on_mode_selected(&"build")
+	tool_controller.select_build_object(setting, variant)

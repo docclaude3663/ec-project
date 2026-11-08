@@ -24,6 +24,10 @@ var style_id: StringName = &""
 ## Запрос стиля от фабрики (создание из сейва или призрак): пусто = активный стиль сессии. В сейв не идёт
 var style_request: StringName = &""
 
+# XX claude-library L4: исполнение модели (покраска и др.), ModelVariant.to_dict(). Пусто: вид модели по умолчанию.
+# Целиком уходит в сейв макета (макет переносим без файлов user://), применяется в C_Visual
+var variant: Dictionary = {}
+
 
 
 func _ready():
@@ -157,6 +161,9 @@ func save_entity() -> Dictionary:
 	# Стиль трака из набора проекта (ATTN_17 §17.13): ключа нет у объектов без стиля из набора
 	if style_id != &"":
 		save_data["style_id"] = style_id
+	# XX claude-library L4: исполнение модели; ключа нет у обычных объектов, старые сейвы читаются как раньше
+	if not variant.is_empty():
+		save_data["variant"] = variant.duplicate(true)
 	
 	return save_data
 

@@ -23,6 +23,8 @@ const PROTOTYPE_M_PER_UNIT := 1.0
 @export var tags: PackedStringArray = PackedStringArray()
 ## {kind: free | xp | chapter | kit, xp: int, id: String}
 @export var unlock: Dictionary = {"kind": "free"}
+## Названия зон покраски: id зоны ("<имя меша>#<номер поверхности>") -> название. Без записи название берётся из меша
+@export var zone_titles: Dictionary = {}
 
 
 static func path_for(model_key: StringName) -> String:

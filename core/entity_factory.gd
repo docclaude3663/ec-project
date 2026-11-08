@@ -7,9 +7,11 @@ class_name EntityFactory extends Node
 
 ## style_id: стиль трака (из сейва или у призрака). Пусто = активный стиль сессии (TSM). Влияет только на
 ## визуалы с пустым `style` в сеттинге
-func create_from_setting(_setting: EntitySetting, style_id: StringName = &"") -> Entity:
+## variant: исполнение модели (ModelVariant.to_dict(), ATTN_22). Пусто: вид модели по умолчанию. Применяет C_Visual
+func create_from_setting(_setting: EntitySetting, style_id: StringName = &"", variant: Dictionary = {}) -> Entity:
 	var entity = Entity.new()
 	entity.style_request = style_id
+	entity.variant = variant.duplicate(true)   # XX claude-library L4
 	
 	## 1. Автоматически уже не вешаем C_Identity, потому что object_config вешается в инспекторе
 	#var identity = C_Identity.new()

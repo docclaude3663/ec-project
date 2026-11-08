@@ -15,7 +15,7 @@ var id := ""
 ## key модели (EntitySetting.get_key()), к которой относится исполнение
 var base := ""
 var name := ""
-## зона -> {color: "#rrggbb", finish: "matte|gloss|metal", wear: float}
+## Покраска, схема v2: {v: 2, layers: [...]}, см. PaintData
 var paint: Dictionary = {}
 var decals: Array = []
 ## слот -> опция

@@ -226,7 +226,9 @@ func load_game(slot_name: String  ='savegame', dir: String = SAVE_DIR, style_ove
 		var _style_id := StringName(e_data.get("style_id", TSM.default_id))
 		if style_override != &"" and e_data.has("style_id"):
 			_style_id = style_override   # трак без style_id (зафиксирован в объекте, не трак) не трогаем
-		var new_entity = entity_factory.create_from_setting(_setting, _style_id)
+		# XX claude-library L4: исполнение модели из сейва (ключа нет у обычных объектов и в старых сейвах)
+		var _variant: Dictionary = e_data.get("variant", {})
+		var new_entity = entity_factory.create_from_setting(_setting, _style_id, _variant)
 		# Имя ноды (G239_01) Entity назначает сам в _ready из ключа объекта
 		# Восстанавливаем трансформацию ДО добавления в дерево
 		new_entity.global_transform = e_data["transform"]

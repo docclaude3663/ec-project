@@ -9,6 +9,8 @@ class_name BuildTool extends Node
 var controller: ToolController
 
 var ghost_setting: EntitySetting # TODO переимновать в entity_setting
+## XX claude-library L4: исполнение модели для призрака и поставленных объектов (из Library или копии объекта). Пусто: по умолчанию
+var ghost_variant: Dictionary = {}
 var ghost : Entity
 
 var rmb_pressed_pos := Vector2.ZERO
@@ -44,7 +46,7 @@ func enter():
 	_alt_rotate.reset()
 	if ghost: ghost.queue_free()
 	# Дубль выбранного трака берет его стиль, остальные призраки стиль сессии (пустой запрос)
-	ghost = controller.entity_factory.create_from_setting(ghost_setting, _dup_style if _dup_pending else &"")
+	ghost = controller.entity_factory.create_from_setting(ghost_setting, _dup_style if _dup_pending else &"", ghost_variant)
 	_dup_style = &""
 	# Стиль сессии сменили, пока призрак в руке: перестроить в новом стиле (ATTN_17 §17.13)
 	if not TSM.current_changed.is_connected(_on_track_style_changed):
@@ -190,7 +192,7 @@ func _place_real_object() -> Entity:
 		
 	# Запрашиваем у фабрики создание реального объекта на основе настроек госта.
 	# style_id госта: объект встанет в том же стиле, что показывал призрак
-	var real_entity = controller.entity_factory.create_from_setting(ghost_setting, ghost.style_id)
+	var real_entity = controller.entity_factory.create_from_setting(ghost_setting, ghost.style_id, ghost.variant)
 	
 	# Ставим реальный объект точно в ту же позицию и поворот, где сейчас гост
 	real_entity.global_transform = ghost.global_transform
@@ -344,6 +346,8 @@ func duplicate_last() -> void:
 	if last_setting == null:
 		return
 	ghost_setting = last_setting
+	# XX claude-library L4: копия берет исполнение исходного объекта (если он жив)
+	ghost_variant = last_entity.variant.duplicate(true) if is_instance_valid(last_entity) else {}
 	_dup_pending = true
 	if controller.active_tool == self:
 		enter()

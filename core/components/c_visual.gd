@@ -20,6 +20,9 @@ func on_added() -> void:
 	entity.add_child(instance)
 	parts = PartRegistry.build(instance)   # новое
 	_collect_meshes()
+	# XX claude-library L4: исполнение модели на меши кузова. Тележки и колёса строятся в хуке ниже и не красятся
+	if not entity.variant.is_empty():
+		VariantApplier.apply(mesh_nodes, entity.variant)
 	_on_instance_ready()   # хук для наследников
 
 
