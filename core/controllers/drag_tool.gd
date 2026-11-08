@@ -41,8 +41,9 @@ func enter():
 		# Курсор вне стола (спавн кнопкой с панели): стартуем драг по плоскости стола, иначе вагон не оживёт
 		hit = controller.get_mouse_plane_hit()
 	if hit:
+		_group_collect()   # до on_drag_started: всем частям C_Drag, иначе связи внутри группы порвутся
 		target_entity.send_event("on_drag_started", hit)
-		_group_begin(hit)
+		_group_start(hit)
 		
 
 
@@ -114,31 +115,49 @@ func exit(_to_drag : bool = false):
 		_group_end()
 
 
-## Схваченный вагон на вечной сцепке: берём всю группу, остальным частям тоже драг (связи между ними не рвутся)
-func _group_begin(hit: Dictionary) -> void:
+## Что тащится вместе со схваченным вагоном: состав из шаблона, который только что появился
+## (controller.consist_drag), или группа на вечных сцепках. Остальным частям сразу C_Drag
+func _group_collect() -> void:
 	_group_clear()
-	var coupler := target_entity.get_comp(C_Coupler) as C_Coupler
-	if coupler == null:
-		return
-	var chain := coupler.get_ordered_consist(true)
-	if chain.size() < 2:
+	var entities: Array[Entity] = []
+	var parts: Array[Dictionary] = []
+	var hint: Dictionary = controller.consist_drag
+	controller.consist_drag = {}
+	if not hint.is_empty() and (hint["entities"] as Array).has(target_entity):
+		entities.assign(hint["entities"])
+		parts.assign(hint["parts"])
+	else:
+		var coupler := target_entity.get_comp(C_Coupler) as C_Coupler
+		if coupler == null:
+			return
+		var prev: Entity = null
+		for item in coupler.get_ordered_consist(true):
+			var e: Entity = item["entity"]
+			entities.append(e)
+			parts.append({
+				"reversed": item["reversed"],
+				"spacing": 0.0 if prev == null else prev.global_position.distance_to(e.global_position),
+			})
+			prev = e
+	if entities.size() < 2:
 		return
 	var start := target_entity.global_transform
-	var prev: Entity = null
-	for i in chain.size():
-		var e: Entity = chain[i]["entity"]
-		_group.append(e)
-		_group_parts.append({
-			"reversed": chain[i]["reversed"],
-			"spacing": 0.0 if prev == null else prev.global_position.distance_to(e.global_position),
-		})
-		_group_rel.append(start.affine_inverse() * e.global_transform)
-		if e == target_entity:
+	for i in entities.size():
+		var member := entities[i]
+		_group.append(member)
+		_group_parts.append(parts[i])
+		_group_rel.append(start.affine_inverse() * member.global_transform)
+		if member == target_entity:
 			_group_index = i
 		else:
-			e.add_component(C_Drag.new())
-			e.send_event("on_drag_started", hit)
-		prev = e
+			member.add_component(C_Drag.new())
+
+
+## Остальным частям группы начало драга (схваченной оно уже послано)
+func _group_start(hit: Dictionary) -> void:
+	for member in _group:
+		if member != target_entity and is_instance_valid(member):
+			member.send_event("on_drag_started", hit)
 
 
 ## Посадка схваченной части на трак: пусто, если она не на рельсах

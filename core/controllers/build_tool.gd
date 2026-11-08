@@ -105,7 +105,8 @@ func _enter_spawn_and_drag() -> void:
 		ghost.send_event("on_drag_moved", hit)     # теперь get_tree() есть
 	# Состав вагонов: остальные части появляются сразу и тащатся группой (DragTool)
 	if consist != null:
-		ConsistPlacer.spawn_loose(consist, ghost, controller.entity_factory, controller.entities_root)
+		var parts_entities := ConsistPlacer.spawn_loose(consist, ghost, controller.entity_factory, controller.entities_root)
+		controller.consist_drag = {"entities": parts_entities, "parts": consist.template.parts}
 	controller.select_tool.set_selection(ghost)
 	_remember(ghost_setting, null)   # XX claude-terra 13.1.4: состояния нет, дубль = еще одна копия
 	ghost = null

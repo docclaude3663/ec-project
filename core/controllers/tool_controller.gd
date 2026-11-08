@@ -164,6 +164,11 @@ func publish_selection(entity: Entity) -> void:
 
 ## Выбран объект для стройки (из панели инструментов). null: снять выбор
 ## variant: исполнение модели из Library (ATTN_22): призрак и поставленный объект получают его. Пусто: вид по умолчанию
+## Состав из шаблона, который только что появился и сразу тащится: {"entities", "parts"}. Кладет BuildTool,
+## забирает DragTool.enter(): тащится весь состав, а не только схваченная часть (даже на обычных сцепках)
+var consist_drag: Dictionary = {}
+
+
 func select_build_object(setting: EntitySetting, variant: Dictionary = {}) -> void:
 	if setting == null :
 		# Очищаем селекта в UI если null

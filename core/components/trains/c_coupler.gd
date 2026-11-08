@@ -266,7 +266,7 @@ func get_debug_info() -> Array[String]:
 # ==========================================
 
 ## Игрок схватил вагон - он отцепляется (состав целиком не тащим)
-## Схватили вагон: обычные связи рвём, вечные остаются (группа тащится целиком, DragTool)
+## Схватили вагон: связи рвём, кроме сцепок внутри перетаскиваемой группы (DragTool)
 func on_drag_started(_data: Dictionary) -> void:
 	_drop_loose(&"drag")
 
@@ -418,8 +418,8 @@ func _solve_link(l: Link, dt: float) -> void:
 		return
 	var ch_a := _chassis()
 	var ch_b := cb._chassis()
-	if l.permanent and _pair_dragging(l):
-		return   # группу тащат: вечная связь ждёт посадки на рельсы
+	if l.coupled and _pair_dragging(l):
+		return   # группу тащат: связь ждёт посадки на рельсы
 	if not ch_a or not ch_b or not ch_b.is_on_rails:
 		_drop_link(l, &"partner_off_rails")
 		return
@@ -680,16 +680,18 @@ func _drop_link(l: Link, reason: StringName) -> void:
 			c.entity.send_event("on_coupler_released", {"reason": reason})
 
 
-## Рвёт все связи, кроме вечных, пока вагон или его сосед по ней в драге (групповое перетаскивание)
+## Рвёт все связи, кроме сцепок внутри перетаскиваемой группы (групповое перетаскивание, DragTool)
 func _drop_loose(reason: StringName) -> void:
 	for end in 2:
 		var l: Link = links[end]
-		if l and not (l.permanent and _pair_dragging(l)):
+		if l and not (l.coupled and _pair_dragging(l)):
 			_drop_link(l, reason)
 
 
+## Оба торца связи в драге: это одна перетаскиваемая группа (вечная связка или состав из шаблона).
+## Одиночный драг вагона дает C_Drag только ему, поэтому его сцепки рвутся как раньше
 func _pair_dragging(l: Link) -> bool:
-	return l.a.entity.has_comp(C_Drag) or l.b.entity.has_comp(C_Drag)
+	return l.a.entity.has_comp(C_Drag) and l.b.entity.has_comp(C_Drag)
 
 
 ## Вагоны, связанные с этим вечными сцепками (включая его), по порядку от головной
