@@ -6,7 +6,8 @@ class_name AltRotate extends RefCounted
 #########################
 ## Пока Alt зажат, горизонтальное движение мыши поворачивает объект вокруг Y (событие on_rotate_input, как Q/E, но плавно),
 ## а позиция объекта не обновляется: инструмент в это время не шлет on_drag_moved. Отпустили Alt: объект снова идет за курсором.
-## Shift: точнее (DEG_PER_PX_FINE). Вправо = по часовой стрелке (вид сверху).
+## Shift: точнее (DEG_PER_PX_FINE). Объект поворачивается вслед за движением мыши (вправо мышью = вправо). Знак подобран по проверке в редакторе:
+## первая версия (-dx) вращала в обратную сторону.
 ## Исключение: лист террейна. Для него Alt уже занят («без магнита», ATTN_13), поэтому его Alt не вращает.
 ## Вызывать tick() каждый кадр из process_tick инструмента, а в обычном кадре (Alt не зажат) передавать последний ввод курсора в remember().
 ## Поворот только меняет состояние объекта, а трансформ применяется событием on_drag_moved. Поэтому на время Alt мы повторяем последний
@@ -47,7 +48,7 @@ func tick(target: Entity, viewport: Viewport) -> bool:
 	_last_x = x
 	if absf(dx) > 0.0:
 		var k := DEG_PER_PX_FINE if Input.is_key_pressed(KEY_SHIFT) else DEG_PER_PX
-		target.send_event("on_rotate_input", {"axis": "y", "amount": -dx * k})
+		target.send_event("on_rotate_input", {"axis": "y", "amount": dx * k})
 		# Применить новый поворот на прежней позиции
 		if not _frozen.is_empty():
 			target.send_event("on_drag_moved", _frozen.duplicate())
