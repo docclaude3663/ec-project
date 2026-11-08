@@ -109,6 +109,10 @@ func save_game(slot_name: String ='savegame') -> bool:
 	var _rb := _room()
 	if _rb and _rb.is_in_group(&"room_root"):
 		_saved_game.room_id = _rb.get_room_id()
+		_saved_game.room_variants = _rb.config.variants.duplicate()
+
+	# XX claude-table T0: подмакетник (ATTN_23)
+	_saved_game.layout = LYM.get_state()
 
 	# Активный стиль траков макета (ATTN_17 §17.13)
 	_saved_game.track_style = TSM.current_id
@@ -198,6 +202,11 @@ func load_game(slot_name: String  ='savegame', dir: String = SAVE_DIR, style_ove
 	var _rb := _room()
 	if _rb:
 		_rb.switch_room(_saved_game.room_id)
+		# XX claude-table T0: варианты комнаты из сейва. Старый сейв (layout пуст) их не хранит: остаются текущие
+		if not _saved_game.layout.is_empty():
+			_rb.set_variants(_saved_game.room_variants)
+	# XX claude-table T0: подмакетник; пустой layout = стол как в v1
+	LYM.set_state(_saved_game.layout)
 	# 1️⃣ загружаем камеру вызывая ее метод
 	$"/root/GameRoot/Gimbal".load_global_state(_saved_game.gimbal)
 	var root_node = get_node(world_entities_root)

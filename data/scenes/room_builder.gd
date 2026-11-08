@@ -202,6 +202,15 @@ func set_variant(slot: String, value: String) -> void:
 	rebuild_room()
 
 
+## XX claude-table T0. Заменить все варианты разом (загрузка сейва): комната пересобирается один раз
+func set_variants(v: Dictionary) -> void:
+	if config.variants == v:
+		return
+	config.variants = v.duplicate()
+	if is_node_ready() and is_in_group(&"room_root"):
+		rebuild_room()
+
+
 func get_bounds() -> AABB:
 	return config.bounds
 

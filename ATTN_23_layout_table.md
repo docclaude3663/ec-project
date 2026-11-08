@@ -1,4 +1,4 @@
-# ATTN 23. Подмакетник (Layout Table): кастомизация, модули, крепление **[план, решений автора ещё нет]**
+# ATTN 23. Подмакетник (Layout Table): кастомизация, модули, крепление **[план принят, предложения §23.12 действуют; в работе, T0 сделан]**
 
 Продолжение [TDD.md](ATTN_TDD.md) §13d, по структуре как [ATTN_14_observe_room.md](ATTN_14_observe_room.md) и [ATTN_22_library.md](ATTN_22_library.md).
 Связанные разделы: [ATTN_13](docs/ATTN_13_TerrainTools.md) (листы пенопласта лежат на столе), [ATTN_14](ATTN_14_observe_room.md) (комната, §14.4.1, §14.12), [ATTN_10](docs/ATTN_10_dc_power_system.md) (пульты и провода D4–D6), [ATTN_22](ATTN_22_library.md) (Customization, покраска), [ATTN_19](ATTN_19_game_flow.md) (`sandbox_setup`), [ATTN_17](ATTN_17_ui.md) (интерфейс).
@@ -35,7 +35,7 @@
 | ATTN_17 §17.12.3 | поток «Песочница → настройка макета (комната, стол) → Игра» | содержания экрана нет |
 | ATTN_10 §10.5, D4–D6 | пульты, провода, коммутаторы, привод стрелок | нигде не сказано, где это физически находится (под столом) |
 | ATTN_GDD | «Terrain Tools, Decor, Room — контент для Build» | подмакетника как контента и награды нет |
-| `saves/saved_game.gd` | только `gimbal` и `entities` | нет `room_id`, `variants`, `layout`; TDD §11 и ATTN_14 §14.9 это обещают, в коде этого нет |
+| `saves/saved_game.gd` | `gimbal`, `entities`, `room_id`, `track_style`, `power_state` | нет `room_variants` и `layout` (T0 их добавил); TDD §11 и ATTN_14 §14.9 это обещают |
 
 Вывод: кастомизации подмакетника не описано нигде. Этот документ её оформляет. Из кода видно, что поверхность изменений небольшая: потребителей прямоугольного стола три (`RoomBuilder._build_table`, `TGM.table_rect`, домен воды), остальная система опирается только на слой `ground`.
 
@@ -178,11 +178,11 @@
 
 ### T0. Страховка и данные
 
-- [ ] `LayoutConfig` и `LYM` (autoload) с одной функцией `table_rect()`, результат тот же, что у `RoomConfig.table_top`; `TGM.table_rect()` делегирует.
-- [ ] `SavedGame.layout` и `SavedGame.room` (`id`, `variants`): запись и чтение, старый сейв без полей открывается.
-- [ ] Метрика «до»: числа `underground_depth` и `surface_y` в нескольких точках стола (для сравнения в T1).
+- [x] `LayoutConfig` (`setting/layout_config.gd`) и `LYM` (`core/controllers/layout_manager.gd`, autoload) с функцией `table_rect()`, результат тот же, что у `RoomConfig.table_top`; `TGM.table_rect()` делегирует.
+- [x] `SavedGame.layout` и `SavedGame.room_variants` (`room_id` в сейве уже был): запись и чтение, старый сейв без полей открывается (пустой `layout` = «до подмакетника»: стол как в v1, варианты комнаты не трогаем). `RoomBuilder.set_variants` применяет варианты из сейва.
+- [x] Метрика «до»: тест `tests/table_layout_test.tscn` печатает верх стола по лучу `ground` в точках стола и за краем (для сравнения в T1). Числа `underground_depth` снимаются в T1 вручную с треком на столе (тест траки не ставит).
 
-**Проверка:** игра грузится, вода льётся как раньше, старый сейв открывается, новый сохраняет и загружает `room_id` и варианты комнаты (стена, покрывало).
+**Проверка:** F6 на `tests/table_layout_test.tscn`: везде OK, ИТОГ: OK; игра грузится, вода льётся как раньше, старый сейв открывается, новый сохраняет и загружает `room_id` и варианты комнаты (стена, покрывало).
 
 ### T1. Секция как Entity
 

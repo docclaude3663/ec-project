@@ -106,17 +106,10 @@ func get_flat_tracks() -> Array[Entity]:
 	return res
 
 
-## XX claude-terra 13.4. Столешница подмакетника в мире (XZ): по паспорту комнаты, центр в (0, 0).
-## Позже подмакетник станет Entity с модулями (ATTN_14 §14.4.1), тогда здесь суммируются секции
+## XX claude-terra 13.4. Столешница подмакетника в мире (XZ), центр в (0, 0).
+## XX claude-table T0: считает LYM (ATTN_23), здесь остаётся для прежних потребителей (домен воды)
 func table_rect() -> Rect2:
-	var size := Vector2(200.0, 100.0)
-	if is_inside_tree():
-		var rb := get_tree().get_first_node_in_group(&"room_root")
-		if rb != null and rb.get("config") is RoomConfig:
-			size = (rb.get("config") as RoomConfig).table_top
-		else:
-			size = RoomConfig.new().table_top
-	return Rect2(-size * 0.5, size)
+	return LYM.table_rect()
 
 
 ## Живые водные участки: без призраков и удаляемых
