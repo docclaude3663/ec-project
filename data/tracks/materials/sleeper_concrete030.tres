@@ -1,36 +1,32 @@
 [gd_resource type="StandardMaterial3D" format=3]
 
-[ext_resource type="Texture2D" path="res://data/textures/track/Concrete030_1K-JPG/Concrete030_1K-JPG_Color.jpg" id="1_jod3l"]
-[ext_resource type="Texture2D" path="res://data/textures/track/Concrete030_1K-JPG/Concrete030_1K-JPG_ORM.png" id="2_oqagw"]
-[ext_resource type="Texture2D" path="res://data/textures/track/Concrete030_1K-JPG/Concrete030_1K-JPG_NormalGL.jpg" id="3_roclh"]
+[ext_resource type="Texture2D" path="res://data/textures/track/Metal007_1K-WebP/Metal007_1K-WebP_Color.webp" id="1_oqagw"]
+[ext_resource type="Texture2D" path="res://data/textures/track/Metal007_1K-WebP/Metal007_1K-WebP_ORM.webp" id="2_jod3l"]
+[ext_resource type="Texture2D" path="res://data/textures/track/Metal007_1K-WebP/Metal007_1K-WebP_NormalGL.webp" id="3_khdnu"]
 
 [resource]
-vertex_color_use_as_albedo = true
-vertex_color_is_srgb = true
-albedo_color = Color(0.734375, 0.73150635, 0.73150635, 1)
-albedo_texture = ExtResource("1_jod3l")
+albedo_texture = ExtResource("1_oqagw")
 metallic = 1.0
-metallic_texture = ExtResource("2_oqagw")
+metallic_texture = ExtResource("2_jod3l")
 metallic_texture_channel = 2
-roughness_texture = ExtResource("2_oqagw")
+roughness_texture = ExtResource("2_jod3l")
 roughness_texture_channel = 1
 normal_enabled = true
-normal_texture = ExtResource("3_roclh")
-uv1_scale = Vector3(0.6060606, 1, 1)
+normal_texture = ExtResource("3_khdnu")
 texture_filter = 5
-metadata/track_role = "sleeper"
-metadata/track_source = "res://data/textures/track/Concrete030_1K-JPG"
+metadata/track_role = "rail"
+metadata/track_source = "res://data/textures/track/Metal007_1K-WebP"
 metadata/track_params = {
 "ao_light_affect": 0.0,
-"height_scale": 0.0,
-"mesh_uv_units": true,
-"metallic": -1.0,
+"height_scale": 0.05,
+"mesh_uv_units": false,
+"metallic": 1.0,
 "normal_scale": 1.0,
 "roughness": 1.0,
-"tile": Vector2(1.65, 1),
-"tint": Color(0.734375, 0.73150635, 0.73150635, 1),
+"tile": Vector2(1, 1),
+"tint": Color(1, 1, 1, 1),
 "triplanar": false,
 "use_ao": false,
 "use_height": false,
-"vertex_color": true
+"vertex_color": false
 }

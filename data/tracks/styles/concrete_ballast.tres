@@ -1,29 +1,30 @@
-[gd_resource type="Resource" script_class="TrackStyle" format=3 uid="uid://bycmu1njyhbj5"]
+[gd_resource type="Resource" script_class="TrackStyle" format=3]
 
-[ext_resource type="Script" uid="uid://cfpx56q1cgoy5" path="res://core/components/tracks/track_style.gd" id="1_ts"]
-[ext_resource type="Texture2D" uid="uid://dnmwlwy0gwso" path="res://data/textures/track/Gravel023_1K-JPG/Gravel023_1K-JPG_Color.jpg" id="1_y7ac1"]
-[ext_resource type="Texture2D" uid="uid://tbvwapmgu2g5" path="res://data/textures/track/Gravel023_1K-JPG/Gravel023_1K-JPG_AmbientOcclusion.jpg" id="2_ypbvr"]
+[ext_resource type="Texture2D" path="res://data/textures/track/Gravel023_1K-WebP/Gravel023_1K-WebP_Color.webp" id="1_qx84f"]
+[ext_resource type="Script" path="res://core/components/tracks/track_style.gd" id="1_ts"]
+[ext_resource type="Texture2D" path="res://data/textures/track/Gravel023_1K-WebP/Gravel023_1K-WebP_ORM.webp" id="2_63ss8"]
+[ext_resource type="Texture2D" path="res://data/textures/track/Gravel023_1K-WebP/Gravel023_1K-WebP_NormalGL.webp" id="3_hff1w"]
 [ext_resource type="Material" path="res://data/tracks/materials/sleeper_concrete030.tres" id="3_hx7wv"]
-[ext_resource type="Texture2D" uid="uid://dwmpkaiqjvqcd" path="res://data/textures/track/Gravel023_1K-JPG/Gravel023_1K-JPG_NormalGL.jpg" id="3_qx84f"]
-[ext_resource type="Texture2D" uid="uid://cwab2oincb8e4" path="res://data/textures/track/Gravel023_1K-JPG/Gravel023_1K-JPG_Roughness.jpg" id="4_63ss8"]
-[ext_resource type="Texture2D" uid="uid://miyaoodacy6b" path="res://data/textures/track/Metal007_1K-JPG/Metal007_1K-JPG_Color.jpg" id="5_qx84f"]
-[ext_resource type="Texture2D" uid="uid://dv1m6m4pygtu4" path="res://data/textures/track/Metal007_1K-JPG/Metal007_1K-JPG_ORM.png" id="6_63ss8"]
-[ext_resource type="Texture2D" uid="uid://bo2qcue1ua5hg" path="res://data/textures/track/Metal007_1K-JPG/Metal007_1K-JPG_NormalGL.jpg" id="7_hff1w"]
+[ext_resource type="Texture2D" path="res://data/textures/track/Concrete030_1K-WebP/Concrete030_1K-WebP_Color.webp" id="6_qsojm"]
+[ext_resource type="Texture2D" path="res://data/textures/track/Concrete030_1K-WebP/Concrete030_1K-WebP_ORM.webp" id="7_j7qjf"]
+[ext_resource type="Texture2D" path="res://data/textures/track/Concrete030_1K-WebP/Concrete030_1K-WebP_NormalGL.webp" id="8_sqfcx"]
 [ext_resource type="ArrayMesh" path="res://data/tracks/meshes/sleeper_concrete_02.res" id="10_63ss8"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hff1w"]
-albedo_color = Color(0.26953125, 0.26953125, 0.26953125, 1)
-albedo_texture = ExtResource("1_y7ac1")
-roughness_texture = ExtResource("4_63ss8")
-roughness_texture_channel = 4
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qx84f"]
+albedo_color = Color(0.65234375, 0.65234375, 0.65234375, 1)
+albedo_texture = ExtResource("1_qx84f")
+metallic = 1.0
+metallic_texture = ExtResource("2_63ss8")
+metallic_texture_channel = 2
+roughness_texture = ExtResource("2_63ss8")
+roughness_texture_channel = 1
 normal_enabled = true
-normal_texture = ExtResource("3_qx84f")
+normal_texture = ExtResource("3_hff1w")
 ao_enabled = true
-ao_texture = ExtResource("2_ypbvr")
-ao_texture_channel = 4
+ao_texture = ExtResource("2_63ss8")
 texture_filter = 5
 metadata/track_role = "ballast"
-metadata/track_source = "res://data/textures/track/Gravel023_1K-JPG"
+metadata/track_source = "res://data/textures/track/Gravel023_1K-WebP"
 metadata/track_params = {
 "ao_light_affect": 0.0,
 "height_scale": 0.05,
@@ -32,50 +33,54 @@ metadata/track_params = {
 "normal_scale": 1.0,
 "roughness": 1.0,
 "tile": Vector2(10, 10),
-"tint": Color(0.26953125, 0.26953125, 0.26953125, 1),
+"tint": Color(0.65234375, 0.65234375, 0.65234375, 1),
 "triplanar": false,
 "use_ao": true,
 "use_height": false,
 "vertex_color": false
 }
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qsojm"]
-albedo_texture = ExtResource("5_qx84f")
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_r3wl2"]
+vertex_color_use_as_albedo = true
+vertex_color_is_srgb = true
+albedo_color = Color(0.734375, 0.73150635, 0.73150635, 1)
+albedo_texture = ExtResource("6_qsojm")
 metallic = 1.0
-metallic_texture = ExtResource("6_63ss8")
+metallic_texture = ExtResource("7_j7qjf")
 metallic_texture_channel = 2
-roughness_texture = ExtResource("6_63ss8")
+roughness_texture = ExtResource("7_j7qjf")
 roughness_texture_channel = 1
 normal_enabled = true
-normal_texture = ExtResource("7_hff1w")
+normal_texture = ExtResource("8_sqfcx")
+uv1_scale = Vector3(0.6060606, 1, 1)
 texture_filter = 5
-metadata/track_role = "rail"
-metadata/track_source = "res://data/textures/track/Metal007_1K-JPG"
+metadata/track_role = "sleeper"
+metadata/track_source = "res://data/textures/track/Concrete030_1K-WebP"
 metadata/track_params = {
 "ao_light_affect": 0.0,
-"height_scale": 0.05,
-"mesh_uv_units": false,
-"metallic": 1.0,
+"height_scale": 0.0,
+"mesh_uv_units": true,
+"metallic": -1.0,
 "normal_scale": 1.0,
 "roughness": 1.0,
-"tile": Vector2(1, 1),
-"tint": Color(1, 1, 1, 1),
+"tile": Vector2(1.65, 1),
+"tint": Color(0.734375, 0.73150635, 0.73150635, 1),
 "triplanar": false,
 "use_ao": false,
 "use_height": false,
-"vertex_color": false
+"vertex_color": true
 }
 
 [resource]
 script = ExtResource("1_ts")
 id = &"concrete_ballast"
 rail_profile = PackedVector2Array(-0.1, 0, -0.0175, 0.048, -0.06, 0.194, -0.06, 0.2325, -0.04, 0.25, 0.04, 0.25, 0.06, 0.2325, 0.06, 0.194, 0.0175, 0.048, 0.1, 0)
-rail_material = SubResource("StandardMaterial3D_qsojm")
+rail_material = ExtResource("3_hx7wv")
 rail_uv_tile = Vector2(1, 1)
 sleeper_mesh = ExtResource("10_63ss8")
 sleeper_size = Vector3(2.55, 0.2, 0.34)
 sleeper_gap = 0.36
-sleeper_material = ExtResource("3_hx7wv")
+sleeper_material = SubResource("StandardMaterial3D_r3wl2")
 ballast_profile = PackedVector2Array(-1.6, 0, -1.1, 0.5, 1.1, 0.5, 1.6, 0)
-ballast_material = SubResource("StandardMaterial3D_hff1w")
+ballast_material = SubResource("StandardMaterial3D_qx84f")
 ballast_uv_tile = Vector2(10, 10)
