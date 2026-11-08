@@ -52,7 +52,7 @@ func _unhandled_input(_event: InputEvent) -> void:
 	if Input.is_action_just_pressed(&"quick_save"):
 		save_game('autosave')
 	# F9 (debug): загрузить эталонную диораму
-	if Global.debug_mode and _event is InputEventKey and _event.pressed and not _event.echo and _event.keycode == KEY_F9:
+	if Global.debug_mode and Actions.pressed(_event, &"debug_load_reference"):
 		load_game('reference', REFERENCE_DIR)
 
 

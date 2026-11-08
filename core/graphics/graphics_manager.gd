@@ -158,12 +158,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			and event.is_action_pressed(&"debug_vsync_toggle") and not event.is_echo():
 		_toggle_vsync()
 	# F4 (debug): оверлей статистики
-	if Global.debug_mode and event is InputEventKey and event.pressed and not event.echo \
-			and event.keycode == KEY_F4:
+	if Global.debug_mode and Actions.pressed(event, &"debug_stats_toggle"):
 		set_stats_shown(not is_stats_shown())
 	# F10 (debug): сохранить встроенные Look и Time в .tres для правки
-	if Global.debug_mode and event is InputEventKey and event.pressed and not event.echo \
-			and event.keycode == KEY_F10:
+	if Global.debug_mode and Actions.pressed(event, &"debug_save_look"):
 		save_builtin_presets()
 
 
