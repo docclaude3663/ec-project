@@ -88,8 +88,8 @@ func handle_input(event: InputEvent):
 			_shift_press = false
 			_shift_click = null
 			var in_build: bool = Global.current_mode == &'build'
-			var shift: bool = in_build and Input.is_key_pressed(KEY_SHIFT)
-			if in_build and (clicked_entity == null or shift or Input.is_key_pressed(KEY_CTRL)):
+			var shift: bool = in_build and Actions.shift()
+			if in_build and (clicked_entity == null or shift or Actions.ctrl()):
 				_marquee_armed = true
 				_marquee_start = event.position
 				if shift:
@@ -97,7 +97,7 @@ func handle_input(event: InputEvent):
 					_marquee_additive = true
 					_shift_click = clicked_entity
 					clicked_entity = null
-				elif Input.is_key_pressed(KEY_CTRL):
+				elif Actions.ctrl():
 					clicked_entity = null   # Ctrl+ЛКМ только рамка, объект под курсором не выбираем
 			if clicked_entity:
 				set_selection(clicked_entity)
@@ -151,10 +151,10 @@ func handle_input(event: InputEvent):
 				clicked_entity = null
 
 	# XX claude-switch: Del удаляет группу, выбранную рамкой
-	if not _group.members.is_empty() and Input.is_action_just_pressed("ui_graph_delete"):
+	if not _group.members.is_empty() and Input.is_action_just_pressed(&"delete"):
 		_group.delete_members()
 		return
-	if selected_entity and Input.is_action_just_pressed("ui_graph_delete"):
+	if selected_entity and Input.is_action_just_pressed(&"delete"):
 		# Вечная группа (паровоз с тендером, секции) удаляется целиком
 		var coupler := selected_entity.get_comp(C_Coupler) as C_Coupler
 		if coupler != null:
@@ -166,20 +166,18 @@ func handle_input(event: InputEvent):
 		#INFO ДЕРГАЕМ ПАНЕЛЬ!
 		controller.publish_selection(null)
 	# XX claude-terra 13.2 B6: B - автонасыпь под выбранным траком и цепочкой за ним (только Build)
-	if selected_entity and event is InputEventKey and event.pressed and not event.echo \
-			and (event.keycode == KEY_B or event.physical_keycode == KEY_B) \
-			and not (event.ctrl_pressed or event.alt_pressed or event.meta_pressed) \
+	if selected_entity and Actions.pressed(event, &"embankment_toggle") \
 			and Global.current_mode == &'build' and selected_entity.has_comp(C_Path):
 		Embankment.build(selected_entity, controller)
 
 		
 	# XX claude-terra T6: тоннельный флаг выбранного трака (у не-траков события никто не слушает)
-	if selected_entity and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_U:
+	if selected_entity and Actions.pressed(event, &"tunnel_toggle"):
 		selected_entity.send_event("on_tunnel_toggle", {})
 
-	if selected_entity and Input.is_action_just_pressed("ui_page_up"):
+	if selected_entity and Input.is_action_just_pressed(&"wagon_kick_fwd"):
 		selected_entity.send_event("on_train_kicked", {"power_kick": 10.0}) # Пинок силой 10m\s
-	if selected_entity and Input.is_action_just_pressed("ui_page_down"):
+	if selected_entity and Input.is_action_just_pressed(&"wagon_kick_back"):
 		selected_entity.send_event("on_train_kicked", {"power_kick": -10.0}) # Пинок силой 10m\s
 
 
@@ -277,7 +275,7 @@ func _try_handle_press() -> bool:
 	if hit.is_empty():
 		return false
 	var data := {"collider": hit.collider, "position": hit.position,
-			"shift": Input.is_key_pressed(KEY_SHIFT), "consumed": false, "drag": false}
+			"shift": Actions.shift(), "consumed": false, "drag": false}
 	selected_entity.send_event("on_pointer_pressed", data)
 	handle_dragging = data.drag
 	return data.consumed

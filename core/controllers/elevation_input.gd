@@ -18,13 +18,13 @@ static func levels_from_event(event: InputEvent) -> int:
 	var k := event as InputEventKey
 	if k == null or not k.pressed or k.echo:
 		return 0
-	if k.keycode == KEY_PAGEUP:
+	if k.is_action(&"level_up_x5"):
 		return BIG_STEP
-	if k.keycode == KEY_PAGEDOWN:
+	if k.is_action(&"level_down_x5"):
 		return -BIG_STEP
 	if k.shift_pressed:
-		if k.keycode == KEY_R or k.physical_keycode == KEY_R:
+		if k.is_action(&"level_up"):
 			return BIG_STEP
-		if k.keycode == KEY_F or k.physical_keycode == KEY_F:
+		if k.is_action(&"level_down"):
 			return -BIG_STEP
 	return 0
