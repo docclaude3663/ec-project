@@ -14,6 +14,9 @@ var ghost_variant: Dictionary = {}
 var ghost : Entity
 ## Состав из кнопки «Составы» (null: ставится обычный объект). ghost_setting при этом головная часть
 var consist: ConsistSetting
+## ToolController кладет состав сюда до switch_tool, enter() забирает его в consist
+## (exit() предыдущего инструмента consist обнуляет, поэтому напрямую его до switch_tool не ставят)
+var pending_consist: ConsistSetting
 
 var rmb_pressed_pos := Vector2.ZERO
 
@@ -43,6 +46,8 @@ var _dup_pending := false
 
 
 func enter():
+	consist = pending_consist
+	pending_consist = null
 	stretch_phase = 0
 	preshaped = false   # XX claude-terra 13.1.4
 	_alt_rotate.reset()
@@ -98,6 +103,9 @@ func _enter_spawn_and_drag() -> void:
 		hit = controller.get_mouse_plane_hit()   # кнопка спавна не над столом
 	if hit:
 		ghost.send_event("on_drag_moved", hit)     # теперь get_tree() есть
+	# Состав вагонов: остальные части появляются сразу и тащатся группой (DragTool)
+	if consist != null:
+		ConsistPlacer.spawn_loose(consist, ghost, controller.entity_factory, controller.entities_root)
 	controller.select_tool.set_selection(ghost)
 	_remember(ghost_setting, null)   # XX claude-terra 13.1.4: состояния нет, дубль = еще одна копия
 	ghost = null

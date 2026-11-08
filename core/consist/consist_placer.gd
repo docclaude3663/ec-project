@@ -92,16 +92,43 @@ static func spawn(cs: ConsistSetting, head: Entity, snap: Dictionary, factory: E
 		_seat(e, parts[i], states[i], true)
 		result.append(e)
 
-	# Сцепки: выходной торец предыдущей части со входным торцом следующей
-	for i in range(1, result.size()):
-		var a := result[i - 1].get_comp(C_Coupler) as C_Coupler
-		var b := result[i].get_comp(C_Coupler) as C_Coupler
+	couple_chain(result, parts, cs.name)
+	return result
+
+
+## Сцепки по порядку: выходной торец предыдущей части со входным торцом следующей
+static func couple_chain(entities: Array[Entity], parts: Array[Dictionary], label: String) -> void:
+	for i in range(1, entities.size()):
+		var a := entities[i - 1].get_comp(C_Coupler) as C_Coupler
+		var b := entities[i].get_comp(C_Coupler) as C_Coupler
 		if a == null or b == null:
 			continue
 		var a_end := C_Coupler.FRONT if parts[i - 1].get("reversed", false) else C_Coupler.REAR
 		var b_end := C_Coupler.REAR if parts[i].get("reversed", false) else C_Coupler.FRONT
 		if not a.couple_with(a_end, b, b_end):
-			push_warning("Consist: не сцеплены части %d и %d шаблона '%s' (типы сцепок или торцы)" % [i, i + 1, cs.name])
+			push_warning("Consist: не сцеплены части %d и %d шаблона '%s' (типы сцепок или торцы)" % [i, i + 1, label])
+
+
+## Состав вагонов, которые появляются сразу и тащатся мышью (SPAWN_AND_DRAG): остальные части ставятся
+## рядом в ряд за головной жёстко, по расстояниям шаблона, и сцепляются. Дальше их ведёт групповой драг
+## DragTool, на рельсы группа садится при дропе. Возвращает все части по порядку, головная первой
+static func spawn_loose(cs: ConsistSetting, head: Entity, factory: EntityFactory, root: Node) -> Array[Entity]:
+	var parts := cs.template.parts
+	var result: Array[Entity] = [head]
+	var fwd := -head.global_basis.z
+	var tail_dir := fwd if parts[0].get("reversed", false) else -fwd
+	var dist := 0.0
+	for i in range(1, parts.size()):
+		dist += float(parts[i].get("spacing", 0.0))
+		var e := factory.create_from_setting(cs.part_settings[i], &"", {})
+		root.add_child(e)
+		var f := tail_dir if parts[i].get("reversed", false) else -tail_dir
+		var basis := head.global_basis
+		if absf(f.y) < 0.99:
+			basis = Basis.looking_at(f, Vector3.UP)
+		e.global_transform = Transform3D(basis, head.global_position + tail_dir * dist)
+		result.append(e)
+	couple_chain(result, parts, cs.name)
 	return result
 
 

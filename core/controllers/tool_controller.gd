@@ -197,9 +197,9 @@ func select_build_object(setting: EntitySetting, variant: Dictionary = {}) -> vo
 
 	build_tool.ghost_setting = setting
 	build_tool.ghost_variant = variant   # XX claude-library L4
+	build_tool.pending_consist = consist_setting   # BuildTool.enter() заберет его после exit() прошлого инструмента
 	# переключение в build_tool
 	switch_tool(build_tool)
-	build_tool.consist = consist_setting   # после switch_tool: BuildTool.exit() его обнуляет
 
 
 
