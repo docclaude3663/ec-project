@@ -24,6 +24,21 @@ class_name RoomConfig extends Resource
 @export var window := {"x": 0.0, "w": 170.0, "sill": 80.0, "h": 140.0}
 @export var door := {"x": 100.0, "w": 80.0, "sill": 0.0, "h": 200.0}
 
+@export_category("Shape")
+## &"box": прямоугольная коробка (greybox RoomBuilder). &"attic": мансарда (RoomAttic): скос крыши у восточной стены
+@export var shape: StringName = &"box"
+## Мансарда: x, где скос крыши встречается с плоским потолком. Скос идёт от пола у восточной стены (x = size.x / 2)
+@export var roof_top_x := 50.0
+
+@export_category("Light")
+## false: окна закрыты, солнца и неба нет. Свет: лампы комнаты (lamps) и ambient (GFX гасит Sun и SkyFill)
+@export var daylight := true
+## Множитель ambient комнаты (Look.ambient_energy × ambient_mul). Без окон ambient ниже, иначе плоско
+@export var ambient_mul := 1.0
+## Потолочные лампы: [{x, z, len, axis ("x" или "z": вдоль чего лежит светильник), energy, shadow, y (необязательно:
+## высота от пола, по умолчанию под потолком)}]. Свет ставит RoomBuilder, корпус светильника рисует декор комнаты
+@export var lamps: Array = []
+
 @export_category("Table (подмакетник v1)")
 ## Столешница: X, Z
 @export var table_top := Vector2(200.0, 100.0)

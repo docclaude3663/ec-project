@@ -53,6 +53,7 @@ const CARDS := {
 		{"id": &"ceiling", "title": "Потолок", "toggle": true},
 		{"id": &"room_kid_room_10", "title": "Комната: детская", "group": &"room_pick", "default": true, "tip": "Заменяет комнату целиком (в памяти одна)"},
 		{"id": &"room_cube", "title": "Комната: пустой куб", "group": &"room_pick", "tip": "Пустая коробка для текстур и импорта. Заменяет комнату целиком"},
+		{"id": &"room_attic", "title": "Комната: мансарда", "group": &"room_pick", "tip": "Скос крыши, окна закрыты, свет только лампы дневного света. Заменяет комнату целиком"},
 		{"id": &"wall_cream", "title": "Стены: беж", "group": &"wall"},
 		{"id": &"wall_sky", "title": "Стены: небо", "group": &"wall"},
 		{"id": &"wall_mint", "title": "Стены: мята", "group": &"wall"},

@@ -53,6 +53,7 @@ var _probe: ReflectionProbe
 var _sky: MeshInstance3D
 var _oc: Node   # ObserveController
 var _sun_base_energy := 1.0
+var _sun_off_by_room := false   # Sun скрыт комнатой без дневного света (вернуть при смене комнаты)
 
 ## Ручной переключатель лампы: -1 авто (Look / Time), 0 выкл, 1 вкл. Сбрасывается при смене Look или Time
 var _lamp_override := -1
@@ -293,6 +294,10 @@ func _apply_all(duration: float) -> void:
 	if _env == null and not _resolve():
 		return
 	_sky = get_tree().get_first_node_in_group(&"gfx_sky") as MeshInstance3D   # комнату могли пересобрать
+	# Свет комнаты: без окон (RoomConfig.daylight = false) солнца и неба нет, ambient свой множитель
+	var room := _room_config()
+	var daylight := room == null or room.daylight
+	var ambient_mul := room.ambient_mul if room else 1.0
 
 	if _tween:
 		_tween.kill()
@@ -321,7 +326,7 @@ func _apply_all(duration: float) -> void:
 	_to(e, &"glow_bloom", look.glow_bloom, duration)
 	_to(e, &"background_color", look.background_color * tod.background_tint, duration)
 	_to(e, &"ambient_light_color", look.ambient_color * tod.ambient_tint, duration)
-	_to(e, &"ambient_light_energy", look.ambient_energy * tod.ambient_energy_mul, duration)
+	_to(e, &"ambient_light_energy", look.ambient_energy * tod.ambient_energy_mul * ambient_mul, duration)
 	_to(e, &"fog_light_color", look.fog_color, duration)
 	_to(e, &"fog_density", look.fog_density, duration)
 	_to(e, &"ssao_radius", look.ssao_radius, duration)
@@ -334,15 +339,21 @@ func _apply_all(duration: float) -> void:
 	# --- Солнце: Look дает множитель и мягкость, Time дает цвет, угол и энергию ---
 	if _sun:
 		_sun.shadow_enabled = true   # в сцене по умолчанию выключены
+		if not daylight:
+			_sun.visible = false   # свет пересчитывать и рисовать тень от выключенного источника незачем
+			_sun_off_by_room = true
+		elif _sun_off_by_room:
+			_sun.visible = true
+			_sun_off_by_room = false
 		_to(_sun, &"light_color", tod.sun_color, duration)
-		_to(_sun, &"light_energy", _sun_base_energy * look.sun_energy_mul * tod.sun_energy, duration)
+		_to(_sun, &"light_energy", _sun_base_energy * look.sun_energy_mul * tod.sun_energy * (1.0 if daylight else 0.0), duration)
 		_to(_sun, &"shadow_blur", look.sun_shadow_blur, duration)
 		_set_feature(_sun, _p_contact_sun, look.contact_shadows and q.contact_shadows)
 		_turn_sun(tod, duration)
 
 	# --- Заполняющий свет «небо»: энергия и цвет по Time, множитель и мягкость по Look, тень по Quality ---
 	if _fill:
-		var fe := tod.fill_energy * look.fill_mul
+		var fe := tod.fill_energy * look.fill_mul * (1.0 if daylight else 0.0)
 		if fe > 0.001:
 			_fill.visible = true
 		else:
@@ -660,6 +671,12 @@ func _save_builtin(dir: String, ids: Array, make: Callable) -> void:
 			continue
 		var err := ResourceSaver.save(make.call(id), path)
 		print("[GFX] сохранён ", path, " (код ", err, ")")
+
+
+## Паспорт текущей комнаты (RoomBuilder в группе room_root). null: комнаты нет (fast_debug)
+func _room_config() -> RoomConfig:
+	var rb := get_tree().get_first_node_in_group(&"room_root")
+	return rb.get("config") as RoomConfig if rb else null
 
 
 func _resolve() -> bool:

@@ -25,6 +25,7 @@ var visuals: Node3D    # пол, стены, потолок, мебель
 var ceiling: Node3D
 var _ceiling_mesh: MeshInstance3D   # плита потолка: скрытая в Observe, она всё равно отбрасывает тень (закрывает солнце сверху)
 var table: Node3D
+var _room_lights: Node3D   # потолочные лампы RoomConfig.lamps: не часть visuals, чтобы кнопка «Комната» не гасила свет
 
 var _mats := {}
 var _walls: Array[MeshInstance3D] = []   # стены, рама, шторы и подоконник: тень только в Observe
@@ -37,6 +38,13 @@ var _walls_shadow_now := false
 const COL_CEILING := Color(0.90, 0.90, 0.88)
 const COL_TABLE := Color(0.62, 0.50, 0.38)
 const COL_TABLE_LEG := Color(0.45, 0.36, 0.28)
+
+## Лампа дневного света (RoomConfig.lamps): холодный белый, широкий конус вниз. Энергия у каждой лампы своя (в паспорте комнаты).
+## Мир в см: bias и дальность считаются в см, значения теней как у лампы над столом
+const LAMP_COLOR := Color(0.90, 0.95, 1.0)
+const LAMP_RANGE := 600.0
+const LAMP_ANGLE := 80.0
+const LAMP_SOFT := 15.0       # light_size: размер источника, мягкость тени (трубка длинная, не точка)
 
 ## Мебель-заглушки. size: X, Y(высота), Z. xz: центр на полу. По §14.4
 const PROPS := [
@@ -121,6 +129,7 @@ func build() -> void:
 	for c in get_children():
 		remove_child(c)
 		c.queue_free()
+	_room_lights = null   # освобождён вместе с остальными детьми
 	_mats.clear()
 	_build_table()
 	_build_room()
@@ -150,6 +159,7 @@ func _build_room() -> void:
 	visuals = Node3D.new()
 	visuals.name = "Room"
 	add_child(visuals)
+	_build_room_lights()
 	if config.scene:
 		visuals.add_child(config.scene.instantiate())
 	else:
@@ -293,38 +303,50 @@ func _build_greybox() -> void:
 	var room_layer := Global.active_layers(['room'])
 	var vis := _vis_layer()
 
-	_decor = RoomDecor.new(c, vis, _lamp_height())
+	var attic := c.shape == &"attic"
+	_decor = RoomAttic.new(c, vis, _lamp_height()) if attic else RoomDecor.new(c, vis, _lamp_height())
 	_wall_col = _decor.wall_color()
 
 	var floor_mi := _box(visuals, "Floor", Vector3(c.size.x + 2.0 * t, t, c.size.z + 2.0 * t), Vector3(0.0, fy - t * 0.5, 0.0),
 			_decor.floor_color(), room_layer, vis, true)
 	floor_mi.material_override = _parquet_mat(_decor.floor_color())
 
-	_wall_z(-1.0, c.window)   # север: окно
-	_wall_z(1.0, c.door)      # юг: дверь
-	_wall_x(-1.0)
-	_wall_x(1.0)
-	_build_window_frame()
-	_build_sky_card()
+	if attic:
+		# Мансарда: оболочку (стены, скос, ниша двери, окна) строит RoomAttic
+		var ra := _decor as RoomAttic
+		ra.floor_material = floor_mi.material_override
+		ra.build_shell(visuals)
+		for part in ra.shell_parts:
+			_walls.append(part)
+	else:
+		_wall_z(-1.0, c.window)   # север: окно
+		_wall_z(1.0, c.door)      # юг: дверь
+		_wall_x(-1.0)
+		_wall_x(1.0)
+		_build_window_frame()
+		_build_sky_card()
 	_build_fake_ao()
 
-	# Потолок: отдельной нодой, по умолчанию скрыт, без коллизии
+	# Потолок: отдельной нодой, по умолчанию скрыт, без коллизии. В мансарде плоский только западнее roof_top_x
 	ceiling = Node3D.new()
 	ceiling.name = "Ceiling"
 	visuals.add_child(ceiling)
-	_ceiling_mesh = _box(ceiling, "CeilingSlab", Vector3(c.size.x + 2.0 * t, t, c.size.z + 2.0 * t),
-			Vector3(0.0, fy + c.size.y + t * 0.5, 0.0), COL_CEILING, 0, _shell_layer(), false)
+	var cx0 := -c.size.x * 0.5 - t
+	var cx1 := c.roof_top_x if attic else c.size.x * 0.5 + t
+	_ceiling_mesh = _box(ceiling, "CeilingSlab", Vector3(cx1 - cx0, t, c.size.z + 2.0 * t),
+			Vector3((cx0 + cx1) * 0.5, fy + c.size.y + t * 0.5, 0.0), COL_CEILING, 0, _shell_layer(), false)
 	_apply_ceiling()
 
 	if not c.furnished:
 		return
 
-	# Мебель: коллизия простой коробкой (слой room), внешний вид строит RoomDecor
-	for p in PROPS:
-		if p.get("collide", true):
-			var sz: Vector3 = p.size
-			var xz: Vector2 = p.xz
-			_collider(visuals, p.name, sz, Vector3(xz.x, fy + sz.y * 0.5, xz.y), room_layer)
+	# Мебель: коллизия простой коробкой (слой room), внешний вид строит RoomDecor (в мансарде RoomAttic и коллизии тоже)
+	if not attic:
+		for p in PROPS:
+			if p.get("collide", true):
+				var sz: Vector3 = p.size
+				var xz: Vector2 = p.xz
+				_collider(visuals, p.name, sz, Vector3(xz.x, fy + sz.y * 0.5, xz.y), room_layer)
 
 	_decor.build(visuals)
 	for part in _decor.window_parts:
@@ -435,18 +457,22 @@ func _build_fake_ao() -> void:
 	visuals.add_child(root)
 	var tex_floor := _ao_tex(true)
 	var tex_corner := _ao_tex(false)
+	# В мансарде восточная сторона скошена: вертикальные квады там повисли бы за крышей, их нет
+	var east := c.shape != &"attic"
 	# Полосы у пола: север, запад, восток (rot_y: куда смотрит нормаль квада внутрь комнаты)
 	_ao_quad(root, "FloorN", Vector2(c.size.x, AO_FLOOR_H), Vector3(0.0, y0 + AO_FLOOR_H * 0.5, -hz + AO_GAP), 0.0, tex_floor, false)
 	_ao_quad(root, "FloorW", Vector2(c.size.z, AO_FLOOR_H), Vector3(-hx + AO_GAP, y0 + AO_FLOOR_H * 0.5, 0.0), PI * 0.5, tex_floor, false)
-	_ao_quad(root, "FloorE", Vector2(c.size.z, AO_FLOOR_H), Vector3(hx - AO_GAP, y0 + AO_FLOOR_H * 0.5, 0.0), -PI * 0.5, tex_floor, false)
+	if east:
+		_ao_quad(root, "FloorE", Vector2(c.size.z, AO_FLOOR_H), Vector3(hx - AO_GAP, y0 + AO_FLOOR_H * 0.5, 0.0), -PI * 0.5, tex_floor, false)
 	# Вертикальные углы: на северной стене и на боковых стенах у севера и юга (градиент от угла)
 	var w := AO_CORNER_W
 	_ao_quad(root, "CornerN_W", Vector2(w, h), Vector3(-hx + w * 0.5, y0 + h * 0.5, -hz + AO_GAP), 0.0, tex_corner, false)
-	_ao_quad(root, "CornerN_E", Vector2(w, h), Vector3(hx - w * 0.5, y0 + h * 0.5, -hz + AO_GAP), 0.0, tex_corner, true)
 	_ao_quad(root, "CornerW_N", Vector2(w, h), Vector3(-hx + AO_GAP, y0 + h * 0.5, -hz + w * 0.5), PI * 0.5, tex_corner, true)
 	_ao_quad(root, "CornerW_S", Vector2(w, h), Vector3(-hx + AO_GAP, y0 + h * 0.5, hz - w * 0.5), PI * 0.5, tex_corner, false)
-	_ao_quad(root, "CornerE_N", Vector2(w, h), Vector3(hx - AO_GAP, y0 + h * 0.5, -hz + w * 0.5), -PI * 0.5, tex_corner, false)
-	_ao_quad(root, "CornerE_S", Vector2(w, h), Vector3(hx - AO_GAP, y0 + h * 0.5, hz - w * 0.5), -PI * 0.5, tex_corner, true)
+	if east:
+		_ao_quad(root, "CornerN_E", Vector2(w, h), Vector3(hx - w * 0.5, y0 + h * 0.5, -hz + AO_GAP), 0.0, tex_corner, true)
+		_ao_quad(root, "CornerE_N", Vector2(w, h), Vector3(hx - AO_GAP, y0 + h * 0.5, -hz + w * 0.5), -PI * 0.5, tex_corner, false)
+		_ao_quad(root, "CornerE_S", Vector2(w, h), Vector3(hx - AO_GAP, y0 + h * 0.5, hz - w * 0.5), -PI * 0.5, tex_corner, true)
 
 
 ## Градиентная текстура: тёмный край и прозрачный дальний конец. floor_strip: по вертикали (тёмный низ), иначе по горизонтали (тёмный левый край)
@@ -526,29 +552,9 @@ func _build_sky_card() -> void:
 	var c := config
 	if c.window.is_empty():
 		return
-	var g := Gradient.new()
-	g.set_color(0, Color(0.45, 0.68, 0.95))
-	g.set_color(1, Color(0.82, 0.92, 1.0))
-	var tex := GradientTexture2D.new()
-	tex.gradient = g
-	tex.fill_from = Vector2(0.0, 0.0)
-	tex.fill_to = Vector2(0.0, 1.0)
-	tex.width = 8
-	tex.height = 128
-	var m := StandardMaterial3D.new()
-	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	m.albedo_texture = tex
-	var q := QuadMesh.new()
-	q.size = Vector2(700.0, 350.0)
-	var mi := MeshInstance3D.new()
-	mi.name = "SkyCard"
-	mi.mesh = q
-	mi.material_override = m
-	mi.layers = _vis_layer()
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var mi := RoomDecor.make_sky_card(Vector2(700.0, 350.0), _vis_layer())
 	mi.position = Vector3(c.window.x, c.floor_y + c.size.y * 0.35, -(c.size.z * 0.5) - 150.0)
 	visuals.add_child(mi)
-	mi.add_to_group(&"gfx_sky")
 
 
 # ==========================================
@@ -568,6 +574,38 @@ func _collider(parent: Node, nm: String, size: Vector3, center: Vector3, layers:
 	cs.shape = bs
 	body.add_child(cs)
 	parent.add_child(body)
+
+
+## Потолочные лампы дневного света из RoomConfig.lamps. SpotLight3D вниз, тень только у ламп с shadow = true (тень дорогая).
+## Свет живёт в RoomLights рядом с Room, а не внутри: кнопка «Комната» прячет стены, но не должна гасить свет над макетом
+func _build_room_lights() -> void:
+	if is_instance_valid(_room_lights):
+		if _room_lights.get_parent() == self:
+			remove_child(_room_lights)
+		_room_lights.queue_free()
+	_room_lights = null
+	if config.lamps.is_empty():
+		return
+	_room_lights = Node3D.new()
+	_room_lights.name = "RoomLights"
+	add_child(_room_lights)
+	var i := 0
+	for d in config.lamps:
+		var l := SpotLight3D.new()
+		l.name = "Lamp%d" % i
+		var y: float = d.get("y", config.size.y - 6.0)
+		l.position = Vector3(d.x, config.floor_y + y - 4.0, d.z)
+		l.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
+		l.light_color = LAMP_COLOR
+		l.light_energy = d.get("energy", 150.0)
+		l.spot_range = LAMP_RANGE
+		l.spot_angle = LAMP_ANGLE
+		l.shadow_enabled = d.get("shadow", false)
+		l.shadow_bias = 0.6            # как у лампы над столом (EnvironmentRoot): в см стандартные значения дают полосы на стенах
+		l.shadow_normal_bias = 3.0
+		l.light_size = LAMP_SOFT
+		_room_lights.add_child(l)
+		i += 1
 
 
 func _lamp_height() -> float:
