@@ -12,6 +12,8 @@ var ghost_setting: EntitySetting # TODO переимновать в entity_setti
 ## XX claude-library L4: исполнение модели для призрака и поставленных объектов (из Library или копии объекта). Пусто: по умолчанию
 var ghost_variant: Dictionary = {}
 var ghost : Entity
+## Состав из кнопки «Составы» (null: ставится обычный объект). ghost_setting при этом головная часть
+var consist: ConsistSetting
 
 var rmb_pressed_pos := Vector2.ZERO
 
@@ -169,8 +171,15 @@ func handle_input(event: InputEvent):
 		if _stretch:
 			ghost.send_event("on_stretch_ended", {})
 
+		# Состав: места частей считаем до постановки. Не помещается на путь: не ставим (призрак красный)
+		var consist_snap := _consist_snap()
+		if consist != null and ConsistPlacer.plan(consist, ghost, consist_snap).is_empty():
+			return
+
 		# 1. Спавним реальный объект и получаем ссылку на него
 		var spawned_entity = _place_real_object()
+		if consist != null and spawned_entity:
+			ConsistPlacer.spawn(consist, spawned_entity, consist_snap, controller.entity_factory, controller.entities_root)
 		if _stretch and spawned_entity:
 			enter()   # новый призрак: можно продолжать от свободного конца
 			return
@@ -205,6 +214,27 @@ func _place_real_object() -> Entity:
 	#real_entity.send_event("on_drag_ended", {})
 	_remember(ghost_setting, real_entity)   # XX claude-terra 13.1.4
 	return real_entity
+
+
+## Посадка призрака головной части на трак (для расчёта мест остальных частей состава). Пусто: не на рельсах
+func _consist_snap() -> Dictionary:
+	if consist == null or ghost == null:
+		return {}
+	var dr := ghost.get_comp(C_TrainDraggable) as C_TrainDraggable
+	if dr == null or not dr.is_snapped_to_track or not is_instance_valid(dr.current_track):
+		return {}
+	return {"track": dr.current_track, "offset": dr.current_curve_point, "route": dr.current_route}
+
+
+## Призрак состава красный, пока состав не помещается на путь (головная не на рельсах или путь кончился)
+func _update_consist_fit() -> void:
+	if consist == null or ghost == null:
+		return
+	var fits := not ConsistPlacer.plan(consist, ghost, _consist_snap()).is_empty()
+	if not fits and not ghost.has_comp(C_Invalid):
+		ghost.add_component(C_Invalid.new())
+	elif fits and ghost.has_comp(C_Invalid):
+		ghost.remove_component(C_Invalid)
 
 
 # XX claude-terra 13.2 B2 ===== Рисование полигона листа (DRAW_POLYGON) =====
@@ -345,6 +375,7 @@ func _on_track_style_changed(id: StringName) -> void:
 func duplicate_last() -> void:
 	if last_setting == null:
 		return
+	consist = null   # дубль копирует одну поставленную часть, не весь состав
 	ghost_setting = last_setting
 	# XX claude-library L4: копия берет исполнение исходного объекта (если он жив)
 	ghost_variant = last_entity.variant.duplicate(true) if is_instance_valid(last_entity) else {}
@@ -396,12 +427,14 @@ func process_tick(_delta):
 			ghost.send_event("on_stretch_moved", hit)
 		else:
 			ghost.send_event("on_drag_moved", hit)
+			_update_consist_fit()
 
 
 
 
 ## Выполняется при выходе из инстр.
 func exit(_to_drag : bool = false):
+	consist = null
 	if TSM.current_changed.is_connected(_on_track_style_changed):
 		TSM.current_changed.disconnect(_on_track_style_changed)
 	Hints.set_context(&"polygon", false)   # XX claude-terra 13.2 B2

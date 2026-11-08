@@ -14,6 +14,9 @@ const TAG := &"consist"
 ## Настройка головной части: из неё берётся призрак
 var head: EntitySetting
 
+## Настройки всех частей по порядку шаблона (part_settings[0] == head)
+var part_settings: Array[EntitySetting] = []
+
 
 ## Шаблон игрока (лежит в user://), его можно переименовать и удалить. Встроенные шаблоны автора лежат в res://
 func is_user() -> bool:
@@ -31,7 +34,9 @@ static func from_template(tpl: ConsistTemplate, by_key: Dictionary) -> ConsistSe
 			return null
 	var s := ConsistSetting.new()
 	s.template = tpl
-	s.head = by_key[StringName(tpl.parts[0]["key"])]
+	for p in tpl.parts:
+		s.part_settings.append(by_key[StringName(p["key"])])
+	s.head = s.part_settings[0]
 	s.key = StringName("train.consist.%s" % tpl.id)
 	s.category = &"train"
 	s.tag = TAG

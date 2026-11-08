@@ -170,10 +170,10 @@ func select_build_object(setting: EntitySetting, variant: Dictionary = {}) -> vo
 		build_selection_cleared.emit()
 		return
 
-	# Кнопка состава: пока ставится только головная часть, остальные части достраиваются в этапе 3
-	if setting is ConsistSetting:
-		print("[Consist] ", setting.name, ": ставится головная часть, остальные части будут в этапе 3")
-		setting = (setting as ConsistSetting).head
+	# Кнопка состава: призрак головной части, остальные части BuildTool ставит по шаблону (ConsistPlacer)
+	var consist_setting := setting as ConsistSetting
+	if consist_setting != null:
+		setting = consist_setting.head
 
 	# XX claude-terra 13.3 S2: кнопка терморезака включает инструмент, призрака нет. Форма выреза из facet "shape"
 	if setting.build_behavior == EntitySetting.BuildBehavior.CUT_TOOL:
@@ -199,6 +199,7 @@ func select_build_object(setting: EntitySetting, variant: Dictionary = {}) -> vo
 	build_tool.ghost_variant = variant   # XX claude-library L4
 	# переключение в build_tool
 	switch_tool(build_tool)
+	build_tool.consist = consist_setting   # после switch_tool: BuildTool.exit() его обнуляет
 
 
 

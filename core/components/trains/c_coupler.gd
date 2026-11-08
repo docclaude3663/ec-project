@@ -126,6 +126,19 @@ func can_couple(end: int) -> bool:
 	return _type_of(end) != &""
 
 
+## Сцепляет торцы без сближения (состав из шаблона ставится уже стоящим вплотную).
+## false: типы сцепок несовместимы или торец занят
+func couple_with(end: int, other: C_Coupler, oend: int) -> bool:
+	if not _compatible(end, other, oend):
+		return false
+	if links[end] != null or other.links[oend] != null:
+		return false
+	_link(end, other, oend, true)
+	entity.send_event("on_coupled", {"other": other.entity, "end": end, "v_close": 0.0})
+	other.entity.send_event("on_coupled", {"other": entity, "end": oend, "v_close": 0.0})
+	return true
+
+
 func is_coupled(end: int) -> bool:
 	var l: Link = links[end]
 	return l != null and l.coupled
