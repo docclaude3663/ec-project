@@ -24,11 +24,15 @@ sky_material = SubResource("ProceduralSkyMaterial_igrpr")
 [sub_resource type="Environment" id="Environment_igrpr"]
 background_mode = 2
 sky = SubResource("Sky_bc160")
-ambient_light_energy = 16.0
+ambient_light_source = 3
+ssr_fade_in = 0.22735739
 ssao_enabled = true
-ssao_intensity = 2.37
-ssao_power = 3.105794
-ssil_enabled = true
+ssao_radius = 32.0
+ssao_intensity = 32.0
+ssao_power = 23.999887
+ssao_detail = 3.52
+ssao_sharpness = 1.0
+ssao_light_affect = 0.08
 
 [sub_resource type="BoxMesh" id="BoxMesh_igrpr"]
 material = ExtResource("1_4pdep")
@@ -99,6 +103,7 @@ environment = SubResource("Environment_igrpr")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="World/WorldEnvironment" unique_id=584191741 groups=["gfx_sun"]]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 20, 0)
+light_energy = 2.895
 shadow_enabled = true
 
 [node name="WoodFloor" type="MeshInstance3D" parent="World/WorldEnvironment" unique_id=863018642]

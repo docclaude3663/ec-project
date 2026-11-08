@@ -769,7 +769,7 @@ light_size = 15.0
 shadow_enabled = true
 shadow_bias = 0.6
 shadow_normal_bias = 3.0
-spot_range = 600.0
+spot_range = 123.05
 spot_angle = 80.0
 
 [node name="Lamp1" type="SpotLight3D" parent="Lights" unique_id=393791649]
