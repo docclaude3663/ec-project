@@ -28,3 +28,32 @@ static func levels_from_event(event: InputEvent) -> int:
 		if k.is_action(&"level_down"):
 			return -BIG_STEP
 	return 0
+
+
+## Шаг для инструментов, где R/F и PgUp/PgDn работают сразу (рельеф, рисование листа): ±1 (R/F), ±5 (Shift+R/F, PgUp/PgDn).
+## 0, если это не клавиша уровня. Ctrl не учитывается: глубину по Ctrl ловит depth_from_event раньше
+static func step_from_event(event: InputEvent) -> int:
+	var k := event as InputEventKey
+	if k == null or not k.pressed or k.echo:
+		return 0
+	if k.is_action(&"level_up_x5"):
+		return BIG_STEP
+	if k.is_action(&"level_down_x5"):
+		return -BIG_STEP
+	return Actions.axis_step(event, &"level_up", &"level_down", BIG_STEP)
+
+
+## Шаг глубины (толщины): Ctrl+R/F ±1, Ctrl+Shift+R/F и Ctrl+PgUp/PgDn ±5. 0, если это не она
+static func depth_from_event(event: InputEvent) -> int:
+	var k := event as InputEventKey
+	if k == null or not k.pressed or k.echo:
+		return 0
+	var n := Actions.axis_step(event, &"depth_up", &"depth_down", BIG_STEP)
+	if n != 0:
+		return n
+	if k.ctrl_pressed:
+		if k.is_action(&"level_up_x5"):
+			return BIG_STEP
+		if k.is_action(&"level_down_x5"):
+			return -BIG_STEP
+	return 0

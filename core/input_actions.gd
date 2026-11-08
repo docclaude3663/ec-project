@@ -18,6 +18,8 @@ extends Node
 ## в project.godot). Остальные заводятся здесь кодом. Переопределения игрока лежат в Settings, секция [input].
 
 const SECTION := "input"
+## Число закладок камеры Observe (ObserveCameraRig.BOOKMARK_COUNT), действия bookmark_1 ... bookmark_N
+const BOOKMARK_COUNT := 5
 
 const G_GLOBAL := &"global"
 const G_BUILD := &"build"
@@ -46,10 +48,11 @@ func _register_defaults() -> void:
 	# Повороты и уровень: Build и Drag
 	register(&"rotate_left", "action.rotate_left", &"build", [G_BUILD, G_DRAG], _key(KEY_Q))
 	register(&"rotate_right", "action.rotate_right", &"build", [G_BUILD, G_DRAG], _key(KEY_E))
-	register(&"level_up", "action.level_up", &"build", [G_BUILD, G_DRAG], _key(KEY_R))
-	register(&"level_down", "action.level_down", &"build", [G_BUILD, G_DRAG], _key(KEY_F))
-	register(&"level_up_x5", "action.level_up_x5", &"build", [G_BUILD, G_DRAG], _key(KEY_PAGEUP))
-	register(&"level_down_x5", "action.level_down_x5", &"build", [G_BUILD, G_DRAG], _key(KEY_PAGEDOWN))
+	# R/F и PgUp/PgDn: уровень. В инструментах рельефа то же по смыслу (плоскость выреза, глубина воды, уровень листа)
+	register(&"level_up", "action.level_up", &"build", [G_BUILD, G_DRAG, G_TERRAIN], _key(KEY_R))
+	register(&"level_down", "action.level_down", &"build", [G_BUILD, G_DRAG, G_TERRAIN], _key(KEY_F))
+	register(&"level_up_x5", "action.level_up_x5", &"build", [G_BUILD, G_DRAG, G_TERRAIN], _key(KEY_PAGEUP))
+	register(&"level_down_x5", "action.level_down_x5", &"build", [G_BUILD, G_DRAG, G_TERRAIN], _key(KEY_PAGEDOWN))
 	register(&"duplicate_last", "action.duplicate_last", &"build", [G_BUILD, G_SELECT], _key(KEY_V))
 	register(&"flex_limits_toggle", "action.flex_limits_toggle", &"build", [G_BUILD], _key(KEY_L))
 	register(&"flex_zones_toggle", "action.flex_zones_toggle", &"build", [G_BUILD], _key(KEY_Z))
@@ -62,11 +65,42 @@ func _register_defaults() -> void:
 	register(&"switch_throw", "action.switch_throw", &"select", [G_SELECT], _key(KEY_T))
 	# Drag
 	register(&"reset_transform", "action.reset_transform", &"drag", [G_DRAG], _key(KEY_HOME))
+	# Инструменты рельефа и рисование листа (ATTN_13 §13.11). Смысл одинаков во всех: подтвердить, отменить шаг, ширина, глубина
+	register(&"shape_confirm", "action.shape_confirm", &"terrain", [G_TERRAIN], [_key(KEY_ENTER), _key(KEY_KP_ENTER)])
+	register(&"shape_undo", "action.shape_undo", &"terrain", [G_TERRAIN], _key(KEY_BACKSPACE))
+	register(&"width_down", "action.width_down", &"terrain", [G_TERRAIN], _key(KEY_BRACKETLEFT))
+	register(&"width_up", "action.width_up", &"terrain", [G_TERRAIN], _key(KEY_BRACKETRIGHT))
+	register(&"depth_up", "action.depth_up", &"terrain", [G_TERRAIN], _key(KEY_R, false, true))
+	register(&"depth_down", "action.depth_down", &"terrain", [G_TERRAIN], _key(KEY_F, false, true))
+	register(&"cut_through", "action.cut_through", &"terrain", [G_TERRAIN], _key(KEY_END))
+	register(&"tool_undo", "action.tool_undo", &"terrain", [G_TERRAIN], _key(KEY_Z, false, true))
+	# Observe
+	register(&"photo_hide_ui", "action.photo_hide_ui", &"observe", [G_OBSERVE], _key(KEY_H))
+	register(&"photo_snap", "action.photo_snap", &"observe", [G_OBSERVE], _key(KEY_P))
+	register(&"observe_cancel", "action.observe_cancel", &"observe", [G_OBSERVE], _key(KEY_ESCAPE), false)
+	for i in BOOKMARK_COUNT:
+		# Ctrl+цифра сохраняет закладку (модификатор читается инструментом, не переназначается)
+		register(StringName("bookmark_%d" % (i + 1)), "action.bookmark", &"observe", [G_OBSERVE], _key((KEY_1 + i) as Key))
 	# Общие
 	register(&"quick_save", "action.quick_save", &"system", [G_GLOBAL], _key(KEY_S, false, true))
 	# Отладка
 	register(&"debug_panel_toggle", "action.debug_panel_toggle", &"debug", [G_DEBUG], _key(KEY_F3))
 	register(&"debug_vsync_toggle", "action.debug_vsync_toggle", &"debug", [G_DEBUG], _key(KEY_V, true, true))
+	# F7 читает модификаторы сам: Shift, Alt, Ctrl задают вид выреза (c_terrain_layer), поэтому читается не точно
+	register(&"debug_stats_toggle", "action.debug_stats_toggle", &"debug", [G_DEBUG], _key(KEY_F4))
+	register(&"debug_terrain_probe", "action.debug_terrain_probe", &"debug", [G_DEBUG], _key(KEY_F7))
+	register(&"debug_load_reference", "action.debug_load_reference", &"debug", [G_DEBUG], _key(KEY_F9))
+	register(&"debug_save_look", "action.debug_save_look", &"debug", [G_DEBUG], _key(KEY_F10))
+	register(&"debug_look_lab", "action.debug_look_lab", &"debug", [G_DEBUG], _key(KEY_L, true, true))
+	register(&"debug_look_lab_medium", "action.debug_look_lab_medium", &"debug", [G_DEBUG], _key(KEY_M, true, true))
+	register(&"debug_look_lab_low", "action.debug_look_lab_low", &"debug", [G_DEBUG], _key(KEY_K, true, true))
+	register(&"debug_look_matrix", "action.debug_look_matrix", &"debug", [G_DEBUG], _key(KEY_N, true, true))
+	register(&"debug_look_matrix_medium", "action.debug_look_matrix_medium", &"debug", [G_DEBUG], _key(KEY_B, true, true))
+	register(&"debug_look_matrix_low", "action.debug_look_matrix_low", &"debug", [G_DEBUG], _key(KEY_J, true, true))
+	# Механизмы выбранного вагона (временно, до вкладки в InfoPanel)
+	register(&"mechanisms_toggle", "action.mechanisms_toggle", &"debug", [G_DEBUG], _key(KEY_O))
+	register(&"lights_toggle", "action.lights_toggle", &"debug", [G_DEBUG], _key(KEY_I))
+	register(&"mechanisms_gizmos", "action.mechanisms_gizmos", &"debug", [G_DEBUG], _key(KEY_I, true))
 	# Камера: файлы камеры не трогаем, действия описаны как есть (U6, решения этапа)
 	register(&"key_w", "action.camera_forward", &"camera", [G_GLOBAL], _key(KEY_W))
 	register(&"key_s", "action.camera_back", &"camera", [G_GLOBAL], _key(KEY_S))
@@ -84,16 +118,17 @@ func _register_defaults() -> void:
 	register(&"key_shift_l", "action.reserved_shift_l", &"reserved", [G_GLOBAL], null, false)
 
 
-## Регистрация действия. default_event используется, только если в InputMap действия ещё нет.
+## Регистрация действия. default_event (одно событие или массив) используется, только если в InputMap действия ещё нет.
 func register(id: StringName, title_key: String, group: StringName, contexts: Array,
-		default_event: InputEvent = null, remappable := true) -> void:
+		default_event: Variant = null, remappable := true) -> void:
 	if _entries.has(id):
 		push_warning("Actions: действие %s уже зарегистрировано" % id)
 		return
 	if not InputMap.has_action(id):
 		InputMap.add_action(id)
-		if default_event:
-			InputMap.action_add_event(id, default_event)
+		var events: Array = default_event if default_event is Array else ([default_event] if default_event else [])
+		for ev in events:
+			InputMap.action_add_event(id, ev)
 	_entries[id] = {
 		"id": id,
 		"title_key": title_key,
@@ -123,6 +158,20 @@ func get_entries() -> Array[Dictionary]:
 ## Действие по событию. Модификаторы должны совпасть точно: Ctrl+V не сработает как V, Shift+R не как R
 func pressed(event: InputEvent, id: StringName) -> bool:
 	return event.is_action_pressed(id, false, true)
+
+
+## Шаг по паре действий «больше, меньше»: +n или -n, 0 если это не они. n = shift_mult при зажатом Shift, иначе 1.
+## Модификаторы не проверяются точно (Shift и Ctrl читает вызывающий). Для инструментов, где одна клавиша шагает значение
+func axis_step(event: InputEvent, up: StringName, down: StringName, shift_mult := 1) -> int:
+	var k := event as InputEventKey
+	if k == null or not k.pressed or k.echo:
+		return 0
+	var n := shift_mult if (shift_mult > 1 and k.shift_pressed) else 1
+	if k.is_action(up):
+		return n
+	if k.is_action(down):
+		return -n
+	return 0
 
 
 func shift() -> bool:
