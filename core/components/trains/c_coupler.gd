@@ -174,6 +174,53 @@ func get_consist() -> Array[Entity]:
 	return result
 
 
+## Состав по порядку от головной части. Головная: крайняя в сторону FRONT выбранного вагона.
+## Элемент: {"entity": Entity, "reversed": bool}; reversed - часть повёрнута передом назад относительно
+## направления записи (в неё вошли через торец REAR). Нужна шаблонам составов (ConsistTemplate)
+func get_ordered_consist() -> Array[Dictionary]:
+	# 1. От этого вагона вперёд до головной части
+	var cur: C_Coupler = self
+	var out_end := FRONT
+	var head_exit := REAR   # торец головной части, которым она сцеплена со следующей
+	var seen := {self: true}
+	while true:
+		var l: Link = cur.links[out_end]
+		if l == null or not l.coupled:
+			break
+		var nxt := l.other(cur)
+		if seen.has(nxt):
+			break
+		seen[nxt] = true
+		var e := nxt._end_of(l)
+		cur = nxt
+		out_end = 1 - e
+		head_exit = e
+	# 2. От головной части назад по цепочке
+	var result: Array[Dictionary] = []
+	var visited := {}
+	var entered := 1 - head_exit
+	var exit_end := head_exit
+	while true:
+		visited[cur] = true
+		result.append({"entity": cur.entity, "reversed": entered == REAR})
+		var l2: Link = cur.links[exit_end]
+		if l2 == null or not l2.coupled:
+			break
+		var nxt2 := l2.other(cur)
+		if visited.has(nxt2):
+			break
+		var e2 := nxt2._end_of(l2)
+		cur = nxt2
+		entered = e2
+		exit_end = 1 - e2
+	return result
+
+
+## Каким торцом этой сцепки держится связь
+func _end_of(l: Link) -> int:
+	return FRONT if links[FRONT] == l else REAR
+
+
 ## Статус торца для вкладки «Положение» в InfoPanel: нет / контакт / сцеплен / вечная и имя соседа
 func end_status(end: int) -> String:
 	var l: Link = links[end]

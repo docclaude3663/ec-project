@@ -12,6 +12,9 @@ var _chassis: C_Chassis
 var _coupler: C_Coupler
 ## Строки «Сцепка» создаются кодом в сетке рядом с «На траке»: [передняя, задняя] пары (подпись, значение)
 var _coupler_rows: Array = []
+## Кнопка «Записать состав» и строка результата под ней (создаются кодом)
+var _record_button: Button
+var _record_label: Label
 
 
 func _on_bind() -> void:
@@ -23,6 +26,8 @@ func _on_bind() -> void:
 func _on_unbind() -> void:
 	_chassis = null
 	_coupler = null
+	if _record_label:
+		_record_label.text = ""
 
 
 func components_changed() -> void:
@@ -69,10 +74,24 @@ func _build_coupler_rows() -> void:
 		grid.add_child(caption)
 		grid.add_child(value)
 		_coupler_rows.append([caption, value])
+	# Кнопка записи состава: в вертикальном контейнере вкладки, под сеткой
+	var box := grid.get_parent().get_parent()
+	_record_button = Button.new()
+	_record_button.text = "Записать состав"
+	_record_button.tooltip_text = "Сохранить все сцепленные вагоны как кнопку «Составы» в каталоге"
+	_record_button.pressed.connect(_on_record_pressed)
+	box.add_child(_record_button)
+	_record_label = Label.new()
+	_record_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	box.add_child(_record_label)
 
 
 ## Статус сцепки: у объектов без C_Coupler строки скрыты, вечная сцепка выделена цветом
 func _set_couplers() -> void:
+	if _record_button:
+		var chain_len := _coupler.get_consist().size() if _coupler else 0
+		_record_button.visible = chain_len >= 2
+		_record_label.visible = _coupler != null
 	for end in _coupler_rows.size():
 		var caption := _coupler_rows[end][0] as Label
 		var value := _coupler_rows[end][1] as Label
@@ -85,3 +104,10 @@ func _set_couplers() -> void:
 			value.add_theme_color_override(&"font_color", ON_TRACK_COLOR)
 		else:
 			value.remove_theme_color_override(&"font_color")
+
+
+func _on_record_pressed() -> void:
+	if target == null:
+		return
+	var res := ConsistStore.record(target)
+	_record_label.text = ("Записано: %s" % res["name"]) if res["ok"] else ("Не записано: %s" % res["error"])
