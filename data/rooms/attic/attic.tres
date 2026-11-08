@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RoomConfig" format=3]
+
+[ext_resource type="PackedScene" path="res://data/rooms/attic/attic.tscn" id="1_3mq1b"]
+[ext_resource type="Script" path="res://setting/room_config.gd" id="2_so6wm"]
+
+[resource]
+script = ExtResource("2_so6wm")
+id = &"attic"
+title = "Мансарда"
+tip = "Скос крыши, окна закрыты, свет только лампы дневного света. Заменяет комнату целиком"
+scene = ExtResource("1_3mq1b")
+size = Vector3(520, 250, 420)
+window = {}
+door = {}
+shape = &"attic"
+daylight = false
+ambient_mul = 0.5
+bounds = AABB(-245, 3, -195, 300, 190, 390)
