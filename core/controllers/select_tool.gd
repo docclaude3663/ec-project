@@ -26,6 +26,9 @@ var _group := GroupSelection.new()
 var _marquee_armed := false   # ЛКМ нажата на пустом месте (или с Ctrl): может начаться рамка
 var _marquee_active := false  # рамка тянется
 var _marquee_start := Vector2.ZERO
+var _marquee_additive := false   # рамка с Shift: добавляет к группе
+var _shift_press := false        # ЛКМ нажата с Shift (Build): клик переключает объект в группе, драг добавляет рамкой
+var _shift_click: Entity         # объект под курсором в момент нажатия с Shift (null: пустое место)
 var _group_layer: CanvasLayer
 var _marquee: MarqueeOverlay
 var _tooltip: InfoToolTip
@@ -77,13 +80,24 @@ func handle_input(event: InputEvent):
 			if lmb_consumed:
 				return
 			clicked_entity = _get_entity_under_mouse()
-			# XX claude-switch: рамка начинается на пустом месте или с зажатым Ctrl (поверх объектов и листов террейна)
+			# XX claude-switch: рамка начинается на пустом месте, с зажатым Ctrl (поверх объектов и листов террейна) или с Shift.
+			# Shift: клик без драга переключает объект в группе, драг добавляет объекты рамки к группе
 			_marquee_armed = false
 			_marquee_active = false
-			if Global.current_mode == &'build' and (clicked_entity == null or Input.is_key_pressed(KEY_CTRL)):
+			_marquee_additive = false
+			_shift_press = false
+			_shift_click = null
+			var in_build: bool = Global.current_mode == &'build'
+			var shift: bool = in_build and Input.is_key_pressed(KEY_SHIFT)
+			if in_build and (clicked_entity == null or shift or Input.is_key_pressed(KEY_CTRL)):
 				_marquee_armed = true
 				_marquee_start = event.position
-				if Input.is_key_pressed(KEY_CTRL):
+				if shift:
+					_shift_press = true
+					_marquee_additive = true
+					_shift_click = clicked_entity
+					clicked_entity = null
+				elif Input.is_key_pressed(KEY_CTRL):
 					clicked_entity = null   # Ctrl+ЛКМ только рамка, объект под курсором не выбираем
 			if clicked_entity:
 				set_selection(clicked_entity)
@@ -93,9 +107,19 @@ func handle_input(event: InputEvent):
 				_finish_marquee(event.position)
 				_marquee_armed = false
 				_marquee_active = false
+				_shift_press = false
+				_shift_click = null
 				clicked_entity = null
 				return
 			_marquee_armed = false
+			if _shift_press:
+				# Shift+клик без драга: переключить объект в группе (по пустому месту ничего не меняет)
+				_shift_press = false
+				if _shift_click != null and is_instance_valid(_shift_click):
+					_toggle_in_group(_shift_click)
+				_shift_click = null
+				clicked_entity = null
+				return
 			if lmb_consumed:
 				if handle_dragging and selected_entity:
 					selected_entity.send_event("on_handle_released", {})
@@ -111,7 +135,10 @@ func handle_input(event: InputEvent):
 		if not _marquee_active and _marquee_start.distance_to(event.position) > MARQUEE_MIN_PX:
 			_marquee_active = true
 			clicked_entity = null
-			_clear_selection()   # группа заменяет одиночный выбор
+			if _marquee_additive:
+				_seed_group_from_single()   # Shift: одиночный выбор входит в группу
+			else:
+				_clear_selection()   # группа заменяет одиночный выбор
 		if _marquee_active:
 			_marquee.set_rect(Rect2(_marquee_start, Vector2.ZERO).expand(event.position))
 
@@ -284,6 +311,11 @@ func _try_handle_remove() -> bool:
 # Снимает селекшн при лкм пкм без драга
 func _clear_selection():
 	_group.clear()   # XX claude-switch: снимаем и группу
+	_clear_single_selection()
+
+
+## XX claude-switch: снять только одиночный выбор, группу не трогаем (Shift добавляет к выбору)
+func _clear_single_selection():
 	if selected_entity: 
 		selected_entity.remove_component(C_Selected)
 		# ⚡Сигнал в visual о смене слоя
@@ -368,5 +400,29 @@ func _on_group_changed() -> void:
 func _finish_marquee(end_pos: Vector2) -> void:
 	var rect := Rect2(_marquee_start, Vector2.ZERO).expand(end_pos)
 	_marquee.set_rect(Rect2())
-	_group.select_in_rect(rect, controller.entities_root, get_viewport().get_camera_3d())
+	_group.select_in_rect(rect, controller.entities_root, get_viewport().get_camera_3d(), _marquee_additive)
+
+
+## Shift+клик: объект в группе убирается, не в группе добавляется. Если выбран один объект, он входит в группу
+## (Shift+клик по самому выбранному снимает выбор)
+func _toggle_in_group(e: Entity) -> void:
+	if e == null or e.has_comp(C_Ghost):
+		return
+	if _group.has_member(e):
+		_group.remove_entity(e)
+		return
+	if e == selected_entity and _group.candidates.is_empty():
+		_clear_single_selection()
+		return
+	_seed_group_from_single()
+	_group.add_entity(e)
+
+
+## Одиночный выбор становится первым членом группы (Shift при выбранном объекте). Объект не из выбираемых категорий просто снимается
+func _seed_group_from_single() -> void:
+	if selected_entity == null:
+		return
+	var e := selected_entity
+	_clear_single_selection()
+	_group.add_entity(e)
 

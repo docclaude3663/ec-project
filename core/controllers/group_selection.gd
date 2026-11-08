@@ -28,20 +28,52 @@ var candidates: Array[Entity] = []
 var members: Array[Entity] = []
 
 
-## Сменить рамку: собрать кандидатов заново. rect в экранных координатах viewport
-func select_in_rect(rect: Rect2, root: Node, cam: Camera3D) -> void:
-	_unmark_members()
-	candidates.clear()
+## Рамка. rect в экранных координатах viewport. additive = false: группа заменяется кандидатами рамки;
+## additive = true (Shift): кандидаты рамки добавляются к уже выбранным
+func select_in_rect(rect: Rect2, root: Node, cam: Camera3D, additive: bool = false) -> void:
+	if not additive:
+		_unmark_members()
+		candidates.clear()
 	if root != null and cam != null:
 		for child in root.get_children():
 			var e := child as Entity
 			if e == null or e.is_queued_for_deletion() or e.has_comp(C_Ghost) or not e.has_comp(ISelectable):
 				continue
-			if not CATEGORIES.has(category_of(e)):
+			if not CATEGORIES.has(category_of(e)) or candidates.has(e):
 				continue
 			if _in_rect(e, rect, cam):
 				candidates.append(e)
 	_apply_filter()
+
+
+## Добавить один объект (Shift+клик). Возвращает false, если он не из выбираемых категорий. Явный выбор перекрывает фильтр:
+## если категория объекта была выключена, она включается
+func add_entity(e: Entity) -> bool:
+	if e == null or not is_instance_valid(e) or e.is_queued_for_deletion() or e.has_comp(C_Ghost):
+		return false
+	var cat := category_of(e)
+	if not CATEGORIES.has(cat):
+		return false
+	if not candidates.has(e):
+		candidates.append(e)
+	enabled[cat] = true
+	_apply_filter()
+	return true
+
+
+## Убрать один объект из группы (Shift+клик по добавленному): совсем, а не фильтром
+func remove_entity(e: Entity) -> void:
+	if e == null:
+		return
+	if is_instance_valid(e) and e.has_comp(C_MultiSelected):
+		e.remove_component(C_MultiSelected)
+	candidates.erase(e)
+	members.erase(e)
+	changed.emit()
+
+
+func has_member(e: Entity) -> bool:
+	return e != null and members.has(e)
 
 
 func set_category_enabled(category: StringName, on: bool) -> void:
