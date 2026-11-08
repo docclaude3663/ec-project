@@ -11,6 +11,11 @@ class_name CatalogProvider extends RefCounted
 ## аргументами звать приемник режима on_pressed (объекты: on_pressed.call(setting), карточки: (category, id, pressed)).
 
 
+## Провайдер зовёт его, когда изменились сами данные (например, переименован или удалён состав):
+## ToolbarController перестраивает кнопки. Пусто: никто не слушает
+var on_changed: Callable = Callable()
+
+
 ## Категории (нижний ряд кнопок) в порядке показа
 func get_categories() -> Array[Dictionary]:
 	return []

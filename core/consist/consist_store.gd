@@ -61,6 +61,26 @@ static func load_all() -> Array[ConsistTemplate]:
 	return out
 
 
+## Переименовывает шаблон игрока. Результат: пустая строка или причина отказа
+static func rename(tpl: ConsistTemplate, new_name: String) -> String:
+	new_name = new_name.strip_edges()
+	if new_name == "":
+		return "имя не может быть пустым"
+	if not tpl.resource_path.begins_with(USER_DIR):
+		return "встроенный шаблон переименовывается в его .tres"
+	tpl.name = new_name
+	var err := ResourceSaver.save(tpl, tpl.resource_path)
+	return "" if err == OK else "не удалось сохранить файл (код %d)" % err
+
+
+## Удаляет шаблон игрока с диска. Результат: пустая строка или причина отказа
+static func delete(tpl: ConsistTemplate) -> String:
+	if not tpl.resource_path.begins_with(USER_DIR):
+		return "встроенный шаблон удаляется вместе с его .tres"
+	var err := DirAccess.remove_absolute(ProjectSettings.globalize_path(tpl.resource_path))
+	return "" if err == OK else "не удалось удалить файл (код %d)" % err
+
+
 static func _default_name(names: Array[String]) -> String:
 	if names.size() <= MAX_NAME_PARTS:
 		return " + ".join(names)

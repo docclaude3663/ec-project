@@ -15,6 +15,11 @@ const TAG := &"consist"
 var head: EntitySetting
 
 
+## Шаблон игрока (лежит в user://), его можно переименовать и удалить. Встроенные шаблоны автора лежат в res://
+func is_user() -> bool:
+	return template != null and template.resource_path.begins_with(ConsistStore.USER_DIR)
+
+
 ## Кнопка шаблона. by_key: ключ объекта -> EntitySetting из каталога.
 ## null, если какой-то части шаблона нет в каталоге (кнопка не показывается, причина в warning)
 static func from_template(tpl: ConsistTemplate, by_key: Dictionary) -> ConsistSetting:

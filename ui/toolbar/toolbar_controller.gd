@@ -78,6 +78,7 @@ func _emit_build_selected(setting: Resource) -> void:
 ## Адаптер режима сообщает: «у меня такой каталог, объект отдавать сюда»
 func register_mode(mode: StringName, provider: CatalogProvider, receiver: Callable) -> void:
 	_providers[mode] = provider
+	provider.on_changed = _on_catalog_changed
 	_receivers[mode] = receiver
 
 
@@ -195,6 +196,21 @@ func _fill_grid(cat: StringName, tag: StringName) -> void:
 
 func _filter_key() -> String:
 	return "%s/%s" % [_mode, current_cat]
+
+
+## Данные каталога изменились (переименован или удалён состав): перестраиваем сетку.
+## Если текущего тега больше нет, заново открываем категорию
+func _on_catalog_changed() -> void:
+	if current_cat == &'idle':
+		return
+	var provider: CatalogProvider = _providers.get(_mode)
+	if provider == null:
+		return
+	for tag in provider.get_tags(current_cat):
+		if tag["id"] == current_tag:
+			_fill_grid(current_cat, current_tag)
+			return
+	_show_category(current_cat)
 
 
 ## ⚡Сигнал из FilterBar: фильтры изменились, пересобираем сетку (фильтры общие для тегов категории)

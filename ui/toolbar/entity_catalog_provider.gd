@@ -124,6 +124,8 @@ func create_buttons(category: StringName, tag: StringName, on_pressed: Callable,
 		btn.config(item)
 		if on_pressed.is_valid():
 			btn.btn_pressed_object_selected.connect(on_pressed)
+		if item is ConsistSetting and item.is_user():
+			ConsistButtonMenu.attach(btn, item, on_changed)
 		out.append(btn)
 	return out
 
