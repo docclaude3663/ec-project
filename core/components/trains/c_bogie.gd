@@ -371,11 +371,21 @@ func wheel_rotate(delta):
 		speed_real = comp_chassis.current_speed 
 		wheel_speed =  comp_chassis.wheel_surface_speed 
 	else: 
-		speed_real = comp_kinem.rb.linear_velocity.length()
+		# Продольная скорость кузова, как в C_Kinematics._update_wheel_speed: вертикаль падения и боковой юз колёса не крутят
+		var rb := comp_kinem.rb
+		speed_real = rb.linear_velocity.dot(-rb.global_basis.z)
 		wheel_speed = comp_kinem.wheel_surface_speed 
+		# Драг мышью гонит тело своей скоростью, колёса при этом не крутятся: это не проскальзывание
+		if comp_kinem.is_dragging:
+			speed_real = 0.0
+			wheel_speed = 0.0
 
+	# Стоим и колёса стоят: без сброса slip_blend залипал на последнем значении (красный на полу после дропа)
+	# Колёса могут крутиться и на стоящем шасси (буксуют в упоре), поэтому смотрим на обе скорости
+	if abs(speed_real) < 0.01 and abs(wheel_speed) < 0.01:
+		_set_wheels_slip(0.0)
+		return
 
-	if abs(speed_real) < 0.01: return 
 	for wheel in wheel_nodes:
 		# Диаметр 
 		var _r: float = wheel.radius
@@ -394,9 +404,22 @@ func wheel_rotate(delta):
 		# Отправляем параметр slip в материал колеса
 		var slip_normalized = clampf(slip_amount / max_expected_slip, 0.0, 1.0)
 
-		var _mesh = wheel.wheel_node.get_node('WheelPairMesh')
-	
-		_mesh.material_overlay.set_shader_parameter("slip_blend", slip_normalized)
+		_set_wheel_slip(wheel, slip_normalized)
+
+
+## Все колёса без проскальзывания (шейдер в нормальный цвет)
+func _set_wheels_slip(value: float) -> void:
+	for wheel in wheel_nodes:
+		_set_wheel_slip(wheel, value)
+
+
+## Пишем в материал только при изменении: set_shader_parameter каждый кадр на каждое колесо лишний
+func _set_wheel_slip(wheel: Dictionary, value: float) -> void:
+	if absf(float(wheel.get('slip', -1.0)) - value) < 0.002:
+		return
+	wheel['slip'] = value
+	var _mesh = wheel.wheel_node.get_node('WheelPairMesh')
+	_mesh.material_overlay.set_shader_parameter("slip_blend", value)
 
 
 

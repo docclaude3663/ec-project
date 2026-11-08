@@ -78,8 +78,8 @@ func _physics_process(_delta: float) -> void:
 	var voltage_ratio = active_voltage / 100.0 # Диапазон от -1.0 до +1.0
 	var target_speed = max_theoretical_speed * voltage_ratio
 
-	# 2. Фактическая скорость шасси
-	var current_speed = chassis.current_speed
+	# 2. Скорость вала мотора: при сцеплении она равна скорости шасси, в пробуксовке это скорость колёс
+	var current_speed = chassis.get_motor_speed()
 
 	# 3. ЭЛЕКТРОДИНАМИЧЕСКОЕ ТОРМОЖЕНИЕ И ТЯГА (ПротивоЭДС)
 	# Сила пропорциональна разнице скоростей: (V_target - V_current) / V_max
@@ -99,4 +99,7 @@ func _physics_process(_delta: float) -> void:
 
 	# Отправляем рассчитанную силу в C_Chassis
 	#XX claude
-	entity.send_event('on_force_changed', {'force': engine_force, 'powered': true})
+	# target_speed и motor_k (Н на м/с) нужны шасси, чтобы раскручивать колёса в пробуксовке
+	var motor_k := max_tractive_force / max_theoretical_speed if max_theoretical_speed > 0.0 else 0.0
+	entity.send_event('on_force_changed', {'force': engine_force, 'powered': true, 'active': true,
+			'target_speed': target_speed, 'motor_k': motor_k})

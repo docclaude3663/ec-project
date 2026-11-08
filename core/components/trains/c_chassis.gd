@@ -35,6 +35,14 @@ var suspension_config: SuspensionConfig = null
 # Скорость поверхности колеса (для визуального вращения мешей)
 var wheel_surface_speed: float = 0.0
 
+## Колёса в срыве сцепления: крутятся независимо от скорости шасси (wheel_surface_speed != current_speed).
+## Читать для визуала пробуксовки (искры): разница wheel_surface_speed - current_speed это скорость проскальзывания
+var is_slipping: bool = false
+## Мотор тянет (напряжение выше порога страгивания), цель оборотов и жёсткость мотора. Приходят из C_Engine
+var motor_active: bool = false
+var motor_target: float = 0.0
+var motor_k: float = 0.0
+
 ### ==========================================
 ### ПОДВЕСКА КУЗОВА (логика - в SuspensionState, тут только включатели)
 ### ==========================================
@@ -69,6 +77,14 @@ var gravity = RailPhysics.G_ROLL
 func on_force_changed(data: Dictionary) -> void:
 	applied_force = data.get("force", 0.0)
 	motor_powered = data.get("powered", false)
+	motor_active = data.get("active", false)
+	motor_target = data.get("target_speed", 0.0)
+	motor_k = data.get("motor_k", 0.0)
+
+
+## Скорость вала мотора для противоЭДС (C_Engine): в сцеплении равна скорости шасси, в срыве скорость колёс
+func get_motor_speed() -> float:
+	return wheel_surface_speed if is_slipping else current_speed
 
 
 
@@ -189,6 +205,7 @@ func on_train_snapped(track_data: Dictionary) -> void:
 		is_w_flipped = false
 
 	is_on_rails = true
+	_reset_wheels()
 	if _susp: _susp.reset()
 	
 	var bogie_comp = entity.get_comp(C_Bogie)
@@ -223,7 +240,14 @@ func on_drag_started(_data: Dictionary) -> void:
 	applied_force = 0.0
 	impulse_force = 0.0
 	coupler_force = 0.0
+	_reset_wheels()
 	if _susp: _susp.reset()
+
+
+## Колёса без срыва и без вращения (посадка, драг, сход)
+func _reset_wheels() -> void:
+	is_slipping = false
+	wheel_surface_speed = 0.0
 
 
 
@@ -261,21 +285,31 @@ func _assist_speed_correction(delta: float) -> void:
 
 	var wheels_locked = false
 
+	# Питание снято или ниже порога: колёса снова стопорит червяк, буксовать нечему
+	if is_slipping and not motor_active:
+		is_slipping = false
+
 	# 1. БЛОКИРОВКА ЧЕРВЯЧНОЙ ПЕРЕДАЧИ (Тормоз юзом)
-	# Локомотив блокирует колеса только если нет тяги от мотора
-	if is_loco and abs(engine_force) < 0.01:
+	# Локомотив блокирует колеса только если нет тяги от мотора (в срыве мотор тянет, даже если сила мала)
+	if is_loco and abs(engine_force) < 0.01 and not is_slipping:
 		roll_res = _kin.locked_wheel_friction 
 		wheels_locked = true
 		
 	# 4. СРЫВ СЦЕПЛЕНИЯ (Пробуксовка)
 	var max_traction_force = mass * gravity * long_grip
 	var effective_engine_force = engine_force
-	var is_slipping = false
 
-	# Сцепление ограничивает ТОЛЬКО мотор!
-	if abs(engine_force) > max_traction_force:
+	# Сцепление ограничивает ТОЛЬКО мотор! Срыв: колёса стартуют со скорости рельса
+	if not is_slipping and abs(engine_force) > max_traction_force:
 		is_slipping = true
-		effective_engine_force = sign(engine_force) * max_traction_force
+		wheel_surface_speed = current_speed
+
+	# В срыве на шасси работает трение скольжения, оно направлено по проскальзыванию колеса относительно рельса
+	var slip_dir := 0.0
+	if is_slipping:
+		var rel := wheel_surface_speed - current_speed
+		slip_dir = sign(rel) if abs(rel) > 0.001 else sign(engine_force)
+		effective_engine_force = slip_dir * max_traction_force * RailPhysics.SLIP_KINETIC
 
 	# Итоговая активная сила = обрезанная тяга мотора + неограниченный пинок + сцепка
 	var total_active_force = effective_engine_force + external_kick_force + coupling_force
@@ -301,6 +335,7 @@ func _assist_speed_correction(delta: float) -> void:
 			and abs(external_kick_force + coupling_force) < 0.01:
 		current_speed = 0.0
 		wheel_surface_speed = 0.0
+		is_slipping = false
 		return
 
 	# 7. Интегрирование скорости шасси
@@ -317,9 +352,24 @@ func _assist_speed_correction(delta: float) -> void:
 	if wheels_locked:
 		wheel_surface_speed = 0.0 # Колеса стоят, локо скользит юзом
 	elif is_slipping:
-		wheel_surface_speed = current_speed + sign(engine_force) * 2.0 
+		_spin_slipping_wheels(delta, effective_engine_force)
+		# Сцепление возвращается, когда колёса догнали рельс и мотор снова укладывается в предел
+		if abs(wheel_surface_speed - current_speed) < RailPhysics.SLIP_REGAIN_DV and abs(engine_force) <= max_traction_force:
+			is_slipping = false
+			wheel_surface_speed = current_speed
 	else:
 		wheel_surface_speed = current_speed
+
+
+## Колёса в срыве: мотор раскручивает их к своей цели, трение скольжения тормозит. Неявный шаг, устойчив при любом dt.
+## Колёса блокирует упор или затор (шасси стоит), а мотор раскручивает их до оборотов холостого хода
+func _spin_slipping_wheels(delta: float, friction_on_body: float) -> void:
+	if motor_k <= 0.0 or delta <= 0.0:
+		wheel_surface_speed = motor_target
+		return
+	var tau := RailPhysics.WHEEL_SPINUP_TAU
+	var drag := friction_on_body / motor_k # реакция трения на колесо, в единицах скорости (против силы на шасси)
+	wheel_surface_speed = (tau / delta * wheel_surface_speed + motor_target - drag) / (tau / delta + 1.0)
 
 
 
@@ -406,6 +456,7 @@ func on_derailed(_data: Dictionary) -> void:
 	snapped_track = null
 	current_speed = 0.0
 	coupler_force = 0.0
+	_reset_wheels()
 	if _susp: _susp.reset()
 
 
