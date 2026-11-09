@@ -1,0 +1,106 @@
+[gd_resource type="Resource" script_class="EntitySetting" format=3 uid="uid://cx447m71ot781"]
+
+[ext_resource type="Script" uid="uid://m4g5jbfwmaa0" path="res://core/component_setting.gd" id="1_0eobx"]
+[ext_resource type="Script" uid="uid://7vuxuiiysiji" path="res://setting/bogie_config.gd" id="2_038os"]
+[ext_resource type="PackedScene" uid="uid://2w8m3k2r3dod" path="res://data/trains/test_bogie.tscn" id="3_0eobx"]
+[ext_resource type="PackedScene" uid="uid://d2wk8qr85spl5" path="res://data/trains/test_wheel_pair.tscn" id="4_038os"]
+[ext_resource type="Script" uid="uid://daeylhso0elsx" path="res://setting/light_config.gd" id="5_gvv61"]
+[ext_resource type="Script" uid="uid://gv2lrhu17dtf" path="res://setting/mechanism_config.gd" id="6_dpygt"]
+[ext_resource type="PackedScene" uid="uid://b0m5kdl31n0kh" path="res://data/trains/test_wagon.tscn" id="7_0eobx"]
+[ext_resource type="Script" uid="uid://bicjny5dv1h3s" path="res://setting/wagon_config.gd" id="8_ih3oy"]
+[ext_resource type="Script" uid="uid://bwaluvayi2o8k" path="res://setting/suspension_config.gd" id="9_vtkg0"]
+[ext_resource type="Script" uid="uid://mpakwrr6lum8" path="res://core/components/comp_settings/identity_setting.gd" id="10_til83"]
+[ext_resource type="Script" uid="uid://b830vi2lx3hl5" path="res://core/components/comp_settings/trainvisual_setting.gd" id="11_24r20"]
+[ext_resource type="Script" uid="uid://bkdny7eq5jthn" path="res://core/components/comp_settings/traindraggable_setting.gd" id="12_4aiwq"]
+[ext_resource type="Script" uid="uid://cuumo0qj7r7gb" path="res://core/components/comp_settings/hoverable_setting.gd" id="13_r4u38"]
+[ext_resource type="Script" uid="uid://deljgsmo4bpow" path="res://core/components/comp_settings/selectable_setting.gd" id="14_kp25e"]
+[ext_resource type="Script" uid="uid://chprgtlxn3aub" path="res://core/components/comp_settings/blockable_setting.gd" id="15_jvd6k"]
+[ext_resource type="Script" uid="uid://bhvk4o3qrvslv" path="res://core/components/comp_settings/chassis_setting.gd" id="16_q0gay"]
+[ext_resource type="Script" uid="uid://cpuhrycuvnuar" path="res://core/components/comp_settings/kinematics_setting.gd" id="17_imt0k"]
+[ext_resource type="Script" uid="uid://b5kx0oyxhiaux" path="res://core/components/comp_settings/bogie_setting.gd" id="18_h7n4i"]
+[ext_resource type="Script" uid="uid://mqrnwkjfweqr" path="res://core/components/comp_settings/coupler_setting.gd" id="19_rn5qf"]
+[ext_resource type="Texture2D" uid="uid://4xll1v22v6kp" path="res://ui/icons/check-mark.svg" id="20_0eobx"]
+[ext_resource type="Script" uid="uid://do5hjkm3r2pdg" path="res://core/entity_setting.gd" id="21_epu6x"]
+
+[sub_resource type="Resource" id="Resource_euvxu"]
+script = ExtResource("2_038os")
+b_offset_z = -4.2
+scene = ExtResource("3_0eobx")
+wheel_pair_scene = ExtResource("4_038os")
+wheel_pair_position = Vector3(0, 0.71, 2.1)
+metadata/_custom_type_script = "uid://7vuxuiiysiji"
+
+[sub_resource type="Resource" id="Resource_xi85s"]
+script = ExtResource("2_038os")
+b_offset_z = 4.2
+scene = ExtResource("3_0eobx")
+wheel_pair_scene = ExtResource("4_038os")
+wheel_pair_position = Vector3(0, 0.71, 2.1)
+metadata/_custom_type_script = "uid://7vuxuiiysiji"
+
+[sub_resource type="Resource" id="Resource_y1p4g"]
+script = ExtResource("9_vtkg0")
+metadata/_custom_type_script = "uid://bwaluvayi2o8k"
+
+[sub_resource type="Resource" id="Resource_ja6yk"]
+script = ExtResource("8_ih3oy")
+min_curve_radius = 10.0
+suspension = SubResource("Resource_y1p4g")
+scene = ExtResource("7_0eobx")
+offset_mesh_y = 3.8
+bogie_configs = Array[ExtResource("2_038os")]([SubResource("Resource_euvxu"), SubResource("Resource_xi85s")])
+coupler_offset = 7.1
+metadata/_custom_type_script = "uid://bicjny5dv1h3s"
+
+[sub_resource type="Resource" id="Resource_lvfb0"]
+script = ExtResource("10_til83")
+object_config = SubResource("Resource_ja6yk")
+metadata/_custom_type_script = "uid://mpakwrr6lum8"
+
+[sub_resource type="Resource" id="Resource_wjam3"]
+script = ExtResource("11_24r20")
+metadata/_custom_type_script = "uid://b830vi2lx3hl5"
+
+[sub_resource type="Resource" id="Resource_s3hn0"]
+script = ExtResource("12_4aiwq")
+metadata/_custom_type_script = "uid://bkdny7eq5jthn"
+
+[sub_resource type="Resource" id="Resource_aqgj4"]
+script = ExtResource("13_r4u38")
+metadata/_custom_type_script = "uid://cuumo0qj7r7gb"
+
+[sub_resource type="Resource" id="Resource_j3fkf"]
+script = ExtResource("14_kp25e")
+metadata/_custom_type_script = "uid://deljgsmo4bpow"
+
+[sub_resource type="Resource" id="Resource_tip3w"]
+script = ExtResource("15_jvd6k")
+metadata/_custom_type_script = "uid://chprgtlxn3aub"
+
+[sub_resource type="Resource" id="Resource_mqnqg"]
+script = ExtResource("16_q0gay")
+metadata/_custom_type_script = "uid://bhvk4o3qrvslv"
+
+[sub_resource type="Resource" id="Resource_6hxcd"]
+script = ExtResource("17_imt0k")
+metadata/_custom_type_script = "uid://cpuhrycuvnuar"
+
+[sub_resource type="Resource" id="Resource_1pi1k"]
+script = ExtResource("18_h7n4i")
+metadata/_custom_type_script = "uid://b5kx0oyxhiaux"
+
+[sub_resource type="Resource" id="Resource_3ukh4"]
+script = ExtResource("19_rn5qf")
+metadata/_custom_type_script = "uid://mqrnwkjfweqr"
+
+[resource]
+script = ExtResource("21_epu6x")
+key = &"train.boxcar.wagon_test"
+name = "TEST"
+description = "test"
+category = &"train"
+tag = &"boxcar"
+icon = ExtResource("20_0eobx")
+build_behavior = 1
+components = Array[ExtResource("1_0eobx")]([SubResource("Resource_lvfb0"), SubResource("Resource_wjam3"), SubResource("Resource_s3hn0"), SubResource("Resource_aqgj4"), SubResource("Resource_j3fkf"), SubResource("Resource_tip3w"), SubResource("Resource_mqnqg"), SubResource("Resource_6hxcd"), SubResource("Resource_1pi1k"), SubResource("Resource_3ukh4")])
+metadata/_custom_type_script = "uid://do5hjkm3r2pdg"

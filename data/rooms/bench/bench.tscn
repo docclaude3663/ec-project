@@ -1,0 +1,10 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://data/rooms/room_root.gd" id="1_1tt1a"]
+
+[node name="bench" type="Node3D" unique_id=453254865]
+script = ExtResource("1_1tt1a")
+
+[node name="Shell" type="Node3D" parent="." unique_id=219872374]
+
+[node name="Decor" type="Node3D" parent="." unique_id=699703665]

@@ -1,0 +1,16 @@
+[gd_scene format=3 uid="uid://2w8m3k2r3dod"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_g8qto"]
+size = Vector3(3, 1.2, 4)
+
+[node name="Bogie_test" type="Node3D" unique_id=1797205713]
+
+[node name="BogieMesh" type="MeshInstance3D" parent="." unique_id=1186852307]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+mesh = SubResource("BoxMesh_g8qto")
+
+[node name="RayCast3D" type="RayCast3D" parent="." unique_id=159467373]
+target_position = Vector3(0, -2, 0)
+collision_mask = 1029
+debug_shape_custom_color = Color(0.827451, 0, 0, 1)
+debug_shape_thickness = 5

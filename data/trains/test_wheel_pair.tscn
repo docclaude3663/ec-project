@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://d2wk8qr85spl5"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_ofvwm"]
+top_radius = 0.71
+bottom_radius = 0.71
+radial_segments = 8
+
+[node name="WheelPair" type="Node3D" unique_id=285940213]
+
+[node name="WheelPairMesh" type="MeshInstance3D" parent="." unique_id=696008735]
+transform = Transform3D(-4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("CylinderMesh_ofvwm")
