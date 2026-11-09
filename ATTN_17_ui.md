@@ -561,7 +561,11 @@ Godot импортирует CSV сам при открытии проекта �
 
 ##### U6.2. Инструменты рельефа, механизмы, Observe, отладка
 
+<<<<<<< HEAD
 **Файлы (фактически):** `core/input_actions.gd`, новый `core/debug_keys.gd`, `ui/debug/debug_keys_tab.gd`, `core/controllers/alt_rotate.gd`; план файлов: `core/controllers/build_tool.gd` (`_handle_draw_input`), `thermo_cut_tool.gd`, `water_pour_tool.gd`, `plaster_tool.gd`, `elevation_input.gd`, `core/components/trains/c_mechanisms.gd`, `core/controllers/observe_camera_rig.gd`, `core/components/terrain/c_terrain_layer.gd`, `terrain_manager.gd`, `core/graphics/graphics_manager.gd`, `save_manager.gd`, `ui/debug/debug_keys_tab.gd`.
+=======
+**Файлы:** `core/controllers/build_tool.gd` (`_handle_draw_input`), `thermo_cut_tool.gd`, `water_pour_tool.gd`, `plaster_tool.gd`, `elevation_input.gd`, `core/components/trains/c_mechanisms.gd`, `core/controllers/observe_camera_rig.gd`, `core/components/terrain/c_terrain_layer.gd`, `terrain_manager.gd`, `core/graphics/graphics_manager.gd`, `save_manager.gd`, `ui/debug/debug_keys_tab.gd`.
+>>>>>>> U6.1: реестр действий Actions, клавиши Build, Select, Drag через InputMap
 
 - [x] `ElevationInput` стал единственным местом для уровня и глубины: `step_from_event` (R/F ±1, Shift+R/F и PgUp/PgDn ±5) и `depth_from_event` (Ctrl+R/F ±1, Ctrl+Shift+R/F и Ctrl+PgUp/PgDn ±5) читают действия `level_*`, `level_*_x5`, `depth_*`. Терморезак, вода, лист-полигон и лист-полоса (`build_tool._handle_draw_input`) зовут их и больше не проверяют `KEY_R`, `KEY_F`, `KEY_PAGEUP` сами. Действия `level_*` получили контекст `terrain_tools` (в Build и Drag они уже были). Общий шаг по паре действий: `Actions.axis_step(event, up, down, shift_mult)`.
 - [x] Действия форм и инструментов (контекст `terrain_tools`, смыслы по ATTN_13 §13.11): `shape_confirm` (Enter, KP_Enter, два события у одного действия), `shape_undo` (Backspace), `width_up`, `width_down` (`[` `]`: ширина полосы и ущелья, шаг ступени скоса, ширина пандуса гипса; Shift ×5 у листа-полосы и терморезака, у гипса шаг 1 как раньше), `depth_up`, `depth_down` (Ctrl+R/F: толщина листа, глубина выреза), `cut_through` (End), `tool_undo` (Ctrl+Z у терморезака, воды и гипса). Ctrl+Z читается точно, поэтому не пересекается с `flex_zones_toggle` (Z). Модификаторы мыши (Shift+ЛКМ, Ctrl+ЛКМ) остались как были, их читает `Actions.shift()` и `ctrl()`.

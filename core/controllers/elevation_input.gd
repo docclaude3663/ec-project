@@ -26,6 +26,7 @@ static func levels_from_event(event: InputEvent) -> int:
 		if k.is_action(&"level_up"):
 			return BIG_STEP
 		if k.is_action(&"level_down"):
+<<<<<<< HEAD
 			return -BIG_STEP
 	return 0
 
@@ -55,5 +56,7 @@ static func depth_from_event(event: InputEvent) -> int:
 		if k.is_action(&"level_up_x5"):
 			return BIG_STEP
 		if k.is_action(&"level_down_x5"):
+=======
+>>>>>>> U6.1: реестр действий Actions, клавиши Build, Select, Drag через InputMap
 			return -BIG_STEP
 	return 0

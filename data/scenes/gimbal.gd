@@ -153,7 +153,8 @@ func _process(delta: float) -> void:
 		_rotating = false
 
 	var wasd := Vector2.ZERO
-	if camera.current and get_window().has_focus():
+	# Ctrl зажат: это сочетание (Ctrl+S быстрое сохранение и др.), а не движение камеры
+	if camera.current and get_window().has_focus() and not Actions.ctrl():
 		wasd = Vector2(Input.get_axis("key_a", "key_d"), Input.get_axis("key_w", "key_s")).limit_length(1.0)
 
 	# --- панорама и инерция ---

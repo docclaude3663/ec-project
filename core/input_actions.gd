@@ -248,10 +248,7 @@ func _apply_overrides() -> void:
 		var entry: Dictionary = _entries[id]
 		if not entry.remappable:
 			continue
-		# has_value заранее: get_value с дефолтом null пишет в консоль ошибку, если ключа нет
-		if not Settings.has_value(SECTION, String(id)):
-			continue
-		var saved: Variant = Settings.get_value(SECTION, String(id), {})
+		var saved: Variant = Settings.get_value(SECTION, String(id), null)
 		if saved is Dictionary and saved.has("key"):
 			var ev := _from_dict(saved)
 			# Сохранённая клавиша могла стать конфликтной (правили реестр): тогда остаётся клавиша по умолчанию
