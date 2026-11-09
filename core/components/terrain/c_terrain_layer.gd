@@ -380,7 +380,7 @@ func _auto_signature(list: Array[FoamCut]) -> String:
 ## никогда не срабатывает. Выбирается ближайший трак. Alt: без магнита.
 ## y_floor: ниже этой отметки лист опускать нельзя (поверхность под курсором). Вызывает C_TerrainDraggable
 func snap_to_tracks(y_floor: float) -> void:
-	if Input.is_key_pressed(KEY_ALT):
+	if Actions.alt():
 		return
 	var T: float = Global.settings.layer_height
 	var dy_down: float = Global.settings.terrain_snap_dy
@@ -413,19 +413,19 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if has_comp(C_Ghost) or not has_comp(C_Selected):
 		return
-	var k := event as InputEventKey
-	if k == null or not k.pressed or k.echo or k.keycode != KEY_F7:
+	# модификаторы читаются отдельно: Ctrl, Shift, Alt выбирают вид выреза
+	if not event.is_action_pressed(&"debug_terrain_probe", false, false):
 		return
 	get_viewport().set_input_as_handled()
-	if k.ctrl_pressed:
+	if Actions.ctrl():
 		remove_last_cut()
 		return
 	var b := _contour_bounds()
 	var c := b.get_center()
 	var lv := maxi(1, levels)
-	if k.shift_pressed:
+	if Actions.shift():
 		add_cut(_rect(c, b.size * 0.4), 0, lv)
-	elif k.alt_pressed:
+	elif Actions.alt():
 		add_cut(_rect(c, Vector2(b.size.x + 2.0, 4.0)), 0, 1)
 	else:
 		add_cut(_rect(c, b.size * 0.4), lv - 1, lv)
