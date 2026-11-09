@@ -195,8 +195,17 @@ func key_text(id: StringName) -> String:
 		if k:
 			var code := k.get_physical_keycode_with_modifiers() if k.physical_keycode != KEY_NONE \
 					else k.get_keycode_with_modifiers()
-			return OS.get_keycode_string(code)
+			return _pretty(OS.get_keycode_string(code))
 	return ""
+
+
+## Короткие названия для подсказок: PageUp → PgUp, BackSpace → Backspace, Escape → Esc, BracketLeft → [
+func _pretty(text: String) -> String:
+	var cut := text.rfind("+") + 1
+	var key := text.substr(cut)
+	var names := {"PageUp": "PgUp", "PageDown": "PgDn", "BackSpace": "Backspace", "Escape": "Esc", "Delete": "Del",
+			"BracketLeft": "[", "BracketRight": "]", "QuoteLeft": "`"}
+	return text.substr(0, cut) + names.get(key, key)
 
 
 ## Какое действие уже занимает эту клавишу в тех же контекстах. event == null: проверить текущую клавишу id.

@@ -573,8 +573,8 @@ Godot импортирует CSV сам при открытии проекта �
 
 **Файлы:** `core/controllers/hint_manager.gd`, `ui/debug/debug_keys_tab.gd`.
 
-- [ ] `Hints.HINTS` хранит действие, а не текст клавиши, например `["@rotate_left/@rotate_right", "поворот 45° (Shift: 5°)"]`. Клавиша берётся из `InputMap.action_get_events(...)[0].as_text()`, мышь и модификаторы остаются текстом. Касается всех контекстов, включая `build_polygon`, `build_strip`, `cut_*`, `water_pour`, `plaster`.
-- [ ] Внести отсутствующие подсказки: `T` и ЛКМ по рычагу стрелки (ATTN_12 §12.12).
+- [x] `Hints.HINTS` хранит действие, а не текст клавиши, например `["@rotate_left/@rotate_right", "поворот 45° (Shift: 5°)"]`. Клавиша берётся из `InputMap.action_get_events(...)[0].as_text()`, мышь и модификаторы остаются текстом. Касается всех контекстов, включая `build_polygon`, `build_strip`, `cut_*`, `water_pour`, `plaster`. **Как сделано:** в тексте ключа пишется токен `@id`, пара `@a/@b` или `@a-@b` склеивает общий модификатор (`@depth_up/@depth_down` → «Ctrl+R/F»), клавишу даёт `Actions.key_text`, которая сокращает названия (PageUp → PgUp, BackSpace → Backspace, Escape → Esc, Delete → Del). Скобки `[` и `]` экранируются для BBCode. `Hints` слушает `Actions.binding_changed` и перерисовывает строку сразу. Мышь, модификаторы и Esc в `wire_tool` (не действие) остались текстом. Вкладка Keys в F3 берёт те же названия через `Actions.key_text`.
+- [x] Внести отсутствующие подсказки: `T` и ЛКМ по рычагу стрелки (ATTN_12 §12.12). **Как сделано:** «ЛКМ по рычагу» добавлена в `select_none` и `operate/select_none` (работает без выделения). Новые ключи `select_switch` и `operate/select_switch` (выбранная стрелка, контекст `switch` ставит `SelectTool.set_selection`) повторяют `select_sel` и добавляют `T` (дистанционная) и рычаг (ручная).
 - [x] Вкладка Keys в `DebugPanel`: клавиши `I`, `L`, `Z` и F3 берутся из реестра (`mechanisms_*`, `flex_limits_toggle`, `flex_zones_toggle`, `debug_panel_toggle`), F7–F10 из перечня `DebugKeys` (сделано в U6.2, см. выше).
 
 **Проверка в редакторе:**

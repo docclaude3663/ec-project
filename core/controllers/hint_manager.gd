@@ -10,7 +10,9 @@ extends Node
 ##   set_tool(tool_name)   ToolController при смене инструмента (SelectTool, BuildTool, DragTool, ObserveTool)
 ##   set_context(key, on)  SelectTool: "selected" (есть выбранный объект), ObserveCameraRig: "photo" (UI скрыт)
 ##   set_extra(name)       ObserveCameraRig: режим камеры follow, pov, orbit или ""
-## Тексты лежат в HINTS ниже: правятся только там. Ключ "режим/контекст" перекрывает общий "контекст".
+## Тексты лежат в HINTS ниже: правятся только там. Клавиша действия пишется токеном «@id» (@rotate_left/@rotate_right → «Q/E»),
+## настоящая клавиша берётся из InputMap через Actions.key_text, поэтому после переназначения подсказка меняется сама.
+## Мышь и модификаторы (Shift+ЛКМ, Alt + мышь) остаются текстом. Ключ "режим/контекст" перекрывает общий "контекст".
 ## Включение сохраняется через Settings ([ui] hints_enabled), кнопка в меню верхней панели.
 
 signal enabled_changed(on: bool)
@@ -22,34 +24,36 @@ const SEPARATOR := "   ·   "
 
 ## Пары [клавиша, действие]
 const HINTS := {
-	"select_group": [["Shift+ЛКМ", "добавить / убрать объект"], ["Shift+тащить", "добавить рамкой"], ["Del", "удалить выбранное"], ["Галки в панели", "какие категории в группе"], ["ПКМ", "снять выбор"], ["Тащить ЛКМ", "новая рамка"]],
-	"select_none": [["ЛКМ", "выбрать объект"], ["Рамка", "ЛКМ тащить по пустому месту (Ctrl: поверх объектов)"], ["Категория → объект", "построить новый"], ["V", "дубль последнего"]],
-	"operate/select_none": [["ЛКМ", "выбрать вагон или локомотив"], ["Тащить ЛКМ", "переместить выбранный"]],
-	"select_sel": [["Тащить ЛКМ", "переместить"], ["Shift+ЛКМ", "добавить к выбору"], ["V", "дубль выбранного"], ["Del", "удалить"], ["PgUp/PgDn", "пинок вагона"], ["U", "тоннель (трак)"], ["B", "насыпь (трак)"], ["Z", "зоны flex"]],
-	"operate/select_sel": [["Ручка на панели", "ЛКМ вращать, ПКМ обнулить"], ["PgUp/PgDn", "пинок вагона"], ["Тащить ЛКМ", "переместить"], ["Del", "удалить"]],
-	"build": [["ЛКМ", "построить"], ["ПКМ", "отмена"], ["Q/E", "поворот 45° (Shift: 5°)"], ["Alt + мышь", "вращать (Shift: точнее)"], ["R/F", "уровень"], ["Shift+R/F, PgUp/PgDn", "уровень ×5"], ["V", "дубль последнего"], ["U", "тоннель"], ["L", "лимиты flex"], ["Z", "зоны flex"]],
-	"build_polygon": [["ЛКМ", "вершина"], ["ЛКМ по первой вершине / Enter", "замкнуть"], ["Backspace", "убрать вершину"], ["ПКМ", "сбросить"], ["R/F", "уровень"], ["Shift+R/F, PgUp/PgDn", "уровень ×5"], ["Ctrl+R/F", "толщина (Shift ×5)"]],
-	"build_strip": [["ЛКМ", "точка оси"], ["ЛКМ по последней точке / Enter", "закончить"], ["[ ]", "ширина (Shift ×5)"], ["Backspace", "убрать точку"], ["ПКМ", "сбросить"], ["R/F", "уровень"], ["Shift+R/F, PgUp/PgDn", "уровень ×5"], ["Ctrl+R/F", "толщина (Shift ×5)"]],
-	"cut_rect": [["ЛКМ", "угол, второй клик режет"], ["Backspace", "отменить рисунок"], ["ПКМ", "сбросить / выйти"], ["R/F", "плоскость (Shift ×5)"], ["Ctrl+R/F", "глубина (Shift ×5)"], ["End", "насквозь"], ["Ctrl+Z", "отменить вырез"]],
-	"cut_polygon": [["ЛКМ", "вершина"], ["ЛКМ по первой вершине / Enter", "вырезать"], ["Backspace", "убрать вершину"], ["ПКМ", "сбросить / выйти"], ["R/F", "плоскость (Shift ×5)"], ["Ctrl+R/F", "глубина (Shift ×5)"], ["End", "насквозь"], ["Ctrl+Z", "отменить вырез"]],
-	"cut_strip": [["ЛКМ", "точка оси"], ["ЛКМ по последней точке / Enter", "вырезать"], ["[ ]", "ширина (Shift ×5)"], ["Backspace", "убрать точку"], ["ПКМ", "сбросить / выйти"], ["R/F", "плоскость (Shift ×5)"], ["Ctrl+R/F", "глубина (Shift ×5)"], ["End", "насквозь"], ["Ctrl+Z", "отменить вырез"]],
-	"cut_line": [["ЛКМ", "две точки прямой, третий клик отсекает сторону курсора"], ["Backspace", "убрать точку"], ["ПКМ", "сбросить / выйти"], ["R/F", "плоскость (Shift ×5)"], ["Ctrl+R/F", "глубина (Shift ×5)"], ["End", "насквозь"], ["Ctrl+Z", "отменить вырез"]],
-	"cut_bevel": [["ЛКМ", "две точки гребня, третий клик режет скос в сторону курсора"], ["[ ]", "ступень (Shift ×5)"], ["Ctrl+R/F", "высота скоса, слоёв"], ["R/F", "плоскость (Shift ×5)"], ["Backspace", "убрать точку"], ["ПКМ", "сбросить / выйти"], ["Ctrl+Z", "отменить скос"]],
-	"water_pour": [["ЛКМ", "налить воду (область видна до клика)"], ["Shift+ЛКМ", "осушить"], ["R/F", "глубина воды (Shift ×5)"], ["PgUp/PgDn", "глубина ±5"], ["Ctrl+Z", "отменить налив"], ["ПКМ", "выйти"]],
-	"plaster": [["ЛКМ", "сгладить весь холм под курсором"], ["Shift+ЛКМ", "только этот лист"], ["Ctrl+ЛКМ", "снять (Shift: только лист)"], ["[ ]", "ступень пандуса, ю на слой"], ["Ctrl+Z", "отменить"], ["ПКМ", "выйти"]],
-	"drag": [["Отпустить ЛКМ", "поставить"], ["ПКМ", "отмена"], ["Q/E", "поворот 45° (Shift: 5°)"], ["Alt + мышь", "вращать (Shift: точнее)"], ["R/F", "уровень"], ["Shift+R/F, PgUp/PgDn", "уровень ×5"], ["Home", "сброс"]],
+	"select_group": [["Shift+ЛКМ", "добавить / убрать объект"], ["Shift+тащить", "добавить рамкой"], ["@delete", "удалить выбранное"], ["Галки в панели", "какие категории в группе"], ["ПКМ", "снять выбор"], ["Тащить ЛКМ", "новая рамка"]],
+	"select_none": [["ЛКМ", "выбрать объект"], ["ЛКМ по рычагу", "переложить стрелку (ручную)"], ["Рамка", "ЛКМ тащить по пустому месту (Ctrl: поверх объектов)"], ["Категория → объект", "построить новый"], ["@duplicate_last", "дубль последнего"]],
+	"operate/select_none": [["ЛКМ", "выбрать вагон или локомотив"], ["ЛКМ по рычагу", "переложить стрелку (ручную)"], ["Тащить ЛКМ", "переместить выбранный"]],
+	"select_sel": [["Тащить ЛКМ", "переместить"], ["Shift+ЛКМ", "добавить к выбору"], ["@duplicate_last", "дубль выбранного"], ["@delete", "удалить"], ["@wagon_kick_fwd/@wagon_kick_back", "пинок вагона"], ["@tunnel_toggle", "тоннель (трак)"], ["@embankment_toggle", "насыпь (трак)"], ["@flex_zones_toggle", "зоны flex"]],
+	"select_switch": [["Тащить ЛКМ", "переместить"], ["Shift+ЛКМ", "добавить к выбору"], ["@duplicate_last", "дубль выбранного"], ["@delete", "удалить"], ["@wagon_kick_fwd/@wagon_kick_back", "пинок вагона"], ["@tunnel_toggle", "тоннель (трак)"], ["@embankment_toggle", "насыпь (трак)"], ["@flex_zones_toggle", "зоны flex"], ["@switch_throw", "переложить стрелку (дистанционную)"], ["ЛКМ по рычагу", "переложить стрелку (ручную)"]],
+	"operate/select_sel": [["Ручка на панели", "ЛКМ вращать, ПКМ обнулить"], ["@wagon_kick_fwd/@wagon_kick_back", "пинок вагона"], ["Тащить ЛКМ", "переместить"], ["@delete", "удалить"]],
+	"operate/select_switch": [["Ручка на панели", "ЛКМ вращать, ПКМ обнулить"], ["@wagon_kick_fwd/@wagon_kick_back", "пинок вагона"], ["Тащить ЛКМ", "переместить"], ["@delete", "удалить"], ["@switch_throw", "переложить стрелку (дистанционную)"], ["ЛКМ по рычагу", "переложить стрелку (ручную)"]],
+	"build": [["ЛКМ", "построить"], ["ПКМ", "отмена"], ["@rotate_left/@rotate_right", "поворот 45° (Shift: 5°)"], ["Alt + мышь", "вращать (Shift: точнее)"], ["@level_up/@level_down", "уровень"], ["Shift+@level_up/@level_down, @level_up_x5/@level_down_x5", "уровень ×5"], ["@duplicate_last", "дубль последнего"], ["@tunnel_toggle", "тоннель"], ["@flex_limits_toggle", "лимиты flex"], ["@flex_zones_toggle", "зоны flex"]],
+	"build_polygon": [["ЛКМ", "вершина"], ["ЛКМ по первой вершине / @shape_confirm", "замкнуть"], ["@shape_undo", "убрать вершину"], ["ПКМ", "сбросить"], ["@level_up/@level_down", "уровень"], ["Shift+@level_up/@level_down, @level_up_x5/@level_down_x5", "уровень ×5"], ["@depth_up/@depth_down", "толщина (Shift ×5)"]],
+	"build_strip": [["ЛКМ", "точка оси"], ["ЛКМ по последней точке / @shape_confirm", "закончить"], ["@width_down/@width_up", "ширина (Shift ×5)"], ["@shape_undo", "убрать точку"], ["ПКМ", "сбросить"], ["@level_up/@level_down", "уровень"], ["Shift+@level_up/@level_down, @level_up_x5/@level_down_x5", "уровень ×5"], ["@depth_up/@depth_down", "толщина (Shift ×5)"]],
+	"cut_rect": [["ЛКМ", "угол, второй клик режет"], ["@shape_undo", "отменить рисунок"], ["ПКМ", "сбросить / выйти"], ["@level_up/@level_down", "плоскость (Shift ×5)"], ["@depth_up/@depth_down", "глубина (Shift ×5)"], ["@cut_through", "насквозь"], ["@tool_undo", "отменить вырез"]],
+	"cut_polygon": [["ЛКМ", "вершина"], ["ЛКМ по первой вершине / @shape_confirm", "вырезать"], ["@shape_undo", "убрать вершину"], ["ПКМ", "сбросить / выйти"], ["@level_up/@level_down", "плоскость (Shift ×5)"], ["@depth_up/@depth_down", "глубина (Shift ×5)"], ["@cut_through", "насквозь"], ["@tool_undo", "отменить вырез"]],
+	"cut_strip": [["ЛКМ", "точка оси"], ["ЛКМ по последней точке / @shape_confirm", "вырезать"], ["@width_down/@width_up", "ширина (Shift ×5)"], ["@shape_undo", "убрать точку"], ["ПКМ", "сбросить / выйти"], ["@level_up/@level_down", "плоскость (Shift ×5)"], ["@depth_up/@depth_down", "глубина (Shift ×5)"], ["@cut_through", "насквозь"], ["@tool_undo", "отменить вырез"]],
+	"cut_line": [["ЛКМ", "две точки прямой, третий клик отсекает сторону курсора"], ["@shape_undo", "убрать точку"], ["ПКМ", "сбросить / выйти"], ["@level_up/@level_down", "плоскость (Shift ×5)"], ["@depth_up/@depth_down", "глубина (Shift ×5)"], ["@cut_through", "насквозь"], ["@tool_undo", "отменить вырез"]],
+	"cut_bevel": [["ЛКМ", "две точки гребня, третий клик режет скос в сторону курсора"], ["@width_down/@width_up", "ступень (Shift ×5)"], ["@depth_up/@depth_down", "высота скоса, слоёв"], ["@level_up/@level_down", "плоскость (Shift ×5)"], ["@shape_undo", "убрать точку"], ["ПКМ", "сбросить / выйти"], ["@tool_undo", "отменить скос"]],
+	"water_pour": [["ЛКМ", "налить воду (область видна до клика)"], ["Shift+ЛКМ", "осушить"], ["@level_up/@level_down", "глубина воды (Shift ×5)"], ["@level_up_x5/@level_down_x5", "глубина ±5"], ["@tool_undo", "отменить налив"], ["ПКМ", "выйти"]],
+	"plaster": [["ЛКМ", "сгладить весь холм под курсором"], ["Shift+ЛКМ", "только этот лист"], ["Ctrl+ЛКМ", "снять (Shift: только лист)"], ["@width_down/@width_up", "ступень пандуса, ю на слой"], ["@tool_undo", "отменить"], ["ПКМ", "выйти"]],
+	"drag": [["Отпустить ЛКМ", "поставить"], ["ПКМ", "отмена"], ["@rotate_left/@rotate_right", "поворот 45° (Shift: 5°)"], ["Alt + мышь", "вращать (Shift: точнее)"], ["@level_up/@level_down", "уровень"], ["Shift+@level_up/@level_down, @level_up_x5/@level_down_x5", "уровень ×5"], ["@reset_transform", "сброс"]],
 	"wire": [["ЛКМ по клемме", "начать провод"], ["ЛКМ по столу", "точка излома"], ["ЛКМ по второй клемме", "соединить"], ["ПКМ / Esc", "отмена, повторно выход"]],
 	"wire_started": [["ЛКМ по клемме", "соединить"], ["ЛКМ по столу", "точка излома"], ["ПКМ / Esc", "отмена провода"]],
 	"library": [["Режим в разработке", ""]],
-	"observe": [["ЛКМ по вагону", "камера Follow"], ["1-5", "перейти к закладке (пустая: сохранить)"], ["Ctrl+1-5 или Shift+карточка", "перезаписать закладку"], ["H", "скрыть UI"], ["P", "снимок"]],
-	"observe_follow": [["Esc", "выйти из Follow"], ["ЛКМ по другому вагону", "сменить"], ["СКМ + мышь", "вращать камеру вагона"]],
-	"observe_pov": [["Esc", "выйти из POV"], ["POV ↔", "развернуть камеру"], ["ЛКМ по другому вагону", "перенести камеру"]],
-	"observe_orbit": [["Esc", "выйти из Orbit"], ["Orbit", "ещё раз, чтобы остановить"]],
-	"observe_photo": [["P", "снимок"], ["H или Esc", "вернуть интерфейс"]],
+	"observe": [["ЛКМ по вагону", "камера Follow"], ["@bookmark_1-@bookmark_5", "перейти к закладке (пустая: сохранить)"], ["Ctrl+@bookmark_1-@bookmark_5 или Shift+карточка", "перезаписать закладку"], ["@photo_hide_ui", "скрыть UI"], ["@photo_snap", "снимок"]],
+	"observe_follow": [["@observe_cancel", "выйти из Follow"], ["ЛКМ по другому вагону", "сменить"], ["СКМ + мышь", "вращать камеру вагона"]],
+	"observe_pov": [["@observe_cancel", "выйти из POV"], ["POV ↔", "развернуть камеру"], ["ЛКМ по другому вагону", "перенести камеру"]],
+	"observe_orbit": [["@observe_cancel", "выйти из Orbit"], ["Orbit", "ещё раз, чтобы остановить"]],
+	"observe_photo": [["@photo_snap", "снимок"], ["@photo_hide_ui или @observe_cancel", "вернуть интерфейс"]],
 }
 
 ## Управление камерой Gimbal, вторая строка, где камерой управляет игрок
-const CAMERA_LINE := [["СКМ", "поворот"], ["ПКМ", "сдвиг"], ["Колесо", "зум"], ["WASD", "перемещение"]]
+const CAMERA_LINE := [["СКМ", "поворот"], ["ПКМ", "сдвиг"], ["Колесо", "зум"], ["@key_w@key_a@key_s@key_d", "перемещение"]]
 
 var enabled := true
 var mode: StringName = &"build"
@@ -63,9 +67,12 @@ var _layer: CanvasLayer
 var _panel: PanelContainer
 var _label: RichTextLabel
 var _tween: Tween
+var _token_re: RegEx
 
 
 func _ready() -> void:
+	_token_re = RegEx.create_from_string("@([a-z0-9_]+)(?:([/-])@([a-z0-9_]+))?")
+	Actions.binding_changed.connect(_on_binding_changed)
 	enabled = bool(Settings.get_value("ui", "hints_enabled", true))
 	_build_ui()
 	_refresh()
@@ -152,7 +159,9 @@ func _context_key() -> String:
 			return "build_polygon" if _ctx.get(&"polygon", false) else "build"
 	if _ctx.get(&"group", false):   # XX claude-switch: группа, выбранная рамкой
 		return "select_group"
-	return "select_sel" if _ctx.get(&"selected", false) else "select_none"
+	if _ctx.get(&"selected", false):
+		return "select_switch" if _ctx.get(&"switch", false) else "select_sel"
+	return "select_none"
 
 
 func _lookup(key: String) -> Array:
@@ -175,13 +184,53 @@ func _compose() -> String:
 func _format(items: Array, highlight := true) -> String:
 	var parts: Array[String] = []
 	for it in items:
-		var k: String = it[0]
+		# [ и ] в BBCode экранируются: «[/]» без этого читалось бы как закрывающий тег
+		var k: String = _keys(it[0]).replace("[", "[lb]").replace("]", "[rb]")
 		var t: String = it[1]
 		if highlight:
 			parts.append(("[b][color=%s]%s[/color][/b] %s" % [KEY_COLOR, k, t]).strip_edges())
 		else:
 			parts.append("%s %s" % [k, t])
 	return SEPARATOR.join(parts)
+
+
+# ==========================================
+# КЛАВИШИ ИЗ INPUTMAP
+# ==========================================
+
+## Подставляет клавиши действий в текст: «@rotate_left» → «Q». Пара «@a/@b» или «@a-@b» склеивает общий модификатор:
+## @depth_up/@depth_down → «Ctrl+R/F». Мышь и модификаторы пишутся текстом (Shift+ЛКМ), они не переназначаются
+func _keys(text: String) -> String:
+	if not text.contains("@"):
+		return text
+	var out := ""
+	var pos := 0
+	for m in _token_re.search_all(text):
+		out += text.substr(pos, m.get_start() - pos)
+		pos = m.get_end()
+		var a := _key_of(m.get_string(1))
+		if m.get_string(3) == "":
+			out += a
+			continue
+		var b := _key_of(m.get_string(3))
+		var pa := a.rfind("+") + 1
+		var pb := b.rfind("+") + 1
+		if pa > 0 and a.substr(0, pa) == b.substr(0, pb):
+			out += a + m.get_string(2) + b.substr(pb)   # Ctrl+R/F: общий модификатор пишется один раз
+		else:
+			out += a + m.get_string(2) + b
+	return out + text.substr(pos)
+
+
+func _key_of(action: String) -> String:
+	var t: String = Actions.key_text(StringName(action))
+	return t if t != "" else "—"
+
+
+## Клавишу действия переназначили (окно ремапа, U11): перерисовать подсказку
+func _on_binding_changed(_id: StringName) -> void:
+	_last_text = ""
+	_refresh()
 
 
 # ==========================================

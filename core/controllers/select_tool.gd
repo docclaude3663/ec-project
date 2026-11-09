@@ -220,6 +220,7 @@ func set_selection(entity_to_select: Entity):
 		#selected_entity = null # из старого, убрать? 
 	selected_entity = entity_to_select
 	Hints.set_context(&"selected", selected_entity != null)
+	Hints.set_context(&"switch", selected_entity != null and selected_entity.has_comp(C_Switch))
 	
 	if selected_entity:
 		selected_entity.add_component(C_Selected.new())
@@ -326,6 +327,7 @@ func _clear_single_selection():
 		selected_entity.send_event("on_select_layer", {'enabled':false})
 	selected_entity = null
 	Hints.set_context(&"selected", false)
+	Hints.set_context(&"switch", false)
 	
 	#INFO ОЧИЩАЕМ ПАНЕЛЬ! +
 	controller.publish_selection(null)
