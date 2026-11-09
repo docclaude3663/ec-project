@@ -127,46 +127,56 @@ func handle_input(event: InputEvent) -> void:
 	var k := event as InputEventKey
 	if k == null or not k.pressed or k.echo:
 		return
-	if Actions.pressed(event, &"shape_confirm"):
+	if k.keycode == KEY_ENTER or k.keycode == KEY_KP_ENTER:
 		if _drawing and shape == SHAPE_POLYGON:
 			_try_commit(_polygon_shape())
 		elif _drawing and shape == SHAPE_STRIP:
 			_try_commit(FoamCutter.strip(_verts, _width), FoamCutter.strip_why(_verts, _width))
 		return
-	if Actions.pressed(event, &"shape_undo"):
+	if k.keycode == KEY_BACKSPACE:
 		_undo_vertex()
 		return
-	if Actions.pressed(event, &"cut_through"):
+	if k.keycode == KEY_END:
 		_through = not _through
 		_dirty = true
 		return
-	if Actions.pressed(event, &"tool_undo"):
+	if k.ctrl_pressed and k.keycode == KEY_Z:
 		_undo_cut()
 		return
 
 	# [ и ] (по физической клавише): ширина полосы или шаг ступени скоса, Shift ×5
-	var w := Actions.axis_step(event, &"width_up", &"width_down", 5)
-	if w != 0:
-		if shape == SHAPE_STRIP or shape == SHAPE_BEVEL:
-			var wstep: float = Global.settings.terrain_grid_step * w
-			if shape == SHAPE_STRIP:
-				_width = clampf(_width + wstep, FoamCutter.STRIP_WIDTH_MIN, FoamCutter.STRIP_WIDTH_MAX)
-			else:
-				_run = clampf(_run + wstep, Global.settings.terrain_grid_step, RUN_MAX)
-			_dirty = true
+	if (shape == SHAPE_STRIP or shape == SHAPE_BEVEL) and (k.keycode == KEY_BRACKETLEFT or k.physical_keycode == KEY_BRACKETLEFT
+			or k.keycode == KEY_BRACKETRIGHT or k.physical_keycode == KEY_BRACKETRIGHT):
+		var wstep: float = Global.settings.terrain_grid_step * (5.0 if k.shift_pressed else 1.0)
+		var left := k.keycode == KEY_BRACKETLEFT or k.physical_keycode == KEY_BRACKETLEFT
+		if shape == SHAPE_STRIP:
+			_width = clampf(_width + (-wstep if left else wstep), FoamCutter.STRIP_WIDTH_MIN, FoamCutter.STRIP_WIDTH_MAX)
+		else:
+			_run = clampf(_run + (-wstep if left else wstep), Global.settings.terrain_grid_step, RUN_MAX)
+		_dirty = true
 		return
 
 	# R/F (по физической клавише): плоскость. Ctrl: глубина. Shift ×5. PgUp/PgDn: ×5
-	var dz := ElevationInput.depth_from_event(event)
-	if dz != 0:
-		_depth = clampi(_depth + dz, 1, MAX_DEPTH)
+	var dir := 0
+	var big := k.shift_pressed
+	if k.keycode == KEY_PAGEUP:
+		dir = 1
+		big = true
+	elif k.keycode == KEY_PAGEDOWN:
+		dir = -1
+		big = true
+	elif k.keycode == KEY_R or k.physical_keycode == KEY_R:
+		dir = 1
+	elif k.keycode == KEY_F or k.physical_keycode == KEY_F:
+		dir = -1
+	if dir == 0:
+		return
+	var n := dir * (ElevationInput.BIG_STEP if big else 1)
+	if k.ctrl_pressed:
+		_depth = clampi(_depth + n, 1, MAX_DEPTH)
 		_through = false
-		_dirty = true
-		return
-	var n := ElevationInput.step_from_event(event)
-	if n == 0:
-		return
-	_dy = clampi(_dy + n, -MAX_SHIFT, MAX_SHIFT)
+	else:
+		_dy = clampi(_dy + n, -MAX_SHIFT, MAX_SHIFT)
 	_dirty = true
 
 
