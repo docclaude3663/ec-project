@@ -22,6 +22,8 @@ signal quality_changed(id: StringName)
 ## Тени траков включили или выключили (или сменился tier, от которого зависит умолчание)
 signal track_shadows_changed(on: bool)
 signal lamp_changed(on: bool)
+## Lab (корректор графики, ATTN_14 §14.16) включён или выключен
+signal lab_changed(on: bool)
 
 const LOOKS_DIR := "res://data/graphics/looks/"
 const TIMES_DIR := "res://data/graphics/time/"
@@ -45,6 +47,10 @@ var qualities := {}
 var light_budget: LightBudget
 ## Оверлей статистики в углу (fps, draw calls, треугольники, траки и вагоны). Только отладочная сборка, F4
 var stats: StatsOverlay
+
+## Корректор графики (только debug, в --fast его нет). Пока lab_mode включён, Look, Time и Quality не применяются
+var lab: GfxLab
+var lab_mode := false
 
 var _world_env: WorldEnvironment
 var _env: Environment
@@ -131,6 +137,8 @@ func _ready() -> void:
 	_build_miniature()
 	_load_presets()
 	_load_settings()
+	if Global.debug_mode:
+		lab = GfxLab.new()
 	# EnvironmentRoot, RoomBuilder и ObserveController встают в группы в своих _ready
 	await get_tree().process_frame
 	if _resolve():
@@ -168,6 +176,7 @@ func apply_look(id: StringName, duration := DEFAULT_TRANSITION) -> void:
 	if not looks.has(id):
 		push_warning("GFX: нет пресета Look '%s'" % id)
 		return
+	exit_lab()
 	state.look = id
 	_lamp_override = -1
 	_apply_all(duration)
@@ -180,6 +189,7 @@ func apply_time(id: StringName, duration := DEFAULT_TRANSITION) -> void:
 	if not times.has(id):
 		push_warning("GFX: нет пресета Time '%s'" % id)
 		return
+	exit_lab()
 	state.time = id
 	_lamp_override = -1
 	_apply_all(duration)
@@ -193,6 +203,10 @@ func apply_quality(id: StringName, duration := 0.3, persist := true) -> void:
 	if not qualities.has(id):
 		push_warning("GFX: нет пресета Quality '%s'" % id)
 		return
+	if lab_mode:
+		if not persist:
+			return   # временное качество фоторежима в Lab не меняет картинку: снимок делается как есть
+		exit_lab()
 	state.quality = id
 	_apply_quality_settings()
 	_apply_all(duration)
@@ -205,6 +219,8 @@ func apply_quality(id: StringName, duration := 0.3, persist := true) -> void:
 ## Пересчитать картинку из текущих значений пресетов (правка на лету: вкладка Graphics панели F3).
 ## quality_too: заново применить настройки Quality (MSAA, атласы теней, SSAO) и сообщить подписчикам quality_changed
 func reapply(quality_too := false) -> void:
+	if lab_mode:
+		return   # вкладка Graphics правит пресеты, а Lab их не применяет
 	if quality_too:
 		_apply_quality_settings()
 	_apply_all(0.0)
@@ -242,6 +258,9 @@ func is_stats_shown() -> bool:
 
 ## Ручное включение лампы над столом
 func set_lamp(on: bool, duration := 0.3) -> void:
+	if lab_mode:
+		lab.set_flag("lamp", on)   # в Lab карточка «Лампа» это птичка лампы
+		return
 	_lamp_override = 1 if on else 0
 	_apply_all(duration)
 
@@ -250,12 +269,74 @@ func is_lamp_on() -> bool:
 	return _lamp_is_on
 
 
+## Режим Observe включён (Lab работает только в нём)
+func is_observe_active() -> bool:
+	return _observe_active
+
+
+## Включить Lab: чистый дефолт Godot вместо Look, Time и Quality (ATTN_14 §14.16). Только debug и только в Observe
+func enter_lab() -> bool:
+	if lab == null or Global.fast_debug:
+		return false
+	if lab_mode:
+		return true
+	if not _observe_active:
+		push_warning("GFX: Lab включается только в режиме Observe")
+		return false
+	if _env == null and not _resolve():
+		return false
+	if _tween:
+		_tween.kill()
+		_tween = null
+	set_process(false)
+	lab.enter(_lab_context())
+	lab_mode = true
+	# Карточки Look, Time и Quality ничего не показывают выбранным: активного пресета нет
+	if is_instance_valid(_oc):
+		_oc.set_group_state(&"look", &"")
+		_oc.set_group_state(&"time", &"")
+		_oc.set_group_state(&"quality", &"")
+		_oc.set_toggle_state(&"lamp", lab.get_flag("lamp"))
+	lab_changed.emit(true)
+	return true
+
+
+## Выключить Lab: Look, Time и Quality применяются заново
+func exit_lab() -> void:
+	if not lab_mode:
+		return
+	lab_mode = false
+	lab.leave()
+	_apply_quality_settings()
+	_apply_all(0.0)
+	lab_changed.emit(false)
+
+
+## Всё, что Lab берёт у GFX: ноды, слой миниатюры и тени траков
+func _lab_context() -> Dictionary:
+	return {
+		"world_env": _world_env, "sun": _sun, "sky_fill": _fill, "lamp": _lamp, "probe": _probe,
+		"mini_rect": _mini_rect, "mini_mat": _mini_mat, "viewport": get_viewport(),
+		"track_get": func() -> int: return _track_shadows_override,
+		"track_set": _lab_set_track_shadows,
+		"observe_active": func() -> bool: return _observe_active,
+	}
+
+
+func _lab_set_track_shadows(v: int) -> void:
+	_track_shadows_override = v
+	track_shadows_changed.emit(is_track_shadows())
+
+
 func get_state() -> Dictionary:
 	return state.duplicate()
 
 
 ## Для SavedGame / настроек (S5)
 func set_state(d: Dictionary) -> void:
+	if lab_mode:
+		lab.apply_room_flags()   # комнату сменили, пока Lab включён: пресеты не применяем
+		return
 	if d.has("look") and looks.has(StringName(d.look)):
 		state.look = StringName(d.look)
 	if d.has("time") and times.has(StringName(d.time)):
@@ -304,6 +385,8 @@ func dump_props() -> void:
 
 ## Собирает итог из state (Look + Time) и применяет его
 func _apply_all(duration: float) -> void:
+	if lab_mode:
+		return
 	var look: GraphicsPreset = looks.get(state.look)
 	var tod: TimeOfDayPreset = times.get(state.time)
 	var q: QualityPreset = qualities.get(state.quality)
@@ -718,10 +801,17 @@ func _connect_observe() -> void:
 	if _oc:
 		_oc.observe_action.connect(_on_observe_action)
 		_oc.observe_entered.connect(func(): _set_observe(true))
-		_oc.observe_exited.connect(func(): _set_observe(false))
+		_oc.observe_exited.connect(_on_observe_exited)
 		_sync_cards()
 	elif not _scene_without_gfx():
 		push_warning("GFX: ObserveController не найден, карточки Look и Light не работают")
+
+
+## Вышли из Observe: Lab выключается (комната и камера возвращаются к обычным), затем миниатюра гаснет
+func _on_observe_exited() -> void:
+	_observe_active = false
+	exit_lab()
+	_set_observe(false)
 
 
 ## Сцены-инструменты (Icon Studio) без окружения игры помечают корень метой gfx_optional: предупреждения GFX там не нужны
@@ -734,7 +824,12 @@ func _scene_without_gfx() -> bool:
 func _on_observe_action(_cat: StringName, _id: StringName, _pressed: bool) -> void:
 	match _cat:
 		&'look':
-			if _pressed and looks.has(_id):
+			if _id == &'lab_default':
+				if lab_mode:
+					lab.rebuild()   # уже в Lab: чистый дефолт заново
+				else:
+					enter_lab()
+			elif _pressed and looks.has(_id):
 				apply_look(_id)
 			elif _pressed and qualities.has(_id):
 				apply_quality(_id)

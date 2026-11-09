@@ -5,7 +5,7 @@ class_name DebugPanel extends PanelContainer
 ###########################
 ## Создается GameRoot только при Global.debug_mode (в релизе узла нет). Открывается клавишей F3
 ## (действие debug_panel_toggle), закрывается ей же или крестиком, тянется за заголовок.
-## Вкладки: Tuning, Suspension и Layout (параметры выбранного вагона), Graphics (правка Look, Time, Quality на лету), Entity (компоненты), Perf (fps, отрисовка, физика),
+## Вкладки: Tuning, Suspension и Layout (параметры выбранного вагона), Graphics (правка Look, Time, Quality на лету), Lab (корректор графики на чистом дефолте Godot), Entity (компоненты), Perf (fps, отрисовка, физика),
 ## Toggles (флаги Global), Keys (отладочные клавиши). Вкладки лежат в ui/debug/debug_*_tab.gd.
 ## Выбранный объект приходит сигналом ToolController.selection_changed. Положение окна пишется в Settings [debug].
 ## Когда появится FloatingPanel (U13), перетаскивание и положение переедут в него.
@@ -48,6 +48,7 @@ func _ready() -> void:
 	_add_tab(DebugTuningTab.new(WagonTuning.TAB_SUSPENSION))
 	_add_tab(DebugTuningTab.new(WagonTuning.TAB_LAYOUT))
 	_add_tab(DebugGraphicsTab.new())
+	_add_tab(DebugLabTab.new())
 	_add_tab(DebugEntityTab.new())
 	_add_tab(DebugPerfTab.new())
 	_add_tab(DebugTogglesTab.new())

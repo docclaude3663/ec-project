@@ -125,6 +125,22 @@ func _apply_detail() -> void:
 		_root.set_detail(lod)
 
 
+## Потолочные лампы комнаты (из сцены или из RoomConfig.lamps). null: ламп нет. Для корректора графики (GfxLab)
+func get_room_lights() -> Node3D:
+	return _room_lights if is_instance_valid(_room_lights) else null
+
+
+## Тень оболочки (стены, рама, шторы, потолок) вручную: корректор графики (GfxLab) включает и выключает её птичкой
+func set_shell_shadows(on: bool) -> void:
+	_walls_shadow_now = on
+	set_walls_cast_shadow(on)
+
+
+## Вернуть обычное правило тени оболочки: тень только в Observe (после выхода из корректора графики)
+func apply_observe_shadows(observe: bool) -> void:
+	_set_observe_shadows(observe)
+
+
 ## Тень стен, рамы и штор: рисунок окна на столе только в Observe
 func _set_observe_shadows(on: bool) -> void:
 	_walls_shadow_now = window_shadows_in_observe if on else walls_cast_shadow
@@ -272,6 +288,8 @@ func _build_room() -> void:
 	_apply_ceiling()
 	set_walls_cast_shadow(_walls_shadow_now)
 	_apply_detail()
+	if GFX.lab_mode:
+		GFX.lab.apply_room_flags()   # новые узлы комнаты получают птички корректора
 
 
 ## Комната из сцены (RoomConfig.scene, корень RoomRoot): лампы выносятся рядом с Room, остальное лежит в visuals
