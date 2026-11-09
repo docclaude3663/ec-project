@@ -19,4 +19,3 @@
 - [0_ATTN_21_dcc.md](0_ATTN_21_dcc.md) — DCC (заглушка).
 - [ATTN_22_library.md](ATTN_22_library.md) — Library (Model Studio): коллекция, кастомизация, сборка и генерация зданий, план L0–L12.
 - [ATTN_23_layout_table.md](ATTN_23_layout_table.md) — Подмакетник (Layout Table): кастомизация, модули, крепление, задник, подстольный слой, план T0–T10.
-- [ATTN_24_model_pipeline.md](ATTN_24_model_pipeline.md) — Модели из Blender: алгоритм экспорта в `.glb`, роли, материалы, механизмы, свет, проверка `tools/glb_preflight.py`.
