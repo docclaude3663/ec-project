@@ -2,75 +2,49 @@ class_name LibraryScreen extends Control
 
 # XX claude-library (новый файл)
 ########################
-## LibraryScreen. Экран Library (Model Studio), ATTN_22 §22.5, шаг L1
+## LibraryScreen. Оболочка экрана Library, ATTN_22 §22.5.4, шаги L1, L1b
 ########################
-## Одно окно, один 3D-мир (StudioWorld, как в Icon Studio) и сменные рабочие области справа. Интерфейс собирается кодом.
+## Верхняя полоса: «Назад», название, кнопки студий (Model Studio, Track Studio, Icon Studio). Всё ниже полосы это
+## дочернее окно выбранной студии. Model Studio (прежнее тело экрана, model_studio.gd) создаётся один раз и при уходе
+## скрывается; Track Studio и Icon Studio создаются при открытии и освобождаются при уходе. Студии окном не управляют.
 ## Два способа запуска:
 ##   - оверлей поверх игры (ModeController): дерево на паузе, 3D главного вьюпорта выключено на время;
-##   - отдельно (F6 на library_screen.tscn): окно как у студий, без паузы, кнопки «Назад» нет.
-## Объект показывает StudioWorld через EntityFactory (как в игре), в своём World3D. Закрытая модель показывается силуэтом.
-## При закрытии объект убирается через kill_me (снимает регистрацию в PGM), пауза и 3D возвращаются.
+##   - отдельно (F6 на library_screen.tscn): без паузы, кнопки «Назад» нет.
+## Перед уходом из студии и закрытием экрана активную студию спрашивают request_leave(proceed): она может не пустить
+## (несохранённая работа) и сама спросит игрока. При закрытии Model Studio снимает объект через kill_me
+## (регистрация в PGM), пауза и 3D возвращаются.
 
 signal closed
 ## Поставить выбранную модель в игре (L4): ModeController закрывает экран и включает Build с этим исполнением.
 ## variant пуст, если покраски нет
 signal place_requested(setting: EntitySetting, variant: Dictionary)
 
-const StudioWorld := preload("res://core/library/icon_studio/studio_world.gd")
-const StudioSettings := preload("res://core/library/icon_studio/studio_settings.gd")
-const StageClean := preload("res://core/library/stage/stage_clean.gd")
-const Overview := preload("res://core/library/workspace/overview.gd")
-const Paint := preload("res://core/library/workspace/paint.gd")
+const ModelStudio := preload("res://core/library/model_studio.gd")
 
-const SETTINGS_PATH := "user://library.cfg"
-## Кадров «settle» после создания объекта (как DEFAULT_SETTLE в Icon Studio)
-const SETTLE_FRAMES := 2
 ## Выключать 3D главного вьюпорта, пока открыт экран (в игре под экраном рисовать нечего)
 const DISABLE_GAME_3D := true
-## Цвет силуэта закрытой модели (ATTN_22 §22.7.1)
-const SILHOUETTE_COLOR := Color(0.13, 0.14, 0.16)
-## Области экрана: id, название, включена ли (остальные включаются шагами L3 и дальше)
-const WORKSPACE_TABS := [
-	[&"overview", "Осмотр", true],
-	[&"paint", "Покраска", true],
-	[&"parts", "Детали", false],
-	[&"fit", "Свет", false],
-	[&"test", "Стенд", false],
-	[&"building", "Здания", false],
-	[&"kit", "Сборка", false],
-	[&"restore", "Реставрация", false],
+## Кнопки студий автора. false: полоса студий скрыта, остаётся один Model Studio. Студии пишут в res://,
+## поэтому на релизе false (до релиза true)
+const SHOW_AUTHOR_STUDIOS := true
+const TOOL_MODEL := &"model"
+## Студии: id, название, сцена (у Model Studio сцены нет: её собирает ModelStudio)
+const TOOLS := [
+	{"id": &"model", "title": "Model Studio"},
+	{"id": &"track", "title": "Track Studio", "scene": "res://core/library/track_studio/track_studio.tscn"},
+	{"id": &"icon", "title": "Icon Studio", "scene": "res://core/library/icon_studio/icon_studio.tscn"},
 ]
-const HINT_TEXT := "ЛКМ: вращать   ·   Shift+ЛКМ, СКМ, ПКМ: сдвиг   ·   колесо: зум   ·   F: вписать   ·   1–6: ракурс (Shift: сохранить)   ·   Esc: назад"
-
-var rules: LibraryRules
-var profile: LibraryProfile
-var settings: StudioSettings
-var world: StudioWorld
-var stage: LibraryStage
-var workspace: LibraryWorkspace
-var catalog: LibraryCatalog
-## Буфер исполнения показанной модели: его правит рабочая область «Покраска». Сбрасывается при выборе другой модели
-var variant: ModelVariant = ModelVariant.new()
-## Показанная модель (null, пока ничего не выбрано)
-var current_setting: EntitySetting:
-	get:
-		return _current
 
 var _embedded := false
 var _prev_paused := false
 var _prev_disable_3d: Variant = false
 var _vp: Viewport
-var _viewport: SubViewport
-var _view_area: PanelContainer
-var _right_box: VBoxContainer
-var _rules_label: Label
-var _current: EntitySetting
+var _holder: Control
+var _buttons := {}          # id студии -> Button
+var _model: ModelStudio
+var _active: Control
+var _active_id: StringName = TOOL_MODEL
+var _busy := false          # студия достраивает интерфейс: переключать и закрывать нельзя
 var _closing := false
-var _tab_buttons := {}      # id области -> Button
-var _place_btn: Button
-var _subject_ready := false
-var _last_info: Dictionary = {}
-var _last_ms := 0
 
 
 func _ready() -> void:
@@ -81,63 +55,46 @@ func _ready() -> void:
 	# а перерасчёта никто не вызывает. Без этого экран схлопывается до минимального размера и не закрывает игру
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
-	settings = StudioSettings.new()
-	settings.name = "StudioSettings"
-	settings.path = SETTINGS_PATH
-	add_child(settings)
-	if not _embedded:
-		settings.restore_window()
-		get_window().title = "Library · Model Studio"
-
-	profile = VariantIO.load_profile()
-	rules = LibraryRules.from_dict(profile.rules) if not profile.rules.is_empty() else LibraryRules.make(LibraryRules.Source.SANDBOX, LibraryRules.Preset.STANDARD)
-
 	_build_ui()
-	_build_world()
-	_set_workspace(Overview.new())
+	_model = ModelStudio.new()
+	_model.name = "ModelStudio"
+	_model.embedded = _embedded
+	_model.place_requested.connect(place_requested.emit)
+	_mount(_model)
+	_active = _model
 	_enter_overlay_state()
-
-	# Размеры контейнеров известны только после первого кадра раскладки
-	await get_tree().process_frame
-	_select_last()
 
 
 func _exit_tree() -> void:
-	if settings:
-		settings.flush()
 	_leave_overlay_state()
-
-
-func _notification(what: int) -> void:
-	if what == NOTIFICATION_WM_CLOSE_REQUEST and settings:
-		settings.flush()
 
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	var k := event as InputEventKey
 	if k == null or not k.pressed or k.echo:
 		return
-	if workspace != null and workspace.handle_key(k):
-		get_viewport().set_input_as_handled()
-	elif k.keycode == KEY_F:
-		world.fit()
-		get_viewport().set_input_as_handled()
-	elif k.keycode == KEY_ESCAPE and _embedded:
+	# Esc закрывает экран только из Model Studio: в других студиях он нужен полям ввода и диалогам
+	if k.keycode == KEY_ESCAPE and _embedded and _active_id == TOOL_MODEL:
 		close()
 		get_viewport().set_input_as_handled()
 
 
-## Закрыть экран (в оверлее). Область может отказать, если у неё несохранённая работа
+## Закрыть экран (в оверлее). Активная студия может не пустить, если у неё несохранённая работа
 func close() -> void:
-	if not _embedded or _closing:
+	if not _embedded or _closing or _busy:
 		return
-	if workspace != null and not workspace.can_leave():
+	_ask_leave(func(): _finish_close.call_deferred())
+
+
+func _finish_close() -> void:
+	if _closing:
 		return
 	_closing = true
-	if workspace != null:
-		workspace.exit()
-	# kill_me снимает регистрацию объекта в PGM; просто освободить дерево недостаточно
-	world.clear_subject()
+	# Студия убирается из дерева сразу: её _exit_tree записывает настройки
+	if _active != null and _active != _model:
+		_holder.remove_child(_active)
+		_active.queue_free()
+	_model.shutdown()
 	closed.emit()
 	queue_free()
 
@@ -179,31 +136,25 @@ func _build_ui() -> void:
 	# set_anchors_preset без offsets оставляет прежний (нулевой) размер, поэтому именно _and_offsets_
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
+	var root := VBoxContainer.new()
+	root.add_theme_constant_override("separation", 0)
+	add_child(root)
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
 	var margin := MarginContainer.new()
 	for side in ["left", "right", "top", "bottom"]:
 		margin.add_theme_constant_override("margin_" + side, 8)
-	add_child(margin)
-	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	root.add_child(margin)
+	margin.add_child(_build_header())
+	root.add_child(HSeparator.new())
 
-	var root := VBoxContainer.new()
-	root.add_theme_constant_override("separation", 6)
-	margin.add_child(root)
-	root.add_child(_build_header())
-
-	var body := HBoxContainer.new()
-	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	body.add_theme_constant_override("separation", 6)
-	root.add_child(body)
-	body.add_child(_build_left())
-	body.add_child(_build_center())
-	body.add_child(_build_right())
-
-	var hint := Label.new()
-	hint.text = HINT_TEXT
-	hint.modulate = Color(1, 1, 1, 0.6)
-	root.add_child(hint)
+	_holder = Control.new()
+	_holder.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_holder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	root.add_child(_holder)
 
 
+## Верхняя полоса: «Назад», название, кнопки студий
 func _build_header() -> Control:
 	var h := HBoxContainer.new()
 	h.add_theme_constant_override("separation", 8)
@@ -215,244 +166,104 @@ func _build_header() -> Control:
 		h.add_child(back)
 
 	var title := Label.new()
-	title.text = "LIBRARY · Model Studio"
+	title.text = "LIBRARY"
 	h.add_child(title)
 
-	var group := ButtonGroup.new()
-	for t in WORKSPACE_TABS:
-		var b := Button.new()
-		b.text = t[1]
-		b.toggle_mode = true
-		b.button_group = group
-		b.disabled = not t[2]
-		b.button_pressed = t[0] == &"overview"
-		if b.disabled:
-			b.tooltip_text = "Включится в следующих шагах (ATTN_22 §22.9)"
-		else:
-			b.pressed.connect(_on_tab.bind(t[0]))
-		_tab_buttons[t[0]] = b
-		h.add_child(b)
-
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	h.add_child(spacer)
-
-	_rules_label = Label.new()
-	_rules_label.text = "Правила: " + rules.label()
-	h.add_child(_rules_label)
-	if Global.debug_mode:
-		var cycle := Button.new()
-		cycle.text = "Правила ⟳"
-		cycle.tooltip_text = "Отладка: переключить источник (песочница, кампания) и пресет сложности"
-		cycle.pressed.connect(_on_cycle_rules)
-		h.add_child(cycle)
+	if SHOW_AUTHOR_STUDIOS:
+		var group := ButtonGroup.new()
+		for t in TOOLS:
+			var b := Button.new()
+			b.text = t["title"]
+			b.toggle_mode = true
+			b.button_group = group
+			b.button_pressed = t["id"] == TOOL_MODEL
+			b.pressed.connect(_on_tool_pressed.bind(t["id"]))
+			_buttons[t["id"]] = b
+			h.add_child(b)
 	return h
 
 
-func _build_left() -> Control:
-	var p := PanelContainer.new()
-	p.custom_minimum_size = Vector2(280, 0)
-	catalog = LibraryCatalog.new(rules, profile)
-	catalog.object_selected.connect(_show_object)
-	p.add_child(catalog)
-	return p
-
-
-func _build_center() -> Control:
-	_view_area = PanelContainer.new()
-	_view_area.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_view_area.custom_minimum_size = Vector2(320, 240)
-	_view_area.mouse_filter = Control.MOUSE_FILTER_STOP
-	var bg := StyleBoxFlat.new()
-	bg.bg_color = Color(0.1, 0.1, 0.11)
-	_view_area.add_theme_stylebox_override("panel", bg)
-	return _view_area
-
-
-func _build_right() -> Control:
-	var p := PanelContainer.new()
-	p.custom_minimum_size = Vector2(320, 0)
-	var v := VBoxContainer.new()
-	p.add_child(v)
-	_right_box = VBoxContainer.new()
-	_right_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	v.add_child(_right_box)
-	v.add_child(HSeparator.new())
-	_place_btn = Button.new()
-	_place_btn.text = "В игру"
-	_place_btn.disabled = true
-	_place_btn.tooltip_text = "Поставить выбранную модель в игре вместе с покраской. Доступно при запуске из игры"
-	_place_btn.pressed.connect(_on_place_pressed)
-	v.add_child(_place_btn)
-	return p
+## Студия на всю область под полосой (якоря заданы кодом: у студий из сцены размер при добавлении мог быть нулевым)
+func _mount(c: Control) -> void:
+	_holder.add_child(c)
+	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 
 # ==========================================
-# 3D-МИР
+# СТУДИИ
 # ==========================================
 
-func _build_world() -> void:
-	var svc := SubViewportContainer.new()
-	svc.stretch = true
-	svc.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_view_area.add_child(svc)
-
-	# Отдельный World3D: объекты Library не видны игре и не видят её (в том числе физика)
-	var studio_world3d := World3D.new()
-	_viewport = SubViewport.new()
-	_viewport.world_3d = studio_world3d
-	_viewport.msaa_3d = Viewport.MSAA_4X
-	_viewport.handle_input_locally = false
-	svc.add_child(_viewport)
-
-	world = StudioWorld.new()
-	world.name = "StudioWorld"
-	_viewport.add_child(world)
-	_view_area.gui_input.connect(world.handle_gui_input)
-	var views: Array[SubViewport] = [_viewport]
-	world.register_views(views, null)
-
-	stage = StageClean.new()
-	stage.apply(world)
-
-
-# ==========================================
-# КАТАЛОГ И ПОКАЗ ОБЪЕКТА
-# ==========================================
-
-## Последний показанный объект (или первый в списке), без повторной загрузки, если он уже выбран
-func _select_last() -> void:
-	var last := str(settings.get_value("state", "last_key", ""))
-	if last != "" and catalog.select_key(StringName(last)):
+func _on_tool_pressed(id: StringName) -> void:
+	_sync_buttons()
+	if id == _active_id or _busy or _closing:
 		return
-	var first := catalog.first_visible_key()
-	if first != &"":
-		catalog.select_key(first)
+	# Model Studio остаётся в памяти со своим состоянием: из неё уходим без вопроса.
+	# Остальные студии освобождаются, поэтому сначала спрашиваем
+	if _active == _model:
+		_activate(id)
+	else:
+		_ask_leave(func(): _activate.call_deferred(id))
 
 
-## keep_variant: оставить буфер исполнения (перезагрузка той же модели при смене правил)
-func _show_object(s: EntitySetting, keep_variant := false) -> void:
-	if s == _current:
+## Спросить активную студию, можно ли уйти: proceed выполнится сразу или после подтверждения игрока
+func _ask_leave(proceed: Callable) -> void:
+	if _active != null and _active.has_method("request_leave"):
+		_active.call("request_leave", proceed)
+	else:
+		proceed.call()
+
+
+func _activate(id: StringName) -> void:
+	if id == _active_id or _busy or _closing:
 		return
-	_current = s
-	_subject_ready = false
-	if not keep_variant:
-		variant = ModelVariant.new()
-		variant.base = String(s.get_key())
-	settings.set_value("state", "last_key", String(s.get_key()))
-	if workspace != null:
-		workspace.on_loading(s)
-	var t0 := Time.get_ticks_msec()
-	var info: Dictionary = await world.set_subject(s, StudioWorld.SOURCE_ENTITY, SETTLE_FRAMES)
-	if info.stale or s != _current or _closing:
+	if _active == _model:
+		_set_shown(_model, false)
+	elif _active != null:
+		_holder.remove_child(_active)
+		_active.queue_free()
+	_active = null
+	_active_id = id
+	_sync_buttons()
+	if id == TOOL_MODEL:
+		_active = _model
+		_set_shown(_model, true)
 		return
-	if info.ok:
-		world.fit()
-		# Закрытая модель: тёмный силуэт без материалов (ATTN_22 §22.7.1)
-		if catalog.is_locked(s.get_key()):
-			_apply_silhouette(world.subject)
-		elif not PaintData.is_empty(variant.paint):
-			apply_variant()
-	_subject_ready = info.ok
-	_last_info = info
-	_last_ms = Time.get_ticks_msec() - t0
-	_place_btn.disabled = not _embedded or not info.ok or catalog.is_locked(s.get_key())
-	if workspace != null:
-		workspace.on_subject(s, info, _last_ms)
 
-
-func _apply_silhouette(root: Node) -> void:
-	var mat := StandardMaterial3D.new()
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.albedo_color = SILHOUETTE_COLOR
-	_silhouette_walk(root, mat)
-
-
-func _silhouette_walk(n: Node, mat: Material) -> void:
-	if n is MeshInstance3D:
-		(n as MeshInstance3D).material_override = mat
-		(n as MeshInstance3D).material_overlay = null
-	for c in n.get_children():
-		_silhouette_walk(c, mat)
-
-
-# ==========================================
-# ИСПОЛНЕНИЕ МОДЕЛИ (L3, L4)
-# ==========================================
-
-## Меши кузова показанной модели (C_Visual.mesh_nodes). Тележки и колёса строятся позже и сюда не входят
-func body_meshes() -> Array[MeshInstance3D]:
-	var out: Array[MeshInstance3D] = []
-	var ent := world.subject as Entity if world != null else null
-	if ent == null or not is_instance_valid(ent):
-		return out
-	var vis := ent.get_comp(C_Visual) as C_Visual
-	if vis == null:
-		return out
-	for m in vis.mesh_nodes:
-		if is_instance_valid(m):
-			out.append(m)
-	return out
-
-
-## Применить буфер исполнения к показанной модели (идемпотентно: повторное применение не наслаивает материалы)
-func apply_variant() -> void:
-	VariantApplier.apply(body_meshes(), variant.to_dict())
-
-
-func is_current_locked() -> bool:
-	return _current != null and catalog.is_locked(_current.get_key())
-
-
-func _on_place_pressed() -> void:
-	if _current == null or not _subject_ready or catalog.is_locked(_current.get_key()):
+	var path := ""
+	for t in TOOLS:
+		if t["id"] == id:
+			path = String(t.get("scene", ""))
+	var packed: PackedScene = load(path) as PackedScene if path != "" else null
+	if packed == null:
+		push_warning("Library: не удалось загрузить студию %s (%s)" % [id, path])
+		_active_id = TOOL_MODEL
+		_active = _model
+		_set_shown(_model, true)
+		_sync_buttons()
 		return
-	var v: Dictionary = {} if PaintData.is_empty(variant.paint) else variant.to_dict()
-	place_requested.emit(_current, v)
+	_busy = true
+	_set_buttons_disabled(true)
+	_active = packed.instantiate() as Control
+	_mount(_active)
+	# Студия досоздаёт часть интерфейса после первого кадра: до этого переключать нельзя
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_busy = false
+	_set_buttons_disabled(false)
 
 
-# ==========================================
-# ОБЛАСТИ И ПРАВИЛА
-# ==========================================
-
-func _set_workspace(ws: LibraryWorkspace) -> void:
-	if workspace != null:
-		workspace.exit()
-		_right_box.remove_child(workspace)
-		workspace.queue_free()
-	workspace = ws
-	workspace.setup(self)
-	workspace.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_right_box.add_child(workspace)
-	workspace.enter()
+## Показать или скрыть студию, которая остаётся в памяти. Скрытая не получает клавиш и таймеров, её SubViewport не рисуется
+func _set_shown(c: Control, on: bool) -> void:
+	c.visible = on
+	c.process_mode = Node.PROCESS_MODE_INHERIT if on else Node.PROCESS_MODE_DISABLED
 
 
-## Вкладка области. Если у текущей области несохранённая работа, она может не пустить
-func _on_tab(id: StringName) -> void:
-	if workspace != null and workspace.id == id:
-		return
-	if workspace != null and not workspace.can_leave():
-		(_tab_buttons[workspace.id] as Button).button_pressed = true
-		return
-	var ws: LibraryWorkspace
-	match id:
-		&"paint":
-			ws = Paint.new()
-		_:
-			ws = Overview.new()
-	_set_workspace(ws)
-	if _current != null and _subject_ready:
-		ws.on_subject(_current, _last_info, _last_ms)
+## Подсветка кнопок по активной студии (ButtonGroup сам переставил бы её на нажатую, даже если переход не состоялся)
+func _sync_buttons() -> void:
+	for id in _buttons:
+		(_buttons[id] as Button).set_pressed_no_signal(id == _active_id)
 
 
-func _on_cycle_rules() -> void:
-	rules.cycle_debug()
-	_rules_label.text = "Правила: " + rules.label()
-	profile.rules = rules.to_dict()
-	VariantIO.save_profile(profile)
-	# Замки и силуэт зависят от правил: перекрасить список и перезагрузить объект
-	catalog.refresh_locks()
-	if _current != null:
-		var cur := _current
-		_current = null
-		_show_object(cur, true)
+func _set_buttons_disabled(on: bool) -> void:
+	for id in _buttons:
+		(_buttons[id] as Button).disabled = on

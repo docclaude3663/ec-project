@@ -3,7 +3,7 @@ extends Control
 ########################
 ## Track Studio (ATTN_20). Редактор стилей траков, часть будущего режима Library.
 ########################
-## Запуск: открыть track_studio.tscn и нажать F6 (Run Current Scene).
+## Живёт в Library: кнопка «Track Studio» в верхней полосе, дочернее окно (ATTN_22 §22.5.4). Окном не управляет.
 ## T1: список стилей из data/tracks/styles, 3D-превью (тот же TrackMeshBuilder, что в игре),
 ## правка параметров стиля, профили текстом, паспорт с проверками, сохранение в .tres.
 ## Интерфейс собирается кодом, как в Icon Studio. Логика проверок и файлов лежит в lib/ без интерфейса.
@@ -99,8 +99,6 @@ func _ready() -> void:
 	settings.name = "StudioSettings"
 	settings.path = SETTINGS_PATH
 	add_child(settings)
-	settings.restore_window()
-	get_window().title = "Track Studio"
 
 	_refresh_timer = Timer.new()
 	_refresh_timer.one_shot = true
@@ -260,8 +258,7 @@ func _build_left_panel() -> void:
 	lv.add_child(hint)
 
 	lv.add_child(HSeparator.new())
-	_add_button(lv, "Сбросить окно", func():
-		settings.reset_window()
+	_add_button(lv, "Сбросить панели", func():
 		_split_left.split_offset = 0
 		_split_right.split_offset = 0
 		settings.set_value("ui", "split_left", 0)
@@ -564,6 +561,11 @@ func _on_list_selected(i: int) -> void:
 	if path == _current_path:
 		return
 	_guard(func(): _load_path(path))
+
+
+## Для оболочки Library (ATTN_22 §22.5.4): перед уходом из студии. proceed выполнится сразу или после подтверждения «Отбросить»
+func request_leave(proceed: Callable) -> void:
+	_guard(proceed)
 
 
 ## Выполняет действие сразу или после подтверждения, если есть несохранённые правки

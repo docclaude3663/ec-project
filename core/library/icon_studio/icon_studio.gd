@@ -3,8 +3,8 @@ extends Control
 ########################
 ## Icon Studio (ATTN_18). Прототип режима Library.
 ########################
-## Запуск: открыть icon_studio.tscn и нажать F6 (Run Current Scene).
-## I0-I1: каркас, окно, настройки, список объектов, объект в мире.
+## Живёт в Library: кнопка «Icon Studio» в верхней полосе, дочернее окно (ATTN_22 §22.5.4). Окном не управляет.
+## I0-I1: каркас, настройки, список объектов, объект в мире.
 ## I2-I4: камера и слоты, свет, фон, тень, качество, предпросмотр в размере результата.
 ## I5-I6: съёмка в файл (PNG/WebP/JPEG), шаблоны, пакетная съёмка, сравнение форматов.
 ## Интерфейс собирается кодом, чтобы не плодить правки в .tscn.
@@ -77,8 +77,6 @@ func _ready() -> void:
 	settings = StudioSettings.new()
 	settings.name = "StudioSettings"
 	add_child(settings)
-	settings.restore_window()
-	get_window().title = "Icon Studio"
 
 	_build_qualities()
 	_load_template()
@@ -622,7 +620,7 @@ func _take_look() -> void:
 func _build_reset_dialog() -> void:
 	_reset_dialog = ConfirmationDialog.new()
 	_reset_dialog.title = "Сброс"
-	_reset_dialog.dialog_text = "Что сбросить?\n«Всё»: окно, панели, шаблон, слоты, камера и настройки списка вернутся к умолчанию."
+	_reset_dialog.dialog_text = "Что сбросить?\n«Всё»: панели, шаблон, слоты, камера и настройки списка вернутся к умолчанию."
 	_reset_dialog.ok_button_text = "Сбросить всё"
 	_reset_dialog.cancel_button_text = "Отмена"
 	_reset_dialog.add_button("Только шаблон", true, "template")
@@ -969,7 +967,6 @@ func _reset_template() -> void:
 
 func _reset_all() -> void:
 	settings.reset_all()
-	settings.reset_window()
 	_split_left.split_offset = 0
 	_split_right.split_offset = 0
 	_source.select(0)
