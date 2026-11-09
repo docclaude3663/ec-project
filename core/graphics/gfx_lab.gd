@@ -62,6 +62,21 @@ const FLAGS := [
 
 ## Порядок целей в файле и в списке отличий
 const TARGETS := ["env", "sun", "sky_fill", "lamp", "probe", "camera", "viewport", "rs", "mini", "dof"]
+## Названия целей для списка параметров (вкладка Lab)
+const TARGET_TITLES := {
+	"env": "Environment", "sun": "Sun (DirectionalLight3D)", "sky_fill": "SkyFill (DirectionalLight3D)",
+	"lamp": "TableLamp (SpotLight3D)", "probe": "ReflectionProbe", "camera": "Camera3D", "viewport": "Viewport",
+	"rs": "RenderingServer (нет в Remote)", "mini": "Миниатюра: шейдер tilt-shift", "dof": "CameraAttributesPractical",
+}
+## Подсказки редактору для строк RenderingServer: [hint, hint_string] (у них нет списка свойств движка)
+const RS_HINTS := {
+	"dir_shadow_atlas_size": [PROPERTY_HINT_RANGE, "256,16384,1"],
+	"dir_soft_shadow_quality": [PROPERTY_HINT_ENUM, "Hard,Soft Very Low,Soft Low,Soft Medium,Soft High,Soft Ultra"],
+	"pos_soft_shadow_quality": [PROPERTY_HINT_ENUM, "Hard,Soft Very Low,Soft Low,Soft Medium,Soft High,Soft Ultra"],
+	"ssao_quality": [PROPERTY_HINT_ENUM, "Very Low,Low,Medium,High,Ultra"],
+	"ssao_adaptive_target": [PROPERTY_HINT_RANGE, "0,1,0.01"],
+	"ssao_blur_passes": [PROPERTY_HINT_RANGE, "0,4,1"],
+}
 ## Цели-узлы света: ключи словаря контекста
 const NODE_TARGETS := ["sun", "sky_fill", "lamp", "probe"]
 ## Что остаётся при сбросе узла (по сути поза и габарит, не «картинка»)
@@ -301,6 +316,57 @@ func changed_count() -> int:
 	for t in d:
 		n += (d[t] as Dictionary).size()
 	return n
+
+
+## Цели, которые сейчас есть в слепке, в порядке TARGETS
+func target_ids() -> Array:
+	var out := []
+	for t in TARGETS:
+		if _targets.has(t):
+			out.append(t)
+	return out
+
+
+## Строка, меняющаяся при появлении или исчезновении цели или замене её объекта: по ней вкладка перестраивает список
+func signature() -> String:
+	var parts := PackedStringArray()
+	for t in target_ids():
+		parts.append("%s:%d" % [t, (_targets[t]["obj"] as Object).get_instance_id()])
+	return ",".join(parts)
+
+
+## Описание параметров цели для списка: [{name, type, hint, hint_string, group}]
+func describe(target: String) -> Array:
+	return _targets[target]["info"] if _targets.has(target) else []
+
+
+func get_value(target: String, prop: String) -> Variant:
+	if not _targets.has(target):
+		return null
+	return _read_prop(_targets[target]["obj"], prop)
+
+
+## Записать значение параметра (правка из списка вкладки Lab). RenderingServer применяется сразу
+func set_value(target: String, prop: String, value: Variant) -> void:
+	if not _targets.has(target):
+		return
+	if target == "rs":
+		rs_set(prop, value)
+	else:
+		_write_prop(_targets[target]["obj"], prop, value)
+
+
+func base_value(target: String, prop: String) -> Variant:
+	return (_base.get(target, {}) as Dictionary).get(prop)
+
+
+func is_changed(target: String, prop: String) -> bool:
+	return not _same(base_value(target, prop), get_value(target, prop))
+
+
+## Вернуть параметр к значению слепка (чистый дефолт)
+func reset_value(target: String, prop: String) -> void:
+	set_value(target, prop, base_value(target, prop))
 
 
 ## Список отличий для показа: «цель.свойство: было -> стало»
@@ -575,7 +641,7 @@ func _build_targets() -> void:
 
 
 func _register(target: String, obj: Object, props: Array) -> void:
-	_targets[target] = {"obj": obj, "props": props}
+	_targets[target] = {"obj": obj, "props": props, "info": _info(obj, props)}
 	var b := {}
 	for p in props:
 		b[p] = _read_prop(obj, p)
@@ -666,13 +732,46 @@ static func _chain_props(obj: Object) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var cls := String(obj.get_class())
 	while cls != "" and not CHAIN_STOP.has(cls):
+		var group := ""
 		for p in ClassDB.class_get_property_list(cls, true):
-			if (int(p["usage"]) & PROPERTY_USAGE_STORAGE) == 0 or int(p["type"]) == TYPE_NIL:
+			var usage := int(p["usage"])
+			if usage & PROPERTY_USAGE_CATEGORY:
+				group = ""
+				continue
+			if usage & PROPERTY_USAGE_GROUP:
+				group = String(p["name"])
+				continue
+			if (usage & PROPERTY_USAGE_STORAGE) == 0 or int(p["type"]) == TYPE_NIL:
 				continue
 			if CHAIN_SKIP.has(String(p["name"])):
 				continue
-			out.append(p)
+			var q: Dictionary = p.duplicate()
+			q["group"] = group
+			out.append(q)
 		cls = String(ClassDB.get_parent_class(cls))
+	return out
+
+
+## Описание параметров цели в порядке props: тип, подсказка редактора (enum, диапазон) и группа
+static func _info(obj: Object, props: Array) -> Array[Dictionary]:
+	var by := {}
+	if obj is ShaderMaterial:
+		var sh := (obj as ShaderMaterial).shader
+		if sh != null:
+			for u in sh.get_shader_uniform_list():
+				var un := String(u["name"])
+				by[un] = {"name": un, "type": int(u["type"]), "hint": int(u["hint"]), "hint_string": String(u["hint_string"]), "group": ""}
+	elif obj is RenderSettings:
+		for k in RenderSettings.MAP:
+			var h: Array = RS_HINTS.get(k, [PROPERTY_HINT_NONE, ""])
+			by[k] = {"name": k, "type": typeof(obj.get(k)), "hint": int(h[0]), "hint_string": String(h[1]), "group": ""}
+	else:
+		for p in _chain_props(obj):
+			by[String(p["name"])] = p
+	var out: Array[Dictionary] = []
+	for n in props:
+		if by.has(n):
+			out.append(by[n])
 	return out
 
 
@@ -738,6 +837,11 @@ static func _coerce(v: Variant, cur: Variant) -> Variant:
 	if typeof(cur) == TYPE_INT and typeof(v) == TYPE_FLOAT:
 		return int(v)
 	return null
+
+
+## Равенство значений параметров (float и векторы с допуском)
+static func values_equal(a: Variant, b: Variant) -> bool:
+	return _same(a, b)
 
 
 static func _same(a: Variant, b: Variant) -> bool:
