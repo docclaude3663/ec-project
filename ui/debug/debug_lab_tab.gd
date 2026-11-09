@@ -8,7 +8,7 @@ class_name DebugLabTab extends DebugTab
 ## Дальше параметры правят где удобно: Remote в редакторе (Environment, свет, камера, Viewport) или строки RenderingServer ниже.
 ## «Записать» сравнивает текущие значения со слепком, снятым при сбросе, и пишет отличия в user://lab/<имя>.json.
 ## Птички (что включено поверх дефолта: SkyFill, FakeAO и т.д.) запоминаются в settings.cfg [lab] и применяются при каждом входе.
-## Включается только в Observe (карточка Look → Default делает то же самое).
+## Включается только в Observe (карточка Look → Lab делает то же самое).
 
 var _lab: GfxLab
 

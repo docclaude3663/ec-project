@@ -30,7 +30,7 @@ const CARDS := {
 		{"id": &"medium", "title": "Medium", "group": &"quality", "default": true},
 		{"id": &"high", "title": "High", "group": &"quality"},
 		# Только debug (см. _cards_for): чистый дефолт Godot для корректора графики (GfxLab, ATTN_14 §14.16)
-		{"id": &"lab_default", "title": "Default", "tip": "Сброс всего к дефолту Godot: Look, Time, Quality, свет, камера (без позиции и зума). Дальше правки в Remote или во вкладке Lab (F3). Любая другая карточка Look, Time или Quality возвращает игру"},
+		{"id": &"lab", "title": "Lab", "tip": "Корректор графики: сброс всего к дефолту Godot: Look, Time, Quality, свет, камера (без позиции и зума). Дальше правки в Remote или во вкладке Lab (F3). Любая другая карточка Look, Time или Quality возвращает игру"},
 	],
 	&"light": [
 		{"id": &"morning", "title": "Утро", "group": &"time"},
@@ -175,7 +175,7 @@ func _is_on(data: Dictionary) -> bool:
 func _cards_for(category: StringName) -> Array:
 	var base: Array = CARDS.get(category, [])
 	if category == &"look" and not Global.debug_mode:
-		return base.filter(func(d: Dictionary) -> bool: return d.id != &"lab_default")
+		return base.filter(func(d: Dictionary) -> bool: return d.id != &"lab")
 	if category != &"room":
 		return base
 	var out: Array = []

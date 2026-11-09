@@ -34,13 +34,19 @@ var _library_prev_mode: StringName = &"build"
 ## Запрос «В игру» из Library: модель и исполнение, которые надо взять в руку после закрытия экрана (ATTN_22 L4)
 var _library_place_setting: EntitySetting
 var _library_place_variant: Dictionary = {}
+## Имя активного инструмента для ModeLabel (метка [LAB] добавляется к нему)
+var _tool_label := ""
 
 
 func _ready() -> void:
 	#⚡Сигнал о выборе режима из панели коннектится с контроллером
 	%ModePanel.mode_selected.connect(on_mode_selected)
 	# Метка с именем активного инструмента (временная, уйдёт вместе с ModeLabel в U9)
-	tool_controller.tool_changed.connect(func(tool_name: StringName): %ModeLabel.text = str(tool_name))
+	tool_controller.tool_changed.connect(func(tool_name: StringName) -> void:
+		_tool_label = str(tool_name)
+		_update_mode_label())
+	# Корректор графики (Lab, ATTN_14 §14.16) помечает метку: «<инструмент> [LAB]»
+	GFX.lab_changed.connect(func(_on: bool) -> void: _update_mode_label())
 
 	var toolbar := get_node_or_null("%ToolbarController")
 	_handlers = {
@@ -74,6 +80,11 @@ func _ready() -> void:
 			handler.debug_open_category(Global.active_ui_category)
 
 
+
+
+## Текст ModeLabel: имя инструмента, в режиме Lab с меткой [LAB]
+func _update_mode_label() -> void:
+	%ModeLabel.text = _tool_label + (" [LAB]" if GFX.lab_mode else "")
 
 
 ##⚡ Сигнал из панели ModePanel. Ставим новый режим

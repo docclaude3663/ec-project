@@ -824,7 +824,7 @@ func _scene_without_gfx() -> bool:
 func _on_observe_action(_cat: StringName, _id: StringName, _pressed: bool) -> void:
 	match _cat:
 		&'look':
-			if _id == &'lab_default':
+			if _id == &'lab':
 				if lab_mode:
 					lab.rebuild()   # уже в Lab: чистый дефолт заново
 				else:
