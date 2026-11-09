@@ -4,9 +4,9 @@ class_name LibraryScreen extends Control
 ########################
 ## LibraryScreen. Оболочка экрана Library, ATTN_22 §22.5.4, шаги L1, L1b
 ########################
-## Верхняя полоса: «Назад», название, кнопки студий (Model Studio, Track Studio, Icon Studio). Всё ниже полосы это
+## Верхняя полоса: «Назад», название, кнопки студий (Model Studio, Track Studio, Icon Studio, Room Studio). Всё ниже полосы это
 ## дочернее окно выбранной студии. Model Studio (прежнее тело экрана, model_studio.gd) создаётся один раз и при уходе
-## скрывается; Track Studio и Icon Studio создаются при открытии и освобождаются при уходе. Студии окном не управляют.
+## скрывается; остальные студии создаются при открытии и освобождаются при уходе. Студии окном не управляют.
 ## Два способа запуска:
 ##   - оверлей поверх игры (ModeController): дерево на паузе, 3D главного вьюпорта выключено на время;
 ##   - отдельно (F6 на library_screen.tscn): без паузы, кнопки «Назад» нет.
@@ -20,6 +20,7 @@ signal closed
 signal place_requested(setting: EntitySetting, variant: Dictionary)
 
 const ModelStudio := preload("res://core/library/model_studio.gd")
+const RoomStudio := preload("res://core/library/room_studio/room_studio.gd")
 
 ## Выключать 3D главного вьюпорта, пока открыт экран (в игре под экраном рисовать нечего)
 const DISABLE_GAME_3D := true
@@ -27,11 +28,13 @@ const DISABLE_GAME_3D := true
 ## поэтому на релизе false (до релиза true)
 const SHOW_AUTHOR_STUDIOS := true
 const TOOL_MODEL := &"model"
-## Студии: id, название, сцена (у Model Studio сцены нет: её собирает ModelStudio)
+## Студии: id, название и откуда берётся: scene (PackedScene) или script (интерфейс собирается кодом).
+## У Model Studio ни того, ни другого: её создаёт сама оболочка
 const TOOLS := [
 	{"id": &"model", "title": "Model Studio"},
 	{"id": &"track", "title": "Track Studio", "scene": "res://core/library/track_studio/track_studio.tscn"},
 	{"id": &"icon", "title": "Icon Studio", "scene": "res://core/library/icon_studio/icon_studio.tscn"},
+	{"id": &"room", "title": "Room Studio", "script": RoomStudio},
 ]
 
 var _embedded := false
@@ -229,13 +232,8 @@ func _activate(id: StringName) -> void:
 		_set_shown(_model, true)
 		return
 
-	var path := ""
-	for t in TOOLS:
-		if t["id"] == id:
-			path = String(t.get("scene", ""))
-	var packed: PackedScene = load(path) as PackedScene if path != "" else null
-	if packed == null:
-		push_warning("Library: не удалось загрузить студию %s (%s)" % [id, path])
+	var studio := _make_tool(id)
+	if studio == null:
 		_active_id = TOOL_MODEL
 		_active = _model
 		_set_shown(_model, true)
@@ -243,13 +241,31 @@ func _activate(id: StringName) -> void:
 		return
 	_busy = true
 	_set_buttons_disabled(true)
-	_active = packed.instantiate() as Control
+	_active = studio
 	_mount(_active)
 	# Студия досоздаёт часть интерфейса после первого кадра: до этого переключать нельзя
 	await get_tree().process_frame
 	await get_tree().process_frame
 	_busy = false
 	_set_buttons_disabled(false)
+
+
+## Новая студия по таблице TOOLS (сцена или скрипт); null, если создать не удалось
+func _make_tool(id: StringName) -> Control:
+	for t in TOOLS:
+		if t["id"] != id:
+			continue
+		if t.has("script"):
+			return (t["script"] as GDScript).new() as Control
+		var path := String(t.get("scene", ""))
+		var packed: PackedScene = null
+		if path != "":
+			packed = load(path) as PackedScene
+		if packed == null:
+			push_warning("Library: не удалось загрузить студию %s (%s)" % [id, path])
+			return null
+		return packed.instantiate() as Control
+	return null
 
 
 ## Показать или скрыть студию, которая остаётся в памяти. Скрытая не получает клавиш и таймеров, её SubViewport не рисуется
