@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="RoomConfig" format=3]
+[gd_resource type="Resource" script_class="RoomConfig" format=3 uid="uid://cj6wdmf1wt0di"]
 
-[ext_resource type="PackedScene" path="res://data/rooms/bench/bench.tscn" id="1_3kyds"]
-[ext_resource type="Script" path="res://setting/room_config.gd" id="2_o6ms3"]
+[ext_resource type="PackedScene" uid="uid://bpyhnxuqd62jj" path="res://data/rooms/bench/bench.tscn" id="1_3kyds"]
+[ext_resource type="Script" uid="uid://cbb2byx0tf34w" path="res://setting/room_config.gd" id="2_o6ms3"]
 
 [resource]
 script = ExtResource("2_o6ms3")
@@ -15,4 +15,5 @@ window = {}
 door = {}
 shape = &"none"
 show_stats = true
+table_top = Vector2(400, 400)
 bounds = AABB(-400, 3, -400, 800, 400, 800)
