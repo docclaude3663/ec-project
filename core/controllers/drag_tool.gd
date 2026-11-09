@@ -74,22 +74,22 @@ func process_tick(_delta):
 ### Передача инпутов в ентити, tool_controller вызывает
 func handle_input(event: InputEvent):
 	# XX claude-terra 13.1.7: Shift+Q/E поворот на ROT_FINE (5°), без Shift ROT_STEP (45°)
-	var _shift := Actions.shift()
+	var _shift := Input.is_key_pressed(KEY_SHIFT)
 	var _rot := ROT_FINE if _shift else ROT_STEP
-	if Input.is_action_just_pressed(&"rotate_left"):
+	if Input.is_action_just_pressed("key_q"):
 		target_entity.send_event("on_rotate_input", {"axis": "y", "amount": _rot})
-	if Input.is_action_just_pressed(&"rotate_right"):
+	if Input.is_action_just_pressed("key_e"):
 		target_entity.send_event("on_rotate_input", {"axis": "y", "amount": -_rot})
 	# XX claude-terra 13.1.4: с Shift R/F идут крупным шагом через ElevationInput, обычный шаг без Shift
-	if Input.is_action_just_pressed(&"level_up") and not _shift:
+	if Input.is_action_just_pressed("key_r") and not _shift:
 		target_entity.send_event("on_rotate_input", {"axis": "x", "amount": ROT_STEP})
-	if Input.is_action_just_pressed(&"level_down") and not _shift:
+	if Input.is_action_just_pressed("key_f") and not _shift:
 		target_entity.send_event("on_rotate_input", {"axis": "x", "amount": -ROT_STEP})
 	# XX claude-terra 13.1.4: Shift+R/F и PageUp/PageDown, крупный шаг уровня (трак, лист, вагон, 13.1.7)
 	var _levels := ElevationInput.levels_from_event(event)
 	if _levels != 0:
 		target_entity.send_event("on_elevation_input", {"levels": _levels})
-	if Input.is_action_just_pressed(&"reset_transform"):
+	if Input.is_action_just_pressed("ui_home"):
 		target_entity.send_event("on_drag_reset", {}) # сбросить состояние
 	# 13.1.7: PageUp/PageDown теперь крупный шаг уровня (ElevationInput выше) для всех, и для вагона тоже
 		

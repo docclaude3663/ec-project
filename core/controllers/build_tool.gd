@@ -137,16 +137,16 @@ func handle_input(event: InputEvent):
 
 	# Транслируем намерение покрутить
 	# XX claude-terra 13.1.7: Shift+Q/E поворот на ROT_FINE (5°), без Shift ROT_STEP (45°)
-	var _shift := Actions.shift()
+	var _shift := Input.is_key_pressed(KEY_SHIFT)
 	var _rot := ROT_FINE if _shift else ROT_STEP
-	if Input.is_action_just_pressed(&"rotate_left"):
+	if Input.is_action_just_pressed("key_q"):
 		ghost.send_event("on_rotate_input", {"axis": "y", "amount": _rot})
-	if Input.is_action_just_pressed(&"rotate_right"):
+	if Input.is_action_just_pressed("key_e"):
 		ghost.send_event("on_rotate_input", {"axis": "y", "amount": -_rot})
 	# XX claude-terra 13.1.4: с Shift R/F идут крупным шагом через ElevationInput, обычный шаг без Shift
-	if Input.is_action_just_pressed(&"level_up") and not _shift:
+	if Input.is_action_just_pressed("key_r") and not _shift:
 		ghost.send_event("on_rotate_input", {"axis": "x", "amount": ROT_STEP})
-	if Input.is_action_just_pressed(&"level_down") and not _shift:
+	if Input.is_action_just_pressed("key_f") and not _shift:
 		ghost.send_event("on_rotate_input", {"axis": "x", "amount": -ROT_STEP})
 	# XX claude-terra 13.1.4: Shift+R/F и PageUp/PageDown, крупный шаг уровня
 	var _levels := ElevationInput.levels_from_event(event)
@@ -154,12 +154,12 @@ func handle_input(event: InputEvent):
 		ghost.send_event("on_elevation_input", {"levels": _levels})
 
 	# XX claude-terra T6: тоннельный режим. Трак с флагом может уходить под листы пенопласта
-	if Actions.pressed(event, &"tunnel_toggle") and ghost.has_comp(C_Path):
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_U and ghost.has_comp(C_Path):
 		tunnel_mode = not tunnel_mode
 		ghost.send_event("on_tunnel_set", {"on": tunnel_mode})
 
 	# Переключатель контроля лимитов flex
-	if Actions.pressed(event, &"flex_limits_toggle"):
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_L:
 		Global.flex_limits = not Global.flex_limits
 		ghost.send_event("on_flex_limits_changed", {})
 		
@@ -421,6 +421,7 @@ func process_tick(_delta):
 		var plane_hit := controller.get_mouse_plane_hit(ghost.global_position.y)
 		if not plane_hit.is_empty():
 			_poly().set_cursor(plane_hit.position)
+		$"../../UI/ModeLabel".text = name
 		return
 	# XX claude-switch: пока зажат Alt, призрак вращается мышью, позицию не обновляем (не во время растягивания flex)
 	if ghost and stretch_phase == 0 and _alt_rotate.tick(ghost, controller.get_viewport()):

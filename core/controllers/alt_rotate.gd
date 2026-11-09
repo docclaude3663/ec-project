@@ -36,7 +36,7 @@ func tick(target: Entity, viewport: Viewport) -> bool:
 	if target == null or not is_instance_valid(target) or target.has_comp(C_TerrainLayer):
 		_active = false
 		return false
-	if not Actions.alt():
+	if not Input.is_key_pressed(KEY_ALT):
 		_active = false
 		return false
 	var x := viewport.get_mouse_position().x
@@ -47,7 +47,7 @@ func tick(target: Entity, viewport: Viewport) -> bool:
 	var dx := x - _last_x
 	_last_x = x
 	if absf(dx) > 0.0:
-		var k := DEG_PER_PX_FINE if Actions.shift() else DEG_PER_PX
+		var k := DEG_PER_PX_FINE if Input.is_key_pressed(KEY_SHIFT) else DEG_PER_PX
 		target.send_event("on_rotate_input", {"axis": "y", "amount": dx * k})
 		# Применить новый поворот на прежней позиции
 		if not _frozen.is_empty():

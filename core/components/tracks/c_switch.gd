@@ -169,7 +169,7 @@ func on_lever_pressed(data: Dictionary) -> void:
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	# Временная кнопка пульта: T по выбранной стрелке = команда remote. Заменит панель/провода (Roadmap 13)
-	if event.is_action_pressed(&"switch_throw") and entity and entity.has_comp(C_Selected) and not entity.has_comp(C_Ghost):
+	if event.is_action_pressed(&"key_t") and entity and entity.has_comp(C_Selected) and not entity.has_comp(C_Ghost):
 		request(-1, &"remote")
 
 
