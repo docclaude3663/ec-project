@@ -43,6 +43,8 @@ var qualities := {}
 
 ## Бюджет источников света сущностей (ATTN_16 §16.6). Создаётся в _ready, регистрируются C_Mechanisms
 var light_budget: LightBudget
+## Оверлей статистики в углу (fps, draw calls, треугольники, траки и вагоны). Только отладочная сборка, F4
+var stats: StatsOverlay
 
 var _world_env: WorldEnvironment
 var _env: Environment
@@ -114,6 +116,9 @@ func _ready() -> void:
 	light_budget = LightBudget.new()
 	light_budget.name = "LightBudget"
 	add_child(light_budget)
+	if Global.debug_mode:
+		stats = StatsOverlay.new()
+		add_child(stats)
 	if Global.fast_debug:
 		# Режим быстрой загрузки: без пресетов Look и Time, без миниатюры, только Low и без SDFGI
 		_load_presets()
@@ -144,6 +149,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if Global.debug_mode and InputMap.has_action(&"debug_vsync_toggle") \
 			and event.is_action_pressed(&"debug_vsync_toggle") and not event.is_echo():
 		_toggle_vsync()
+	# F4 (debug): оверлей статистики
+	if Global.debug_mode and event is InputEventKey and event.pressed and not event.echo \
+			and event.keycode == KEY_F4:
+		set_stats_shown(not is_stats_shown())
 	# F10 (debug): сохранить встроенные Look и Time в .tres для правки
 	if Global.debug_mode and event is InputEventKey and event.pressed and not event.echo \
 			and event.keycode == KEY_F10:
@@ -220,6 +229,15 @@ func set_track_shadows(on: bool, persist := true) -> void:
 
 func get_quality() -> QualityPreset:
 	return qualities.get(state.quality)
+
+
+func set_stats_shown(on: bool) -> void:
+	if stats:
+		stats.set_shown(on)
+
+
+func is_stats_shown() -> bool:
+	return stats != null and stats.visible
 
 
 ## Ручное включение лампы над столом

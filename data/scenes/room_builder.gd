@@ -140,6 +140,8 @@ func build() -> void:
 	_mats.clear()
 	_build_table()
 	_build_room()
+	if config.show_stats:
+		GFX.set_stats_shown(true)
 
 	if temp_light:
 		var l := DirectionalLight3D.new()
@@ -260,6 +262,8 @@ func _build_room() -> void:
 	_clear_room_lights()
 	if config.scene:
 		_build_from_scene()
+	elif config.shape == &"none":
+		pass   # стенд: комнаты нет, только стол
 	else:
 		_build_room_lights()
 		_build_greybox()

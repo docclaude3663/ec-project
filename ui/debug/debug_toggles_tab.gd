@@ -85,6 +85,10 @@ func _init() -> void:
 			func() -> bool: return DisplayServer.window_get_vsync_mode() != DisplayServer.VSYNC_DISABLED,
 			_set_vsync)
 
+	_add_toggle("Оверлей статистики (F4)", "fps, draw calls, треугольники, траки и вагоны в углу экрана. Цифры отрисовки за все проходы кадра", "GFX.stats",
+			func() -> bool: return GFX.is_stats_shown(),
+			func(on: bool) -> void: GFX.set_stats_shown(on))
+
 	add_child(make_header("Сцена"))
 	var clear := Button.new()
 	clear.text = "Очистить сцену..."

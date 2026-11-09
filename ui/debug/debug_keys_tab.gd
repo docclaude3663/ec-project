@@ -12,6 +12,7 @@ class_name DebugKeysTab extends DebugTab
 ## action: действие InputMap для кнопки (если задано, кнопка шлет его, а не клавишу)
 const KEYS: Array[Dictionary] = [
 	{"key": "F3", "text": "Эта панель", "code": KEY_NONE},
+	{"key": "F4", "text": "Оверлей статистики в углу: fps, draw calls, треугольники (все проходы кадра), траки и вагоны, условия прогона", "code": KEY_F4},
 	{"key": "F7", "text": "Печатает surface_y под курсором. С выбранным листом террейна: ниша; Shift: окно; Alt: тоннель; Ctrl: убрать последний вырез", "code": KEY_NONE},
 	{"key": "Ctrl+Shift+V", "text": "V-Sync вкл/выкл (действие debug_vsync_toggle, переназначается в Project Settings). Раньше был F8, но в редакторе Godot это «Остановить игру»", "code": KEY_NONE, "action": &"debug_vsync_toggle"},
 	{"key": "F9", "text": "Загрузить эталонную диораму (заменяет макет)", "code": KEY_F9},

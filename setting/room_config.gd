@@ -30,10 +30,14 @@ class_name RoomConfig extends Resource
 @export var door := {"x": 100.0, "w": 80.0, "sill": 0.0, "h": 200.0}
 
 @export_category("Shape")
-## &"box": прямоугольная коробка (greybox RoomBuilder). &"attic": мансарда (RoomAttic): скос крыши у восточной стены
+## &"box": прямоугольная коробка (greybox RoomBuilder). &"attic": мансарда (RoomAttic): скос крыши у восточной стены.
+## &"none": комнаты нет, только стол (стенд для замеров, без пола, стен и потолка)
 @export var shape: StringName = &"box"
 ## Мансарда: x, где скос крыши встречается с плоским потолком. Скос идёт от пола у восточной стены (x = size.x / 2)
 @export var roof_top_x := 50.0
+
+## Включать оверлей статистики (GFX.stats) при входе в комнату (стенд)
+@export var show_stats := false
 
 @export_category("Light")
 ## false: окна закрыты, солнца и неба нет. Свет: лампы комнаты (lamps) и ambient (GFX гасит Sun и SkyFill)
