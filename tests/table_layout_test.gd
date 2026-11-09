@@ -75,8 +75,11 @@ func _ready() -> void:
 		return
 	var rb := RoomBuilder.new()
 	add_child(rb)
+	# XX claude-table T1: плиту строит секция-Entity, RoomBuilder её больше не делает
+	var sec := LYM.ensure_start_section(self)
 	await get_tree().physics_frame
 	await get_tree().physics_frame
+	check("стартовая секция создана", sec != null and LYM.get_sections().size() == 1)
 	check("комната построена", rb.table != null and rb.is_in_group(&"room_root"))
 	check("table_rect по паспорту комнаты", LYM.table_rect() == Rect2(-100.0, -50.0, 200.0, 100.0))
 	rb.set_variants({"wall": "cream"})
@@ -101,5 +104,7 @@ func _ready() -> void:
 	var out := space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(-150, 50.0, 0), Vector3(-150, -200.0, 0), mask))
 	check("за краем стола земли нет", out.is_empty())
 	rb.queue_free()
+	if sec != null:
+		sec.free()
 
 	print("ИТОГ: ", "OK" if _bad == 0 else "ОШИБОК %d" % _bad)

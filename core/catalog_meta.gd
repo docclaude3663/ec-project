@@ -25,6 +25,8 @@ const CATEGORIES := {
 	&"building": {"name": "Building", "icon": preload("res://ui/icons/house/house.svg")},
 	&"decor": {"name": "Decor", "icon": preload("res://ui/icons/house/beech.svg")},
 	&"terrain": {"name": "Terrain", "icon": preload("res://ui/icons/tool/spade.svg")},
+	# XX claude-table T1: секции подмакетника. В MODE_CATEGORIES не входит: кнопка Build -> Table появится с TableTool (T2)
+	&"table": {"name": "Table", "icon": preload("res://ui/icons/resize.svg")},
 	&"dc_controller": {"name": "DC Controllers", "icon": preload("res://ui/icons/settings-knobs.svg")},
 	&"dcc_controller": {"name": "DCC Controllers", "icon": preload("res://ui/icons/transport/steam-locomotive.svg")},
 }
@@ -36,6 +38,7 @@ const TAGS := {
 	&"track": [&"straight", &"curve", &"junction", &"special"],
 	&"building": [&"house"],
 	&"terrain": [&"foam", &"cut", &"water", &"plaster"],
+	&"table": [&"section"],
 	&"dc_controller": [&"2d", &"3d", &"switch", &"wire"],
 }
 

@@ -9,6 +9,7 @@ var object_dirs := [	"res://data/tracks/objects/",
 						"res://data/trains/objects/", 
 						"res://data/buildings/objects/",
 						"res://data/terrain/objects/",
+						"res://data/table/objects/",
 						"res://ui/dc_controllers/objects/",
 						"res://data/power/objects/"]
 

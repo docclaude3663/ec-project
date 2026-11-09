@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="EntitySetting" format=3]
+
+[ext_resource type="Script" path="res://core/component_setting.gd" id="1_cs"]
+[ext_resource type="Script" path="res://core/entity_setting.gd" id="2_es"]
+[ext_resource type="Script" path="res://core/components/comp_settings/identity_setting.gd" id="3_id"]
+[ext_resource type="Script" path="res://setting/table_config.gd" id="4_tc"]
+[ext_resource type="Script" path="res://core/components/comp_settings/tablesection_setting.gd" id="5_ts"]
+[ext_resource type="Texture2D" path="res://ui/icons/resize.svg" id="6_ic"]
+
+[sub_resource type="Resource" id="Resource_cfg"]
+script = ExtResource("4_tc")
+size = Vector2(200, 100)
+thickness = 5.0
+
+[sub_resource type="Resource" id="Resource_id"]
+script = ExtResource("3_id")
+object_config = SubResource("Resource_cfg")
+
+[sub_resource type="Resource" id="Resource_sec"]
+script = ExtResource("5_ts")
+
+[resource]
+script = ExtResource("2_es")
+key = &"table.section.sec_200x100"
+name = "sec_200x100"
+description = "Секция подмакетника 200x100, толщина 5"
+category = &"table"
+tag = &"section"
+sort_order = 4
+icon = ExtResource("6_ic")
+components = Array[ExtResource("1_cs")]([SubResource("Resource_id"), SubResource("Resource_sec")])

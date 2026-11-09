@@ -30,7 +30,8 @@ func _ready() -> void:
 	if FileAccess.file_exists(SAVE_DIR + "autosave.tres"):
 		load_game('autosave')
 	else:
-		# Новая игра: автосейва ещё нет, создаём его из стартового состояния (комната по умолчанию, пустой стол)
+		# Новая игра: автосейва ещё нет, создаём его из стартового состояния (комната по умолчанию, стартовая секция стола)
+		LYM.ensure_start_section(get_node_or_null(world_entities_root))   # XX claude-table T1
 		save_game('autosave')
 
 
@@ -155,6 +156,9 @@ func clear_scene() -> void:
 		child.queue_free()
 	# Сеть питания: напряжения в ноль, защита снята, пульты ставят ручки в ноль (ATTN_10 P5)
 	PGM.reset_state()
+	# XX claude-table T1: очищен и стол, макет без плиты не бывает
+	LYM.reset()
+	LYM.ensure_start_section(root_node)
 		
 	#INFO ДЕРГАЕМ ПАНЕЛЬ!
 	if tool_controller:
@@ -273,6 +277,9 @@ func load_game(slot_name: String  ='savegame', dir: String = SAVE_DIR, style_ove
 		for _p in _skipped:
 			_n += _skipped[_p]
 		push_warning("SaveManager: пропущено объектов без сеттинга: %d (%s)" % [_n, ", ".join(_skipped.keys())])
+
+	# XX claude-table T1: сейв до подмакетника (секций нет): стартовая секция 200 x 100, как стол v1
+	LYM.ensure_start_section(root_node)
 
 	# Источники питания: команды и защита из сейва, пульты ставят ручки (старый сейв: словарь пуст, остаются нули)
 	PGM.load_state(_saved_game.power_state)

@@ -4,7 +4,8 @@ class_name RoomBuilder extends Node3D
 ## RoomRoot. Строит комнату из RoomConfig под собой. НЕ в EntitiesRoot и не сохраняется (TDD §14.1).
 ########################
 ## S2: greybox из коробок (пол, стены с проёмами, потолок, мебель-заглушки) + подмакетник.
-## Подмакетник (Table): верх на слое ground, ножки на room. Он не скрывается кнопкой «Комната».
+## Подмакетник (Table): плиту строят секции-Entity (C_TableSection, слой ground, ATTN_23 T1), здесь только ножки на room.
+## Он не скрывается кнопкой «Комната».
 ## Всё остальное (Room) на слое room (физика) и на visual layer Global.ROOM_VISUAL_LAYER.
 ## Комната слушает ObserveController.observe_action (категория room), про поезда не знает ничего.
 
@@ -428,11 +429,8 @@ func _build_table() -> void:
 	table.name = "Table"
 	add_child(table)
 
+	# XX claude-table T1: плита (верх стола = ground, y = 0) это секция-Entity, ножки пока как в v1 от RoomConfig
 	var th := c.table_top_thickness
-	# Верх стола = ground (слой 1): по нему бьют лучи тулов, underground_depth и опоры
-	_box(table, "TableTop", Vector3(c.table_top.x, th, c.table_top.y), Vector3(0.0, -th * 0.5, 0.0),
-			COL_TABLE, Global.active_layers(['ground']), 1, true)
-
 	var leg_h := -c.floor_y - th
 	if leg_h <= 0.0:
 		return

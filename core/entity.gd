@@ -101,6 +101,9 @@ func add_component(comp: Component):
 
 
 func kill_me():
+	# XX claude-table T1: последнюю секцию стола не убираем (ATTN_23 §23.2)
+	if has_comp(C_TableSection) and not LYM.can_remove_section(self):
+		return
 	var power_clip = get_comp(C_PowerClip)
 	if power_clip:
 		PGM.unregister_clip(power_clip)
