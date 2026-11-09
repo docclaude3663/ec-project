@@ -77,17 +77,18 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not _active:
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
-		var i := _bookmark_from_event(event)
-		if i >= 0:
+		var k: int = event.keycode
+		if k >= KEY_1 and k < KEY_1 + BOOKMARK_COUNT:
+			var i := k - KEY_1
 			if event.ctrl_pressed or _bookmarks[i] == null:
 				save_bookmark(i)
 			else:
 				go_bookmark(i)
-		elif Actions.pressed(event, &"photo_hide_ui"):
+		elif k == KEY_H:
 			set_ui_hidden(not _ui_hidden)
-		elif Actions.pressed(event, &"photo_snap"):
+		elif k == KEY_P:
 			take_photo()
-		elif Actions.pressed(event, &"observe_cancel"):
+		elif k == KEY_ESCAPE:
 			if _ui_hidden:
 				set_ui_hidden(false)
 			elif mode != Mode.NONE:
@@ -97,14 +98,6 @@ func _unhandled_input(event: InputEvent) -> void:
 # ==========================================
 # ЦЕЛЬ И РЕЖИМЫ
 # ==========================================
-
-## Номер закладки (с нуля) по клавише bookmark_N или -1. Ctrl и Shift не мешают: Ctrl+цифра сохраняет закладку
-func _bookmark_from_event(event: InputEvent) -> int:
-	for i in BOOKMARK_COUNT:
-		if event.is_action(StringName("bookmark_%d" % (i + 1))):
-			return i
-	return -1
-
 
 ## Клик ObserveTool по вагону: включаем Follow на нем (в POV переносим камеру на новый вагон)
 func pick_target(e: Entity) -> void:
@@ -298,7 +291,7 @@ func _on_observe_action(_cat: StringName, _id: StringName, _pressed: bool) -> vo
 			var i := int(s.get_slice("_", 1)) - 1
 			if i < 0 or i >= BOOKMARK_COUNT:
 				return
-			if Actions.shift() or _bookmarks[i] == null:
+			if Input.is_key_pressed(KEY_SHIFT) or _bookmarks[i] == null:
 				save_bookmark(i)
 			else:
 				go_bookmark(i)

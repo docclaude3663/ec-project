@@ -705,19 +705,22 @@ func get_debug_info() -> Array[String]:
 func _unhandled_input(event: InputEvent) -> void:
 	if not Global.debug_mode or _ghost or (_mechs.is_empty() and _lamps.is_empty()) or not has_comp(C_Selected):
 		return
-	if Actions.pressed(event, &"mechanisms_toggle"):
+	if not (event is InputEventKey and event.pressed and not event.echo):
+		return
+	if event.keycode == KEY_O:
 		for id in _order:
 			on_mechanism_toggle({"id": id})
-	elif Actions.pressed(event, &"mechanisms_gizmos"):
-		toggle_gizmos()
-		print_layout()
-	elif Actions.pressed(event, &"lights_toggle"):
-		# все источники: если хоть один горит, гасим, иначе включаем
-		var any_on := false
-		for id in _lamp_order:
-			any_on = any_on or _lamps[id].target > 0.5
-		for id in _lamp_order:
-			set_light(id, 0.0 if any_on else 1.0)
+	elif event.keycode == KEY_I:
+		if event.shift_pressed:
+			toggle_gizmos()
+			print_layout()
+		else:
+			# все источники: если хоть один горит, гасим, иначе включаем
+			var any_on := false
+			for id in _lamp_order:
+				any_on = any_on or _lamps[id].target > 0.5
+			for id in _lamp_order:
+				set_light(id, 0.0 if any_on else 1.0)
 
 
 # ==========================================

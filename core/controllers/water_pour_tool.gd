@@ -97,13 +97,24 @@ func handle_input(event: InputEvent) -> void:
 	var k := event as InputEventKey
 	if k == null or not k.pressed or k.echo:
 		return
-	if Actions.pressed(event, &"tool_undo"):
+	if k.keycode == KEY_Z and k.ctrl_pressed:
 		_undo()
 		return
-	var n := ElevationInput.step_from_event(event)
-	if n == 0:
+	var dir := 0
+	var big := k.shift_pressed
+	if k.keycode == KEY_PAGEUP:
+		dir = 1
+		big = true
+	elif k.keycode == KEY_PAGEDOWN:
+		dir = -1
+		big = true
+	elif k.keycode == KEY_R or k.physical_keycode == KEY_R:
+		dir = 1
+	elif k.keycode == KEY_F or k.physical_keycode == KEY_F:
+		dir = -1
+	if dir == 0:
 		return
-	_depth = clampi(_depth + n, 1, MAX_DEPTH)
+	_depth = clampi(_depth + dir * (ElevationInput.BIG_STEP if big else 1), 1, MAX_DEPTH)
 	_dirty = true
 
 

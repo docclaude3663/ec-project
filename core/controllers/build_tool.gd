@@ -292,30 +292,41 @@ func _handle_draw_input(event: InputEvent) -> void:
 	var k := event as InputEventKey
 	if k == null or not k.pressed or k.echo:
 		return
-	if Actions.pressed(event, &"shape_confirm"):
+	if k.keycode == KEY_ENTER or k.keycode == KEY_KP_ENTER:
 		if d.drawing:
 			_close_polygon()
 		return
-	if Actions.pressed(event, &"shape_undo"):
+	if k.keycode == KEY_BACKSPACE:
 		d.undo_vertex()
 		return
 
-	# ширина полосы: [ и ] (физические клавиши, раскладка не важна), Shift ×5
-	var w := Actions.axis_step(event, &"width_up", &"width_down", 5)
-	if w != 0:
-		if d.strip:
-			d.add_width(Global.settings.terrain_grid_step * w)
+	# ширина полосы: [ и ] (по физической клавише, раскладка не важна), Shift ×5
+	if d.strip and (k.keycode == KEY_BRACKETLEFT or k.physical_keycode == KEY_BRACKETLEFT
+			or k.keycode == KEY_BRACKETRIGHT or k.physical_keycode == KEY_BRACKETRIGHT):
+		var wstep: float = Global.settings.terrain_grid_step * (5.0 if k.shift_pressed else 1.0)
+		var left := k.keycode == KEY_BRACKETLEFT or k.physical_keycode == KEY_BRACKETLEFT
+		d.add_width(-wstep if left else wstep)
 		return
 
-	# толщина (Ctrl) или уровень
-	var dz := ElevationInput.depth_from_event(event)
-	if dz != 0:
-		d.add_levels(dz)
+	# уровень или толщина
+	var dir := 0
+	var big := k.shift_pressed
+	if k.keycode == KEY_PAGEUP:
+		dir = 1
+		big = true
+	elif k.keycode == KEY_PAGEDOWN:
+		dir = -1
+		big = true
+	elif k.keycode == KEY_R or k.physical_keycode == KEY_R:
+		dir = 1
+	elif k.keycode == KEY_F or k.physical_keycode == KEY_F:
+		dir = -1
+	if dir == 0:
 		return
-	var n := ElevationInput.step_from_event(event)
-	if n == 0:
-		return
-	if d.drawing:
+	var n := dir * (ElevationInput.BIG_STEP if big else 1)
+	if k.ctrl_pressed:
+		d.add_levels(n)
+	elif d.drawing:
 		d.elevate(n)
 	else:
 		ghost.send_event("on_elevation_input", {"levels": n})

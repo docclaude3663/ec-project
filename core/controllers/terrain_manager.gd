@@ -214,7 +214,7 @@ func overlap_area(a: PackedVector2Array, b: PackedVector2Array) -> float:
 func _unhandled_input(event: InputEvent) -> void:
 	if not Global.debug_mode:
 		return
-	if event.is_action_pressed(&"debug_terrain_probe", false, false):
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F7:
 		_debug_print_surface()
 
 

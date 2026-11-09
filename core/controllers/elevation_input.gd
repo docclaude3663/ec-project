@@ -29,6 +29,7 @@ static func levels_from_event(event: InputEvent) -> int:
 <<<<<<< HEAD
 			return -BIG_STEP
 	return 0
+<<<<<<< HEAD
 
 
 ## Шаг для инструментов, где R/F и PgUp/PgDn работают сразу (рельеф, рисование листа): ±1 (R/F), ±5 (Shift+R/F, PgUp/PgDn).
@@ -60,3 +61,5 @@ static func depth_from_event(event: InputEvent) -> int:
 >>>>>>> U6.1: реестр действий Actions, клавиши Build, Select, Drag через InputMap
 			return -BIG_STEP
 	return 0
+=======
+>>>>>>> parent of 7ed44b4 (U6.2: клавиши инструментов рельефа, механизмов, Observe и отладки через Actions)

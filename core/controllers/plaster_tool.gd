@@ -73,12 +73,13 @@ func handle_input(event: InputEvent) -> void:
 	var k := event as InputEventKey
 	if k == null or not k.pressed or k.echo:
 		return
-	if Actions.pressed(event, &"tool_undo"):
+	if k.keycode == KEY_Z and k.ctrl_pressed:
 		_undo()
 		return
-	var w := Actions.axis_step(event, &"width_up", &"width_down")
-	if w != 0:
-		_run = clampi(_run + w, 1, C_TerrainLayer.PLASTER_MAX_RUN)
+	var left := k.keycode == KEY_BRACKETLEFT or k.physical_keycode == KEY_BRACKETLEFT
+	var right := k.keycode == KEY_BRACKETRIGHT or k.physical_keycode == KEY_BRACKETRIGHT
+	if left or right:
+		_run = clampi(_run + (-1 if left else 1), 1, C_TerrainLayer.PLASTER_MAX_RUN)
 		_dirty = true
 
 
@@ -199,7 +200,7 @@ func process_tick(delta: float) -> void:
 				found = (n as Entity).get_comp(C_TerrainLayer) as C_TerrainLayer
 				if found != null and ((n as Entity).has_comp(C_Ghost) or (n as Entity).has_comp(C_Drag)):
 					found = null
-	var key := "%s%s" % [Actions.ctrl(), Actions.shift()]
+	var key := "%s%s" % [Input.is_key_pressed(KEY_CTRL), Input.is_key_pressed(KEY_SHIFT)]
 	if found != _hover or key != _mode_key:
 		_hover = found
 		_mode_key = key
@@ -247,10 +248,10 @@ func _redraw() -> void:
 	_imm.clear_surfaces()
 	if _hover == null:
 		return
-	var remove := Actions.ctrl()
+	var remove := Input.is_key_pressed(KEY_CTRL)
 	var col := COL_REMOVE if remove else COL_ADD
 	_imm.surface_begin(Mesh.PRIMITIVE_LINES)
-	for l in _targets(Actions.shift()):
+	for l in _targets(Input.is_key_pressed(KEY_SHIFT)):
 		var poly := l.world_polygon()
 		var y := l.top_y() + 0.05
 		for i in poly.size():
@@ -273,8 +274,8 @@ func _update_note() -> void:
 			_label.modulate = Color(1.0, 0.85, 0.3)
 		return
 	var T: float = Global.settings.layer_height
-	var single := Actions.shift()
-	var remove := Actions.ctrl()
+	var single := Input.is_key_pressed(KEY_SHIFT)
+	var remove := Input.is_key_pressed(KEY_CTRL)
 	var lines: Array[String] = []
 	if remove:
 		lines.append("Гипсовый бинт: снять · листов %d" % _targets(single).size())
