@@ -11,6 +11,7 @@ uniform sampler2D layer : filter_linear, repeat_disable;
 uniform bool premultiplied = true;
 uniform bool srgb_decode = true;
 uniform float push = 0.0;
+uniform bool debug_flat = false;   // показать цвет слоя как есть (без освещения), для автопроверки цвета
 uniform float rough : hint_range(0.0, 1.0) = 0.6;
 uniform float metal : hint_range(0.0, 1.0) = 0.0;
 
@@ -31,4 +32,11 @@ void fragment() {
 	ALPHA = c.a;
 	ROUGHNESS = rough;
 	METALLIC = metal;
+	if (debug_flat) {
+		EMISSION = col;
+		ALBEDO = vec3(0.0);
+		SPECULAR = 0.0;
+		ROUGHNESS = 1.0;
+		METALLIC = 0.0;
+	}
 }

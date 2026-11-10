@@ -36,6 +36,11 @@ func handle_key(_event: InputEventKey) -> bool:
 	return false
 
 
+## Событие мыши в 3D-виде. true: область его забрала (например, рисует), вид его не получит
+func view_input(_event: InputEvent) -> bool:
+	return false
+
+
 func on_loading(_setting: EntitySetting) -> void:
 	pass
 

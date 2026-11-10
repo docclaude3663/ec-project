@@ -14,8 +14,10 @@ const META := &"library_paint"
 const META_PREV := &"library_paint_prev"
 
 
-## variant: ModelVariant.to_dict() (или {} для сброса). meshes: Array[MeshInstance3D]
-static func apply(meshes: Array, variant: Dictionary) -> void:
+## variant: ModelVariant.to_dict() (или {} для сброса). meshes: Array[MeshInstance3D].
+## overlays: имя меша -> ShaderMaterial накладки слоя кисти (PaintEngine.make_overlay или слой из сейва, C2). Накладка
+## встаёт в цепочку next_pass override-копии каждой поверхности меша (своя копия накладки на поверхность)
+static func apply(meshes: Array, variant: Dictionary, overlays: Dictionary = {}) -> void:
 	var paint: Dictionary = {}
 	var pv: Variant = variant.get("paint")
 	if pv is Dictionary:
@@ -23,7 +25,8 @@ static func apply(meshes: Array, variant: Dictionary) -> void:
 	var zones := PaintData.zones(paint)
 	for mi in meshes:
 		if mi is MeshInstance3D and is_instance_valid(mi):
-			_apply_mesh(mi, zones)
+			var ov: Variant = overlays.get(str(mi.name))
+			_apply_mesh(mi, zones, ov as Material)
 
 
 ## Снять покраску: вернуть материалы модели
@@ -31,7 +34,7 @@ static func clear(meshes: Array) -> void:
 	apply(meshes, {})
 
 
-static func _apply_mesh(mi: MeshInstance3D, zones: Dictionary) -> void:
+static func _apply_mesh(mi: MeshInstance3D, zones: Dictionary, overlay: Material) -> void:
 	var mesh := mi.mesh
 	if mesh == null:
 		return
@@ -48,14 +51,28 @@ static func _apply_mesh(mi: MeshInstance3D, zones: Dictionary) -> void:
 		elif cur != null:
 			prev = cur
 		var spec := _spec_for(mi, i, base, zones)
-		if spec.is_empty() or not (base is BaseMaterial3D):
+		var painted: Material = null
+		if not spec.is_empty() and base is BaseMaterial3D:
+			painted = _painted(base as BaseMaterial3D, spec)
+		if overlay != null and base != null:
+			if painted == null:
+				painted = base.duplicate() as Material
+				painted.set_meta(META, true)
+			_insert_overlay(painted, overlay)
+		if painted == null:
 			if ours:
 				mi.set_surface_override_material(i, prev)
 			continue
-		var painted := _painted(base as BaseMaterial3D, spec)
 		if prev != null:
 			painted.set_meta(META_PREV, prev)
 		mi.set_surface_override_material(i, painted)
+
+
+## Накладка встаёт первой в цепочке next_pass: прежняя цепочка (контур, питание) остаётся за ней и не меняется
+static func _insert_overlay(m: Material, overlay: Material) -> void:
+	var ov := overlay.duplicate() as Material
+	ov.next_pass = m.next_pass
+	m.next_pass = ov
 
 
 static func _spec_for(mi: MeshInstance3D, surface: int, base: Material, zones: Dictionary) -> Dictionary:

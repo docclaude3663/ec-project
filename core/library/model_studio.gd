@@ -13,6 +13,8 @@ extends Control
 ## Поставить выбранную модель в игре (L4): оболочка закрывает экран, ModeController включает Build с этим исполнением.
 ## variant пуст, если покраски нет
 signal place_requested(setting: EntitySetting, variant: Dictionary)
+## Движок кисти построен (true) или недоступен (false): его ждёт область «Покраска» (C2.1)
+signal paint_engine_ready(ok: bool)
 
 const StudioWorld := preload("res://core/library/icon_studio/studio_world.gd")
 const StudioSettings := preload("res://core/library/icon_studio/studio_settings.gd")
@@ -48,6 +50,10 @@ var world: StudioWorld
 var stage: LibraryStage
 var workspace: LibraryWorkspace
 var catalog: LibraryCatalog
+## Движок кисти показанной модели (C2.1): строится по требованию в режиме «Кисть», освобождается при смене модели
+var paint_engine: PaintEngine
+## имя меша -> материал накладки слоя кисти: VariantApplier вставляет его в цепочку material.next_pass
+var paint_overlays: Dictionary = {}
 ## Буфер исполнения показанной модели: его правит рабочая область «Покраска». Сбрасывается при выборе другой модели
 var variant: ModelVariant = ModelVariant.new()
 ## Показанная модель (null, пока ничего не выбрано)
@@ -64,6 +70,7 @@ var _closing := false
 var _tab_buttons := {}      # id области -> Button
 var _place_btn: Button
 var _subject_ready := false
+var _engine_building := false
 var _last_info: Dictionary = {}
 var _last_ms := 0
 
@@ -126,7 +133,8 @@ func shutdown() -> void:
 	if workspace != null:
 		workspace.exit()
 	if world != null:
-		world.clear_subject()
+		_free_paint_engine()
+	world.clear_subject()
 
 
 # ==========================================
@@ -255,7 +263,7 @@ func _build_world() -> void:
 	world = StudioWorld.new()
 	world.name = "StudioWorld"
 	_viewport.add_child(world)
-	_view_area.gui_input.connect(world.handle_gui_input)
+	_view_area.gui_input.connect(_on_view_input)
 	var views: Array[SubViewport] = [_viewport]
 	world.register_views(views, null)
 
@@ -283,6 +291,7 @@ func _show_object(s: EntitySetting, keep_variant := false) -> void:
 		return
 	_current = s
 	_subject_ready = false
+	_free_paint_engine()
 	if not keep_variant:
 		variant = ModelVariant.new()
 		variant.base = String(s.get_key())
@@ -344,7 +353,55 @@ func body_meshes() -> Array[MeshInstance3D]:
 
 ## Применить буфер исполнения к показанной модели (идемпотентно: повторное применение не наслаивает материалы)
 func apply_variant() -> void:
-	VariantApplier.apply(body_meshes(), variant.to_dict())
+	VariantApplier.apply(body_meshes(), variant.to_dict(), paint_overlays)
+
+
+## Событие мыши в 3D-виде: сначала область (кисть), иначе камера студии
+func _on_view_input(event: InputEvent) -> void:
+	if workspace != null and workspace.view_input(event):
+		return
+	world.handle_gui_input(event)
+
+
+## Строит движок кисти для меша кузова с UV2 (карта позиций в потоке). false: подходящего меша нет или модель сменилась.
+## Параллельные вызовы ждут общий результат (сигнал paint_engine_ready)
+func ensure_paint_engine() -> bool:
+	if paint_engine != null and paint_engine.is_built:
+		return true
+	# Идёт построение (возможно, для прежней модели): дождаться и проверить заново
+	while _engine_building:
+		await paint_engine_ready
+	if paint_engine != null and paint_engine.is_built:
+		return true
+	var target := PaintEngine.pick_target(body_meshes())
+	if target == null:
+		return false
+	_engine_building = true
+	var eng := PaintEngine.new()
+	eng.name = "PaintEngine"
+	add_child(eng)
+	paint_engine = eng
+	var ok := await eng.setup(target)
+	_engine_building = false
+	# Пока строилась карта, модель могла смениться (движок отцеплен)
+	if not ok or paint_engine != eng:
+		eng.queue_free()
+		if paint_engine == eng:
+			paint_engine = null
+		paint_engine_ready.emit(false)
+		return false
+	paint_overlays = {str(target.name): eng.make_overlay()}
+	apply_variant()
+	paint_engine_ready.emit(true)
+	return true
+
+
+## Освободить движок и накладку (смена модели, закрытие). Строящийся движок дожидается конца карты и удаляется сам
+func _free_paint_engine() -> void:
+	if paint_engine != null and paint_engine.is_built:
+		paint_engine.queue_free()
+	paint_engine = null
+	paint_overlays = {}
 
 
 func is_current_locked() -> bool:

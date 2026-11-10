@@ -561,7 +561,52 @@ func _selftest() -> void:
 	await _settle()
 	_measure_snapshot_into(lines)
 
+	# 5. цвет на модели: пиксель в центре кадра против цвета штампа, все четыре сочетания G и M
+	await _color_test(lines)
+
 	_finish_selftest(lines)
+
+
+## Камера смотрит на точку попадания вдоль нормали; штамп цвета (0.9, 0.2, 0.1) с потоком 1; накладка без освещения
+## (debug_flat). Пиксель в центре кадра должен совпасть с цветом штампа. Лучшее сочетание G и M остаётся включённым
+func _color_test(lines: Array[String]) -> void:
+	var hit := _probe(Vector3.RIGHT)
+	if hit.is_empty():
+		lines.append("ИНФО  проверка цвета пропущена: нет попадания луча")
+		return
+	var expected := Color(0.9, 0.2, 0.1)
+	var world_pos: Vector3 = _mi.global_transform * (hit["position"] as Vector3)
+	var world_n: Vector3 = ((_mi.global_transform.basis * (hit["normal"] as Vector3))).normalized()
+	_cam.global_position = world_pos + world_n * _size * 1.2
+	_cam.look_at(world_pos, Vector3.UP)
+	_overlay_mat.set_shader_parameter("debug_flat", true)
+	_clear_layer()
+	await _settle()
+	await _stamp_now(hit, expected, 0.15, 1.0)
+	var best_err := 9.0
+	var best_g := true
+	var best_m := true
+	for combo in [[true, true], [false, true], [true, false], [false, false]]:
+		_srgb_decode = combo[0]
+		_premultiplied = combo[1]
+		_apply_overlay_params()
+		await _settle()
+		var img := get_viewport().get_texture().get_image()
+		var px := img.get_pixel(img.get_width() / 2, img.get_height() / 2)
+		var err := maxf(absf(px.r - expected.r), maxf(absf(px.g - expected.g), absf(px.b - expected.b)))
+		lines.append("ИНФО  цвет на экране при G=%s M=%s: (%.2f, %.2f, %.2f), ожидалось (%.2f, %.2f, %.2f), ошибка %.3f" % [
+			"вкл" if combo[0] else "выкл", "вкл" if combo[1] else "выкл", px.r, px.g, px.b, expected.r, expected.g, expected.b, err])
+		if err < best_err:
+			best_err = err
+			best_g = combo[0]
+			best_m = combo[1]
+	_srgb_decode = best_g
+	_premultiplied = best_m
+	_apply_overlay_params()
+	_overlay_mat.set_shader_parameter("debug_flat", false)
+	lines.append("ИНФО  лучшее сочетание: G=%s M=%s (оставлено включённым)" % ["вкл" if best_g else "выкл", "вкл" if best_m else "выкл"])
+	_check("цвет на модели совпадает с цветом штампа (ошибка %.3f)" % best_err, best_err < 0.04)
+	_update_camera()
 
 
 func _measure_snapshot() -> void:

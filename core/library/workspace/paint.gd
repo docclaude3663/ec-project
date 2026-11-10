@@ -2,13 +2,20 @@ extends "res://core/library/workspace/workspace.gd"
 
 # XX claude-library (новый файл)
 ########################
-## Покраска: грунт по зонам, исполнения модели (ATTN_22 §22.7.2.1, шаг L3)
+## Покраска: грунт по зонам, кисть, исполнения модели (ATTN_22 §22.7.2.1, шаги L3 и C2.1)
 ########################
-## Правит screen.variant (буфер исполнения текущей модели) и сразу применяет его к мешам кузова
-## (screen.apply_variant). Зоны: «Весь корпус» и каждая поверхность каждого меша (PaintZones).
-## Уровни paint.level: 0 покраска выключена; 1 только цвет зоны; 2 плюс отделка и кроющая/лессировка.
+## Два режима. «Заливка зон»: правит screen.variant (буфер исполнения текущей модели) и сразу применяет его к мешам
+## кузова (screen.apply_variant); зоны: «Весь корпус» и каждая поверхность каждого меша (PaintZones).
+## «Кисть»: рисует в слой краски по UV2 (PaintEngine): кисть, аэрограф, ластик; ЛКМ рисует, ПКМ вращает.
+## Мазки кисти пока не входят в исполнение (сохранение и игра: шаг C2.1b): при выборе другой модели они пропадают.
+## Уровни paint.level: 0 покраска выключена; 1 только цвет зоны; 2 плюс отделка, кроющая/лессировка и кисть.
 ## Исполнения хранятся JSON в user://library/variants/ (VariantIO); «Сохранить» обновляет открытое исполнение,
 ## «Как новое» создаёт копию. Несохранённые правки теряются при выборе другой модели.
+
+const MODE_ZONES := 0
+const MODE_BRUSH := 1
+const STROKE_STEP_PX := 6.0
+const STROKE_MAX_STEPS := 24
 
 const PALETTE := [
 	["Белый", "#f2f2f0"], ["Чёрный", "#1b1b1d"], ["Серый", "#7d7f82"], ["Красный", "#c0392b"],
@@ -29,6 +36,23 @@ var _status: Label
 var _zones: Array[Dictionary] = []
 var _saved: Array[ModelVariant] = []
 var _silent := false   # идёт программное заполнение элементов, их обработчики молчат
+var _mode := MODE_ZONES
+var _mode_zones_btn: Button
+var _mode_brush_btn: Button
+var _zone_cap: Label
+var _zone_row: HBoxContainer
+var _brush_box: VBoxContainer
+var _brush_note: Label
+var _tool := "brush"
+var _tool_buttons := {}
+var _tool_params := {}          # id инструмента -> {size, hardness, flow, ...}: правки ползунков помнятся по инструментам
+var _size_slider: HSlider
+var _flow_slider: HSlider
+var _hard_slider: HSlider
+var _undo_btn: Button
+var _redo_btn: Button
+var _stroke_active := false
+var _last_pos := Vector2.ZERO
 
 
 func _init() -> void:
@@ -59,7 +83,25 @@ func _ready() -> void:
 	_controls.add_theme_constant_override("separation", 6)
 	card.add_child(_controls)
 
-	_controls.add_child(_caption("Зона"))
+	var mode_row := HBoxContainer.new()
+	_controls.add_child(mode_row)
+	var mode_group := ButtonGroup.new()
+	_mode_zones_btn = Button.new()
+	_mode_zones_btn.text = "Заливка зон"
+	_mode_zones_btn.toggle_mode = true
+	_mode_zones_btn.button_group = mode_group
+	_mode_zones_btn.button_pressed = true
+	_mode_zones_btn.pressed.connect(_set_mode.bind(MODE_ZONES))
+	mode_row.add_child(_mode_zones_btn)
+	_mode_brush_btn = Button.new()
+	_mode_brush_btn.text = "Кисть"
+	_mode_brush_btn.toggle_mode = true
+	_mode_brush_btn.button_group = mode_group
+	_mode_brush_btn.pressed.connect(_set_mode.bind(MODE_BRUSH))
+	mode_row.add_child(_mode_brush_btn)
+
+	_zone_cap = _caption("Зона")
+	_controls.add_child(_zone_cap)
 	_zone_opt = OptionButton.new()
 	_zone_opt.item_selected.connect(func(_i: int) -> void: _sync_controls())
 	_controls.add_child(_zone_opt)
@@ -103,6 +145,7 @@ func _ready() -> void:
 	_finish_row.add_child(_cover_check)
 
 	var row := HBoxContainer.new()
+	_zone_row = row
 	_controls.add_child(row)
 	var reset_zone := Button.new()
 	reset_zone.text = "Сбросить зону"
@@ -112,6 +155,8 @@ func _ready() -> void:
 	reset_all.text = "Сбросить всё"
 	reset_all.pressed.connect(_on_reset_all)
 	row.add_child(reset_all)
+
+	_build_brush_box()
 
 	_controls.add_child(HSeparator.new())
 	_controls.add_child(_caption("Исполнения"))
@@ -185,7 +230,19 @@ func _refresh() -> void:
 		_note.text = "Выберите зону и цвет: покраска применяется сразу. Несохранённые правки пропадут при выборе другой модели."
 	if not usable:
 		return
-	_finish_row.visible = level >= 2
+	# Новая модель: движок кисти освобождён экраном, режим «Кисть» сбрасывается на «Заливку зон»
+	if _mode == MODE_BRUSH and (screen.paint_engine == null or not screen.paint_engine.is_built):
+		_mode = MODE_ZONES
+		_mode_zones_btn.button_pressed = true
+	var can_brush := level >= 2 and PaintEngine.pick_target(meshes) != null
+	_mode_brush_btn.disabled = not can_brush
+	if level < 2:
+		_mode_brush_btn.tooltip_text = "Кисть доступна с уровня 2 (правила)"
+	elif not can_brush:
+		_mode_brush_btn.tooltip_text = "У модели нет меша с UV2 без перекрытий (tests/uv2_audit.gd): кисть недоступна, остаётся заливка зон"
+	else:
+		_mode_brush_btn.tooltip_text = "Рисовать кистью, аэрографом и ластиком по UV2 модели"
+	_apply_mode_visibility()
 	_build_zone_list()
 	_sync_controls()
 	_refresh_saved()
@@ -233,7 +290,7 @@ func _sync_controls() -> void:
 ## Записать в зону то, что выбрано в элементах, и применить. color_changed: создаёт зону.
 ## Отделка и «кроющая» меняют только уже окрашенную зону (чтобы не красить зону случайно)
 func _apply_zone(create := true) -> void:
-	if _silent:
+	if _silent or _mode != MODE_ZONES:
 		return
 	var zone := _selected_zone_id()
 	if not create and PaintData.zone_spec(screen.variant.paint, zone).is_empty():
@@ -336,3 +393,218 @@ func _caption(text: String) -> Label:
 	l.text = text
 	l.modulate = Color(1, 1, 1, 0.7)
 	return l
+
+
+# ==========================================
+# РЕЖИМ «КИСТЬ» (C2.1)
+# ==========================================
+
+func _build_brush_box() -> void:
+	for id in PaintBrushes.ORDER:
+		_tool_params[id] = PaintBrushes.preset(id)
+	_brush_box = VBoxContainer.new()
+	_brush_box.add_theme_constant_override("separation", 6)
+	_brush_box.visible = false
+	_controls.add_child(_brush_box)
+
+	_brush_note = Label.new()
+	_brush_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_brush_box.add_child(_brush_note)
+
+	var tool_row := HBoxContainer.new()
+	_brush_box.add_child(tool_row)
+	var group := ButtonGroup.new()
+	for id in PaintBrushes.ORDER:
+		var b := Button.new()
+		b.text = str(PaintBrushes.PRESETS[id]["name"])
+		b.toggle_mode = true
+		b.button_group = group
+		b.button_pressed = id == _tool
+		b.pressed.connect(_select_tool.bind(id))
+		tool_row.add_child(b)
+		_tool_buttons[id] = b
+
+	_size_slider = _add_slider("Размер, %", 1.0, 30.0, 1.0, "size")
+	_flow_slider = _add_slider("Поток, %", 5.0, 100.0, 5.0, "flow")
+	_hard_slider = _add_slider("Жёсткость, %", 0.0, 95.0, 5.0, "hardness")
+
+	var row := HBoxContainer.new()
+	_brush_box.add_child(row)
+	_undo_btn = Button.new()
+	_undo_btn.text = "Отменить"
+	_undo_btn.tooltip_text = "Ctrl+Z"
+	_undo_btn.pressed.connect(_on_undo)
+	row.add_child(_undo_btn)
+	_redo_btn = Button.new()
+	_redo_btn.text = "Повторить"
+	_redo_btn.tooltip_text = "Ctrl+Y"
+	_redo_btn.pressed.connect(_on_redo)
+	row.add_child(_redo_btn)
+	var clear_btn := Button.new()
+	clear_btn.text = "Очистить слой"
+	clear_btn.pressed.connect(_on_clear_layer)
+	row.add_child(clear_btn)
+	_sync_tool_sliders()
+
+
+## Ползунок параметра инструмента. key: size, flow или hardness; значения в процентах
+func _add_slider(caption: String, lo: float, hi: float, step: float, key: String) -> HSlider:
+	var row := HBoxContainer.new()
+	_brush_box.add_child(row)
+	var l := Label.new()
+	l.text = caption
+	l.custom_minimum_size = Vector2(100, 0)
+	row.add_child(l)
+	var sl := HSlider.new()
+	sl.min_value = lo
+	sl.max_value = hi
+	sl.step = step
+	sl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sl.value_changed.connect(func(v: float) -> void:
+		if not _silent:
+			_tool_params[_tool][key] = v / 100.0)
+	row.add_child(sl)
+	return sl
+
+
+func _sync_tool_sliders() -> void:
+	var p: Dictionary = _tool_params[_tool]
+	_silent = true
+	_size_slider.value = float(p["size"]) * 100.0
+	_flow_slider.value = float(p["flow"]) * 100.0
+	_hard_slider.value = float(p["hardness"]) * 100.0
+	_silent = false
+
+
+func _select_tool(id: String) -> void:
+	_tool = id
+	_sync_tool_sliders()
+
+
+func _set_mode(m: int) -> void:
+	if m == _mode:
+		return
+	_mode = m
+	_stroke_end()
+	_apply_mode_visibility()
+	if m == MODE_BRUSH:
+		_enter_brush()
+
+
+func _apply_mode_visibility() -> void:
+	var zones := _mode == MODE_ZONES
+	_zone_cap.visible = zones
+	_zone_opt.visible = zones
+	_zone_row.visible = zones
+	_finish_row.visible = zones and _paint_level() >= 2
+	_brush_box.visible = not zones
+
+
+## Строит карту кисти (в потоке) и включает рисование. Если нельзя, возвращает «Заливку зон»
+func _enter_brush() -> void:
+	_brush_note.text = "Построение карты кисти..."
+	var ok: bool = await screen.ensure_paint_engine()
+	if _mode != MODE_BRUSH:
+		return
+	if ok:
+		var ms := int(screen.paint_engine.bake_info.get("ms", 0))
+		_brush_note.text = "Карта кисти готова (%d мс). ЛКМ рисует, ПКМ вращает, колесо зум. Мазки пока не сохраняются в исполнение." % ms
+	else:
+		_brush_note.text = "Кисть недоступна для этой модели."
+		_mode_zones_btn.button_pressed = true
+		_set_mode(MODE_ZONES)
+
+
+func exit() -> void:
+	_stroke_end()
+
+
+func view_input(event: InputEvent) -> bool:
+	if _mode != MODE_BRUSH or screen.paint_engine == null or not screen.paint_engine.is_built:
+		return false
+	if event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.button_index == MOUSE_BUTTON_LEFT:
+			if mb.pressed:
+				_stroke_begin(mb.position)
+			else:
+				_stroke_end()
+			return true
+		if mb.button_index == MOUSE_BUTTON_RIGHT:
+			# вид вращается левой кнопкой: правую отдаём ему как левую
+			var e := mb.duplicate() as InputEventMouseButton
+			e.button_index = MOUSE_BUTTON_LEFT
+			screen.world.handle_gui_input(e)
+			return true
+	elif event is InputEventMouseMotion and _stroke_active:
+		_stroke_move((event as InputEventMouseMotion).position)
+	return false
+
+
+func handle_key(event: InputEventKey) -> bool:
+	if _mode != MODE_BRUSH or not event.ctrl_pressed:
+		return false
+	if event.keycode == KEY_Z and not event.shift_pressed:
+		_on_undo()
+		return true
+	if event.keycode == KEY_Y or (event.keycode == KEY_Z and event.shift_pressed):
+		_on_redo()
+		return true
+	return false
+
+
+func _process(_delta: float) -> void:
+	if _stroke_active and bool(_tool_params[_tool]["accumulate"]):
+		_stamp_at(_last_pos)
+	if _undo_btn != null and _brush_box.visible and screen != null and screen.paint_engine != null:
+		_undo_btn.disabled = not screen.paint_engine.can_undo()
+		_redo_btn.disabled = not screen.paint_engine.can_redo()
+
+
+func _stroke_begin(pos: Vector2) -> void:
+	_stroke_active = true
+	_last_pos = pos
+	screen.paint_engine.begin_stroke()
+	_stamp_at(pos)
+
+
+func _stroke_move(pos: Vector2) -> void:
+	var steps := clampi(int(ceil(pos.distance_to(_last_pos) / STROKE_STEP_PX)), 1, STROKE_MAX_STEPS)
+	for s in steps:
+		_stamp_at(_last_pos.lerp(pos, float(s + 1) / steps))
+	_last_pos = pos
+
+
+func _stroke_end() -> void:
+	if not _stroke_active:
+		return
+	_stroke_active = false
+	if screen != null and screen.paint_engine != null:
+		screen.paint_engine.end_stroke()
+
+
+func _stamp_at(pos: Vector2) -> void:
+	var eng: PaintEngine = screen.paint_engine
+	if eng == null or not eng.is_built:
+		return
+	var hit := eng.raycast(screen.world.camera, pos)
+	if hit.is_empty():
+		return
+	var p: Dictionary = _tool_params[_tool]
+	eng.stamp(hit["position"], hit["normal"], eng.radius_for(float(p["size"])), _color_btn.color,
+		float(p["flow"]), float(p["hardness"]), bool(p["erase"]))
+
+
+func _on_undo() -> void:
+	if screen.paint_engine != null:
+		screen.paint_engine.undo()
+
+
+func _on_redo() -> void:
+	if screen.paint_engine != null:
+		screen.paint_engine.redo()
+
+
+func _on_clear_layer() -> void:
+	if screen.paint_engine != null:
+		screen.paint_engine.clear()

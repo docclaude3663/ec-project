@@ -53,6 +53,10 @@ var _views: Array[SubViewport] = []
 var _factory: EntityFactory
 var _subject_root: Node3D
 var _cam: Camera3D
+## Камера вида (Library: попадание кисти)  # XX claude-library C2.1
+var camera: Camera3D:
+	get:
+		return _cam
 var _pcam: Camera3D              # камера предпросмотра (в другом SubViewport)
 var _key: DirectionalLight3D
 var _fill: DirectionalLight3D
