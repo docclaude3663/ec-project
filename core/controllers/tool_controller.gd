@@ -271,6 +271,11 @@ func on_current_mode_changed(_new_mode):
 			switch_tool(observe_tool)
 		elif active_tool == observe_tool:
 			switch_tool(select_tool)
+	# XX claude-table T1b: режим «Секции» (ящики подмакетника): только выбор, без призрака и инструментов стройки.
+	# Выбор, которого в новом режиме быть не может (секция вне «Секции», объект дороги в «Секциях»), снимается
+	if _new_mode == &'sections' and active_tool != select_tool:
+		switch_tool(select_tool)
+	select_tool.on_mode_changed()
 
 
 ### Получаем текущий current mode

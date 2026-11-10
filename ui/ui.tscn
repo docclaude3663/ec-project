@@ -10,6 +10,7 @@
 [ext_resource type="Script" uid="uid://bm2guc8626oc2" path="res://ui/operate_controller.gd" id="4_mf2ns"]
 [ext_resource type="Script" uid="uid://clkuxy8sfhdwm" path="res://ui/toolbar/toolbar_controller.gd" id="4_tbc"]
 [ext_resource type="Texture2D" uid="uid://djywpcxpy5ypw" path="res://ui/icons/tool/tinker.svg" id="5_pa1oa"]
+[ext_resource type="Texture2D" path="res://ui/icons/resize.svg" id="99_sections"]
 [ext_resource type="PackedScene" uid="uid://boj0kanwn0n0e" path="res://ui/panels/info_panel.tscn" id="10_ay4pc"]
 [ext_resource type="PackedScene" uid="uid://d8t1asbj2c3s" path="res://ui/panels/top_panel.tscn" id="12_hrmpd"]
 
@@ -59,6 +60,14 @@ theme_type_variation = &"ModeButton"
 toggle_mode = true
 button_group = SubResource("ButtonGroup_adgqd")
 icon = ExtResource("2_obcwv")
+
+[node name="SectionsButton" type="Button" parent="ModePanel/VBoxContainer"]
+layout_mode = 2
+tooltip_text = "Секции: выбор и правка ящиков подмакетника"
+theme_type_variation = &"ModeButton"
+toggle_mode = true
+button_group = SubResource("ButtonGroup_adgqd")
+icon = ExtResource("99_sections")
 
 [node name="ObserveButton" type="Button" parent="ModePanel/VBoxContainer" unique_id=445960366]
 layout_mode = 2
@@ -232,6 +241,7 @@ offset_right = 71.0
 offset_bottom = 74.0
 
 [connection signal="pressed" from="ModePanel/VBoxContainer/LibraryButton" to="ModePanel" method="_on_library_button_pressed"]
+[connection signal="pressed" from="ModePanel/VBoxContainer/SectionsButton" to="ModePanel" method="_on_sections_button_pressed"]
 [connection signal="pressed" from="ModePanel/VBoxContainer/ObserveButton" to="ModePanel" method="_on_observe_button_pressed"]
 [connection signal="pressed" from="ModePanel/VBoxContainer/OperateButton" to="ModePanel" method="_on_operate_button_pressed"]
 [connection signal="pressed" from="ModePanel/VBoxContainer/BuildButton" to="ModePanel" method="_on_build_button_pressed"]

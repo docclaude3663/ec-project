@@ -182,19 +182,39 @@ func handle_input(event: InputEvent):
 
 
 
+## XX claude-table T1b: что можно выбрать в текущем режиме. Секции стола (ящики) выбираются только в режиме «Секции»,
+## а в нём не выбирается ничего, кроме секций. В остальных режимах секция для выбора и рамки не существует
+func _is_pickable(e: Entity) -> bool:
+	return e != null and e.has_comp(C_TableSection) == (Global.current_mode == &'sections')
+
+
+## Смена режима (зовёт ToolController): выбор и ховер, которых в новом режиме быть не может, снимаются
+func on_mode_changed() -> void:
+	if selected_entity != null and (not is_instance_valid(selected_entity) or not _is_pickable(selected_entity)):
+		_clear_selection()
+	if hovered_entity != null and (not is_instance_valid(hovered_entity) or not _is_pickable(hovered_entity)):
+		if is_instance_valid(hovered_entity):
+			hovered_entity.remove_component(C_Hovered)
+		hovered_entity = null
+
+
 func _get_entity_under_mouse() -> Entity:
 	# Слой земли(1), траков(3), трейна(5), селектеда(11)- 11 это гост!
 	
 	#var hit = controller.get_mouse_ray((1 << 0) | (1 << 2) |(1 << 4)| (1 << 10)) 
 	var hit = _pick_ray()
 	if hit and hit.collider:
-		return _find_entity(hit.collider)
+		var e := _find_entity(hit.collider)
+		return e if _is_pickable(e) else null   # XX claude-table T1b: чужое под курсором это пустое место
 	return null
 
 
 ## XX claude-terra 13.4. Луч выбора: как раньше, плюс вода. Трак и вагон выбираются сквозь воду;
 ## воду берём, если она ближе земли (стола, листа) под ней или земли нет
 func _pick_ray() -> Dictionary:
+	# XX claude-table T1b: в режиме «Секции» смотрим только плиту (вагон или трак на ней не заслоняют её)
+	if Global.current_mode == &'sections':
+		return controller.get_mouse_ray(Global.active_layers(['ground', 'ghost']))
 	var hit: Dictionary = controller.get_mouse_ray(Global.active_layers(['ground','tracks','trains','ghost','power']))
 	if not hit.is_empty() and hit.collider is CollisionObject3D \
 			and (hit.collider.collision_layer & Global.active_layers(['ground'])) == 0:
@@ -253,7 +273,7 @@ func _update_hover():
 	# Наехали на сущность?
 	if result and result.collider:
 		var entity = _find_entity(result.collider)
-		if entity and entity.has_comp(IHoverable):
+		if entity and entity.has_comp(IHoverable) and _is_pickable(entity):
 			new_hover = entity
 			
 	# Если Новый ховер не такой же как был, то делаем ховером новый
@@ -285,6 +305,8 @@ func _try_handle_press() -> bool:
 ## XX claude-switch. Рычаг стрелки (слой handles) работает без выделения: клик по рычагу перекладывает стрелку.
 ## Забираем нажатие, чтобы клик не выбрал и не потащил трак
 func _try_press_lever() -> bool:
+	if Global.current_mode == &'sections':
+		return false   # XX claude-table T1b: в режиме «Секции» рычаги и ручки не работают
 	var hit = controller.get_mouse_ray(Global.active_layers(['handles']))
 	if hit.is_empty():
 		return false

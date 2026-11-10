@@ -10,6 +10,7 @@ class_name ModeController extends Node
 ##   debug_open_category(index: int)  необязательно: открыть категорию по номеру (Global.active_ui_category)
 ## Build, Operate и Observe обслуживает ToolbarController (каталог режима регистрирует адаптер).
 ## У режима без обработчика показывается простая панель из _plain_panels.
+## Режим «sections» (ящики подмакетника, ATTN_23) без панели: выбор секций стола, каталога пока нет.
 ## Library это экран поверх игры (ATTN_22 §22.5.2), режим HUD не меняется: см. _open_library.
 
 
@@ -56,11 +57,12 @@ func _ready() -> void:
 	}
 	_plain_panels = {&"library": get_node_or_null("%LibraryPanel")}
 
-	# Режим быстрой загрузки: Observe недоступен, кнопка режима скрыта
+	# Режим быстрой загрузки: Observe недоступен, кнопка режима скрыта. Секций стола тоже нет (XX claude-table T1b)
 	if Global.fast_debug:
-		var observe_btn := %ModePanel.get_node_or_null("VBoxContainer/ObserveButton") as Control
-		if observe_btn:
-			observe_btn.hide()
+		for btn_name in ["ObserveButton", "SectionsButton"]:
+			var fast_btn := %ModePanel.get_node_or_null("VBoxContainer/" + btn_name) as Control
+			if fast_btn:
+				fast_btn.hide()
 
 	# Задежка, чтобы создались кнопки в билдпанели
 	await get_tree().process_frame

@@ -24,5 +24,9 @@ func _on_observe_button_pressed() -> void:
 	mode_selected.emit(&'observe') ##⚡Сигнал в ModeController
 
 
+func _on_sections_button_pressed() -> void:
+	mode_selected.emit(&'sections') ##⚡Сигнал в ModeController (XX claude-table T1b)
+
+
 func _on_library_button_pressed() -> void:
 	mode_selected.emit(&'library') ##⚡Сигнал в ModeController
