@@ -49,6 +49,8 @@ var _filters := {}   # "режим/категория" -> {id фильтра: з
 func _ready() -> void:
 	# Build: объекты каталога, приемник это сигнал object_selected
 	register_mode(&"build", EntityCatalogProvider.new(&"build"), _emit_build_selected)
+	# XX claude-table T2: режим «Секции»: категория table (пресеты секций), приёмник тот же: ToolController включит TableTool
+	register_mode(&"sections", EntityCatalogProvider.new(&"sections"), _emit_build_selected)
 
 	_dup_btn = Button.new()
 	_dup_btn.text = "Дубль  (V)"

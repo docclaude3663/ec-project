@@ -32,9 +32,13 @@ var _shift_click: Entity         # объект под курсором в мо�
 var _group_layer: CanvasLayer
 var _marquee: MarqueeOverlay
 var _tooltip: InfoToolTip
+# XX claude-table T2: сообщения подмакетника (отказ убрать секцию, высота стола) наверху экрана
+var _note: Label
+var _note_gen := 0
 
 func _ready() -> void:
 	_ensure_group_ui()
+	LYM.notice.connect(_show_note)
 
 
 func enter():
@@ -59,6 +63,12 @@ func process_tick(_delta):
 
 
 func handle_input(event: InputEvent):
+	# XX claude-table T2: в режиме «Секции» R/F (Shift, PgUp/PgDn) меняют высоту стола
+	if Global.current_mode == &'sections':
+		var n := ElevationInput.step_from_event(event)
+		if n != 0:
+			LYM.step_height(n)
+			return
 	# --- ПКМ: Обработка (Отмена vs Камера) ---
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT:
 		if event.pressed:
@@ -144,7 +154,7 @@ func handle_input(event: InputEvent):
 
 	# --- ЛКМ: Движение (Переход в Драг) ---
 	if event is InputEventMouseMotion and Input.is_action_pressed("lmb"):
-		if clicked_entity and clicked_entity == selected_entity:
+		if clicked_entity and clicked_entity == selected_entity and Global.current_mode != &'sections':   # XX claude-table T2: секции не таскаем, их ставит TableTool
 			# Если протащили достаточно далеко — включаем инструмент перетаскивания
 			if lmb_start_pos.distance_to(event.position) > 10:
 				_start_drag(clicked_entity)
@@ -413,10 +423,34 @@ func _ensure_group_ui() -> void:
 	_group_layer.add_child(_marquee)
 	_tooltip = InfoToolTip.new()
 	_group_layer.add_child(_tooltip)
+	_note = Label.new()
+	_note.name = "LayoutNote"
+	_note.visible = false
+	_note.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_note.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_note.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_note.position.y = 70.0
+	_note.add_theme_font_size_override("font_size", 20)
+	_note.add_theme_color_override("font_color", Color(1.0, 0.9, 0.5))
+	_note.add_theme_color_override("font_outline_color", Color.BLACK)
+	_note.add_theme_constant_override("outline_size", 8)
+	_group_layer.add_child(_note)
 	_tooltip.category_toggled.connect(func(cat: StringName, on: bool): _group.set_category_enabled(cat, on))
 	_tooltip.delete_pressed.connect(func(): _group.delete_members())
 	_group.changed.connect(_on_group_changed)
 	_on_group_changed()
+
+
+## Сообщение подмакетника наверху экрана на 3 секунды
+func _show_note(text: String) -> void:
+	_ensure_group_ui()
+	_note.text = text
+	_note.visible = true
+	_note_gen += 1
+	var gen := _note_gen
+	await get_tree().create_timer(3.0).timeout
+	if gen == _note_gen and is_instance_valid(_note):
+		_note.visible = false
 
 
 func _on_group_changed() -> void:

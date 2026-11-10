@@ -1,4 +1,4 @@
-class_name C_TableSection extends Component
+class_name C_TableSection extends C_Visual
 
 # XX claude-table T1 (новый файл)
 ###################################
@@ -12,6 +12,7 @@ class_name C_TableSection extends Component
 ##  - LYM (подмакетник) видит секцию по группе LYM.GROUP и слушает layout_changed;
 ##  - TGM.terrain_changed: поставили, изменили, убрали секцию (опоры эстакады пересчитывают землю под собой).
 ## Опоры (ножки) в T1 по-прежнему строит RoomBuilder; секция про них не знает.
+## Контуры состояний (ховер, выбор, призрак, красный призрак) рисует база C_Visual, как у листов пенопласта (T2).
 ## Сейв: thickness. Контур сохраняет C_Contour, поза лежит в transform Entity.
 
 ## Толщина плиты по умолчанию, u (значение v1: RoomConfig.table_top_thickness)
@@ -25,7 +26,6 @@ const COL_TABLE := Color(0.62, 0.50, 0.38)
 static var _material: StandardMaterial3D
 
 var thickness := DEFAULT_THICKNESS
-var instance: Node3D
 var mesh_node: MeshInstance3D
 var body: StaticBody3D
 
@@ -34,6 +34,7 @@ var _ready_done := false
 var _last_aabb := AABB()
 
 
+## Базовый C_Visual.on_added инстанцирует сцену; у плиты сцены нет
 func on_added() -> void:
 	instance = Node3D.new()
 	instance.name = 'Plate'
@@ -50,11 +51,16 @@ func on_added() -> void:
 	instance.add_child(body)
 	_apply_collision_layers()
 
+	parts = PartRegistry.build(instance)
+	_collect_meshes()
+	_on_instance_ready()
+
 
 func on_entity_ready() -> void:
 	entity.add_to_group(LYM.GROUP)
 	_ready_done = true
 	_rebuild()
+	update_visual()
 
 
 func on_contour_changed(_d: Dictionary) -> void:
@@ -63,16 +69,19 @@ func on_contour_changed(_d: Dictionary) -> void:
 
 
 func on_component_added(type: Script) -> void:
+	super(type)
 	if type == C_Ghost:
 		_apply_collision_layers()
 
 
 func on_component_removed(type: Script) -> void:
+	super(type)
 	if type == C_Ghost:
 		_apply_collision_layers(type)
 
 
 func _exit_tree() -> void:
+	super()
 	# секция убрана: сообщаем область, где земля пропала (призрак землёй не был)
 	if not is_instance_valid(LYM) or entity == null or entity.has_comp(C_Ghost):
 		return

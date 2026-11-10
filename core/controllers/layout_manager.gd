@@ -13,9 +13,13 @@ extends Node
 
 ## ⚡ Подмакетник изменился (секция, высота, опоры, загрузка сейва). Слушают опоры, границы камеры, домен воды
 signal layout_changed
+## ⚡ Сообщение игроку по подмакетнику (отказ удалить секцию, высота стола). Показывает SelectTool
+signal notice(text: String)
 
 ## Группа секций (C_TableSection добавляет в неё свою Entity при готовности)
 const GROUP := &"table_section"
+## Шаг высоты стола клавишами, u
+const HEIGHT_STEP := 5.0
 ## Стартовая секция новой игры и миграции старых сейвов: 200 x 100 (стол v1)
 const START_SECTION := "res://data/table/objects/sec_200x100.tres"
 
@@ -64,6 +68,158 @@ static func _on_edge(pt: Vector2, poly: PackedVector2Array) -> bool:
 func can_remove_section(e: Entity) -> bool:
 	var list := get_sections()
 	return not list.has(e) or list.size() > 1
+
+
+## XX claude-table T2. Почему секцию нельзя убрать; пусто: можно. Последняя секция остаётся. Пока на секции стоят объекты
+## (трак, вагон, лист, дом), убрать её нельзя: решение по умолчанию ATTN_23 §23.12, вопрос 3
+func removal_block_reason(e: Entity) -> String:
+	if not can_remove_section(e):
+		return "Последнюю секцию убрать нельзя"
+	var on := objects_on_section(e)
+	if on.is_empty():
+		return ""
+	var counts := {}
+	for o in on:
+		var cat := GroupSelection.category_of(o)
+		var label: String = GroupSelection.LABELS.get(cat, String(cat) if cat != &"" else "Прочее")
+		counts[label] = int(counts.get(label, 0)) + 1
+	var parts: Array[String] = []
+	for k in counts:
+		parts.append("%s %d" % [k, counts[k]])
+	return "На секции стоят объекты (%s). Сначала уберите их или перенесите" % ", ".join(parts)
+
+
+## Объекты, которые останутся без стола, если убрать секцию: любая их точка (начало, контрольные точки пути) лежит на этой секции
+## и не лежит ни на одной другой. Секции и призраки не считаются
+func objects_on_section(sec: Entity) -> Array[Entity]:
+	var res: Array[Entity] = []
+	var poly := section_polygon(sec)
+	if poly.size() < 3 or not is_inside_tree():
+		return res
+	var others: Array[PackedVector2Array] = []
+	for o in get_sections():
+		if o != sec:
+			others.append(section_polygon(o))
+	var root := sec.get_parent()
+	if root == null:
+		return res
+	for n in root.get_children():
+		var e := n as Entity
+		if e == null or e == sec or e.is_queued_for_deletion() or e.has_comp(C_Ghost) or e.has_comp(C_TableSection):
+			continue
+		for p in _probe_points(e):
+			if _poly_has(poly, p) and not _any_has(others, p):
+				res.append(e)
+				break
+	return res
+
+
+static func _poly_has(poly: PackedVector2Array, p: Vector2) -> bool:
+	return poly.size() >= 3 and (Geometry2D.is_point_in_polygon(p, poly) or _on_edge(p, poly))
+
+
+static func _any_has(polys: Array[PackedVector2Array], p: Vector2) -> bool:
+	for poly in polys:
+		if _poly_has(poly, p):
+			return true
+	return false
+
+
+## Начало объекта и контрольные точки пути (как у выбора рамкой), в плане (x = X, y = Z)
+static func _probe_points(e: Entity) -> Array[Vector2]:
+	var pts: Array[Vector2] = [Vector2(e.global_position.x, e.global_position.z)]
+	var path := e.get_comp(C_Path) as C_Path
+	if path != null and path.path_node != null:
+		for c in path.all_curves():
+			var l := c.get_baked_length()
+			for f in [0.0, 0.5, 1.0]:
+				var w := path.path_node.to_global(c.sample_baked(l * f))
+				pts.append(Vector2(w.x, w.z))
+	return pts
+
+
+## Объединение плит: внешние контуры (дыры не учитываем). Касающиеся секции сливаются в один контур, разрозненные остаются отдельными.
+## Секций нет: стол v1 одним прямоугольником
+func footprint() -> Array[PackedVector2Array]:
+	var polys: Array[PackedVector2Array] = []
+	for e in get_sections():
+		var poly := section_polygon(e)
+		if poly.size() >= 3:
+			polys.append(poly)
+	var merged: Array[PackedVector2Array] = []
+	if polys.is_empty():
+		var r := _room_table_rect()
+		merged.append(PackedVector2Array([r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)]))
+		return merged
+	for poly in polys:
+		var cur := poly
+		var rest: Array[PackedVector2Array] = []
+		for m in merged:
+			var outers := _outer_polygons(Geometry2D.merge_polygons(m, cur))
+			if outers.size() == 1:
+				cur = outers[0]
+			else:
+				rest.append(m)
+		rest.append(cur)
+		merged = rest
+	return merged
+
+
+## Из результата merge_polygons только внешние контуры (дыры обходятся по часовой стрелке)
+static func _outer_polygons(u: Array[PackedVector2Array]) -> Array[PackedVector2Array]:
+	var res: Array[PackedVector2Array] = []
+	for p in u:
+		if not Geometry2D.is_polygon_clockwise(p):
+			res.append(p)
+	return res
+
+
+## Толщина плиты, u: наибольшая у секций (ножки встают под неё). Секций нет: значение паспорта комнаты
+func plate_thickness() -> float:
+	var t := 0.0
+	for e in get_sections():
+		var sec := e.get_comp(C_TableSection) as C_TableSection
+		if sec != null:
+			t = maxf(t, sec.thickness)
+	if t > 0.0:
+		return t
+	var rb := get_tree().get_first_node_in_group(&"room_root") if is_inside_tree() else null
+	if rb != null and rb.get("config") is RoomConfig:
+		return (rb.get("config") as RoomConfig).table_top_thickness
+	return C_TableSection.DEFAULT_THICKNESS
+
+
+## Где можно ставить секции: внутренний размер комнаты минус проход aisle_min с каждой стороны (ATTN_23 §23.4).
+## Комнаты нет или она &"none" (стенд): без ограничения
+func placement_limits() -> Rect2:
+	var big := Rect2(-100000.0, -100000.0, 200000.0, 200000.0)
+	var rb := get_tree().get_first_node_in_group(&"room_root") if is_inside_tree() else null
+	if rb == null or not (rb.get("config") is RoomConfig):
+		return big
+	var cfg := rb.get("config") as RoomConfig
+	if cfg.shape == &"none":
+		return big
+	var half := Vector2(cfg.size.x, cfg.size.z) * 0.5 - Vector2.ONE * config.aisle_min
+	if half.x <= 0.0 or half.y <= 0.0:
+		return Rect2()
+	return Rect2(-half, half * 2.0)
+
+
+## Шаг высоты стола клавишами (режим «Секции»): n шагов по HEIGHT_STEP, игроку сообщается итог
+func step_height(n: int) -> void:
+	var before := config.height
+	set_height(before + float(n) * HEIGHT_STEP)
+	var limit := "" if not is_equal_approx(before, config.height) else " (предел)"
+	notice.emit("Высота стола %d u%s" % [int(config.height), limit])
+
+
+## Высота стола: из LayoutConfig, в пределах (T3). Пересборка пола, ножек и границ камеры идёт по layout_changed
+func set_height(h: float) -> void:
+	h = clampf(h, LayoutConfig.HEIGHT_MIN, LayoutConfig.HEIGHT_MAX)
+	if is_equal_approx(h, config.height):
+		return
+	config.height = h
+	layout_changed.emit()
 
 
 ## Ограничивающий прямоугольник плиты в мире (XZ): объединение секций. Нет секций: стартовая плита v1 из паспорта комнаты

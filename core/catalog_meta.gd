@@ -17,6 +17,7 @@ class_name CatalogMeta extends RefCounted
 const MODE_CATEGORIES := {
 	&"build": [&"train", &"track", &"building", &"decor", &"terrain"],
 	&"operate": [&"dc_controller", &"dcc_controller"],
+	&"sections": [&"table"],   # XX claude-table T2: секции подмакетника, не категория Build
 }
 
 const CATEGORIES := {
@@ -25,7 +26,7 @@ const CATEGORIES := {
 	&"building": {"name": "Building", "icon": preload("res://ui/icons/house/house.svg")},
 	&"decor": {"name": "Decor", "icon": preload("res://ui/icons/house/beech.svg")},
 	&"terrain": {"name": "Terrain", "icon": preload("res://ui/icons/tool/spade.svg")},
-	# XX claude-table T1: секции подмакетника. В MODE_CATEGORIES не входит: секции ставит TableTool в режиме «Секции» (T2)
+	# XX claude-table T1: секции подмакетника. Не входит в MODE_CATEGORIES[build]: секции ставит TableTool в режиме «Секции» (MODE_CATEGORIES[sections])
 	&"table": {"name": "Table", "icon": preload("res://ui/icons/resize.svg")},
 	&"dc_controller": {"name": "DC Controllers", "icon": preload("res://ui/icons/settings-knobs.svg")},
 	&"dcc_controller": {"name": "DCC Controllers", "icon": preload("res://ui/icons/transport/steam-locomotive.svg")},

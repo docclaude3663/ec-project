@@ -56,11 +56,21 @@ static func blocker_for(level_y: float) -> Callable:
 		return false
 
 
+## XX claude-table T2. Ячейка (центр в мире, ю) лежит на плите подмакетника. Секции есть: по их контурам (стол из нескольких секций,
+## вода у вырезанного угла не вытекает); секций нет (стенд, тест): Callable() и домен-прямоугольник, как раньше
+static func footprint_inside() -> Callable:
+	if not is_instance_valid(LYM) or LYM.get_sections().is_empty():
+		return Callable()
+	return func(p: Vector2) -> bool: return LYM.contains(p.x, p.y)
+
+
 ## Залить. Результат:
 ##  ok - область найдена, иначе why = причина ("" при ok);
 ##  cells - Dictionary Vector2i -> true; count; touches_edge - область дошла до края домена;
 ##  bounds - Rect2 области в мире (ю); dom - Rect2i ячеек домена.
-static func fill(seed_pos: Vector2, level_y: float, domain: Rect2, step: float, blocked: Callable, max_cells: int = MAX_CELLS) -> Dictionary:
+## inside (необязательно): Callable(Vector2) -> bool, центр ячейки на плите. Ячейка вне плиты это край домена (стена, не утечка)
+static func fill(seed_pos: Vector2, level_y: float, domain: Rect2, step: float, blocked: Callable, max_cells: int = MAX_CELLS,
+		inside: Callable = Callable()) -> Dictionary:
 	var res := {"ok": false, "why": "", "cells": {}, "count": 0, "touches_edge": false, "bounds": Rect2(), "dom": Rect2i()}
 	var T: float = Global.settings.layer_height
 	if level_y < T - EPS:
@@ -69,7 +79,7 @@ static func fill(seed_pos: Vector2, level_y: float, domain: Rect2, step: float, 
 	var dom := grid_domain(domain, step)
 	res["dom"] = dom
 	var s := cell_of(seed_pos, step)
-	if not dom.has_point(s):
+	if not dom.has_point(s) or (inside.is_valid() and not inside.call(cell_center(s, step))):
 		res["why"] = "Точка за краем стола"
 		return res
 	if blocked.call(cell_center(s, step)):
@@ -89,7 +99,7 @@ static func fill(seed_pos: Vector2, level_y: float, domain: Rect2, step: float, 
 			var n: Vector2i = c + d
 			if cells.has(n):
 				continue
-			if not dom.has_point(n):
+			if not dom.has_point(n) or (inside.is_valid() and not inside.call(cell_center(n, step))):
 				edge = true
 				continue
 			if blocked.call(cell_center(n, step)):
@@ -136,8 +146,22 @@ static func runs(cells: Dictionary) -> Array[Vector3i]:
 
 ## Стенки у края домена: мокрые ячейки на границе дают вертикальную грань. Элемент: {"a": Vector2, "b": Vector2}
 ## (концы грани в мире, ю), обход так, что нормаль смотрит наружу
-static func edge_walls(cells: Dictionary, dom: Rect2i, step: float) -> Array[Dictionary]:
+static func edge_walls(cells: Dictionary, dom: Rect2i, step: float, inside: Callable = Callable()) -> Array[Dictionary]:
 	var res: Array[Dictionary] = []
+	if inside.is_valid():
+		# XX claude-table T2: край это любая грань мокрой ячейки, за которой нет плиты (или домена)
+		for c: Vector2i in cells:
+			var x0 := float(c.x) * step
+			var z0 := float(c.y) * step
+			if _outside(c + Vector2i(-1, 0), dom, step, inside):
+				res.append({"a": Vector2(x0, z0 + step), "b": Vector2(x0, z0)})
+			if _outside(c + Vector2i(1, 0), dom, step, inside):
+				res.append({"a": Vector2(x0 + step, z0), "b": Vector2(x0 + step, z0 + step)})
+			if _outside(c + Vector2i(0, -1), dom, step, inside):
+				res.append({"a": Vector2(x0, z0), "b": Vector2(x0 + step, z0)})
+			if _outside(c + Vector2i(0, 1), dom, step, inside):
+				res.append({"a": Vector2(x0 + step, z0 + step), "b": Vector2(x0, z0 + step)})
+		return res
 	var x_min := float(dom.position.x) * step
 	var x_max := float(dom.end.x) * step
 	var z_min := float(dom.position.y) * step
@@ -154,3 +178,7 @@ static func edge_walls(cells: Dictionary, dom: Rect2i, step: float) -> Array[Dic
 		if c.y == dom.end.y - 1:   # юг (+Z): нормаль +Z
 			res.append({"a": Vector2(x0 + step, z_max), "b": Vector2(x0, z_max)})
 	return res
+
+
+static func _outside(c: Vector2i, dom: Rect2i, step: float, inside: Callable) -> bool:
+	return not dom.has_point(c) or not inside.call(cell_center(c, step))

@@ -87,7 +87,8 @@ func setup(new_level: int, new_domain: Rect2, new_step: float) -> Dictionary:
 ## Пересчитать область по текущим листам и пересобрать меш
 func recompute() -> Dictionary:
 	_pending = false
-	var res := WaterFill.fill(seed_point(), level_y(), domain, step, WaterFill.blocker_for(level_y()))
+	var res := WaterFill.fill(seed_point(), level_y(), domain, step, WaterFill.blocker_for(level_y()),
+			WaterFill.MAX_CELLS, WaterFill.footprint_inside())   # XX claude-table T2: край воды это край плиты
 	region = res
 	_bounds = res["bounds"] if res["ok"] else Rect2()
 	_build(res)
@@ -140,7 +141,7 @@ func _build(res: Dictionary) -> void:
 		var c := Vector3(float(r.z) * s - o.x, y, float(r.x + 1) * s - o.y)
 		var d := Vector3(float(r.y) * s - o.x, y, float(r.x + 1) * s - o.y)
 		_quad(st, a, b, c, d, Vector3.UP)
-	for w: Dictionary in WaterFill.edge_walls(res["cells"], res["dom"], s):
+	for w: Dictionary in WaterFill.edge_walls(res["cells"], res["dom"], s, WaterFill.footprint_inside()):
 		var wa: Vector2 = w["a"] - o
 		var wb: Vector2 = w["b"] - o
 		var dir := wb - wa

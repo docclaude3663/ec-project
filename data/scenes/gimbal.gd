@@ -395,6 +395,13 @@ func set_bounds(aabb: AABB, enabled := true) -> void:
 	_wake()
 
 
+## XX claude-table T3. Новые границы без смены включённости (высота стола сдвинула потолок)
+func update_bounds(aabb: AABB) -> void:
+	bounds = aabb
+	_clamp_target()
+	_wake()
+
+
 func set_bounds_enabled(enabled: bool) -> void:
 	_bounds_wanted = enabled
 	bounds_enabled = enabled and not free_camera

@@ -218,7 +218,8 @@ func _refresh() -> void:
 			and (_res["cells"] as Dictionary).has(seed_cell)
 	if not reuse:
 		var ly := float(level) * float(Global.settings.layer_height)
-		_res = WaterFill.fill(_cursor, ly, TGM.table_rect(), step, WaterFill.blocker_for(ly))
+		_res = WaterFill.fill(_cursor, ly, TGM.table_rect(), step, WaterFill.blocker_for(ly),
+				WaterFill.MAX_CELLS, WaterFill.footprint_inside())   # XX claude-table T2
 		_res_level = level
 		_res_ver = _terrain_ver
 	_reason = "" if _res["ok"] else str(_res["why"])

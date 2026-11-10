@@ -39,6 +39,10 @@ const HINTS := {
 	"cut_strip": [["ЛКМ", "точка оси"], ["ЛКМ по последней точке / @shape_confirm", "вырезать"], ["@width_down/@width_up", "ширина (Shift ×5)"], ["@shape_undo", "убрать точку"], ["ПКМ", "сбросить / выйти"], ["@level_up/@level_down", "плоскость (Shift ×5)"], ["@depth_up/@depth_down", "глубина (Shift ×5)"], ["@cut_through", "насквозь"], ["@tool_undo", "отменить вырез"]],
 	"cut_line": [["ЛКМ", "две точки прямой, третий клик отсекает сторону курсора"], ["@shape_undo", "убрать точку"], ["ПКМ", "сбросить / выйти"], ["@level_up/@level_down", "плоскость (Shift ×5)"], ["@depth_up/@depth_down", "глубина (Shift ×5)"], ["@cut_through", "насквозь"], ["@tool_undo", "отменить вырез"]],
 	"cut_bevel": [["ЛКМ", "две точки гребня, третий клик режет скос в сторону курсора"], ["@width_down/@width_up", "ступень (Shift ×5)"], ["@depth_up/@depth_down", "высота скоса, слоёв"], ["@level_up/@level_down", "плоскость (Shift ×5)"], ["@shape_undo", "убрать точку"], ["ПКМ", "сбросить / выйти"], ["@tool_undo", "отменить скос"]],
+	"table_place": [["ЛКМ", "поставить секцию"], ["@rotate_left/@rotate_right", "повернуть на 90°"], ["@level_up/@level_down", "высота стола ±5 (Shift ×5)"], ["@tool_undo", "убрать последнюю"], ["ПКМ", "выйти"]],
+	"sections/select_none": [["ЛКМ", "выбрать секцию"], ["@level_up/@level_down", "высота стола ±5 (Shift ×5)"], ["Кнопка секции внизу", "поставить новую"]],
+	"sections/select_sel": [["@delete", "убрать секцию (последнюю и с объектами на ней нельзя)"], ["@level_up/@level_down", "высота стола ±5 (Shift ×5)"], ["Кнопка секции внизу", "поставить новую"]],
+	"sections/select_switch": [["@delete", "убрать секцию"], ["@level_up/@level_down", "высота стола ±5 (Shift ×5)"]],
 	"water_pour": [["ЛКМ", "налить воду (область видна до клика)"], ["Shift+ЛКМ", "осушить"], ["@level_up/@level_down", "глубина воды (Shift ×5)"], ["@level_up_x5/@level_down_x5", "глубина ±5"], ["@tool_undo", "отменить налив"], ["ПКМ", "выйти"]],
 	"plaster": [["ЛКМ", "сгладить весь холм под курсором"], ["Shift+ЛКМ", "только этот лист"], ["Ctrl+ЛКМ", "снять (Shift: только лист)"], ["@width_down/@width_up", "ступень пандуса, ю на слой"], ["@tool_undo", "отменить"], ["ПКМ", "выйти"]],
 	"drag": [["Отпустить ЛКМ", "поставить"], ["ПКМ", "отмена"], ["@rotate_left/@rotate_right", "поворот 45° (Shift: 5°)"], ["Alt + мышь", "вращать (Shift: точнее)"], ["@level_up/@level_down", "уровень"], ["Shift+@level_up/@level_down, @level_up_x5/@level_down_x5", "уровень ×5"], ["@reset_transform", "сброс"]],
@@ -144,6 +148,8 @@ func _context_key() -> String:
 			return "plaster"
 		&"WaterPourTool":   # XX claude-terra 13.4 W3: налить воду
 			return "water_pour"
+		&"TableTool":   # XX claude-table T2: постановка секций
+			return "table_place"
 		&"ThermoCutTool":   # XX claude-terra 13.3 S2: терморезак (контекст ставит сам инструмент)
 			if _ctx.get(&"cut_polygon", false):
 				return "cut_polygon"
@@ -175,7 +181,7 @@ func _compose() -> String:
 		return ""
 	var text := _format(items)
 	# Вторая строка про камеру: когда ею управляет игрок (не Follow, POV, Orbit и не фоторежим)
-	var own_camera := key in ["select_none", "select_group", "select_sel", "build", "build_polygon", "build_strip", "cut_rect", "cut_polygon", "cut_strip", "cut_line", "cut_bevel", "water_pour", "plaster", "wire", "wire_started", "drag", "observe"]
+	var own_camera := key in ["select_none", "select_group", "select_sel", "build", "build_polygon", "build_strip", "cut_rect", "cut_polygon", "cut_strip", "cut_line", "cut_bevel", "water_pour", "table_place", "plaster", "wire", "wire_started", "drag", "observe"]
 	if own_camera:
 		text += "\n[color=%s]%s[/color]" % [DIM_COLOR, _format(CAMERA_LINE, false)]
 	return "[center]" + text + "[/center]"

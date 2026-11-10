@@ -9,6 +9,8 @@ class_name RoomBuilder extends Node3D
 ## Всё остальное (Room) на слое room (физика) и на visual layer Global.ROOM_VISUAL_LAYER.
 ## Комната слушает ObserveController.observe_action (категория room), про поезда не знает ничего.
 
+## ⚡ XX claude-table T3. Пол, ножки и границы камеры пересобраны после изменения секций или высоты стола
+signal room_layout_applied
 ## ⚡ Комнату показали или спрятали (CameraBounds выключает ограничение)
 signal room_visible_changed(on: bool)
 ## Комнату заменили (switch_room): границы камеры и небо надо перечитать
@@ -26,6 +28,7 @@ var visuals: Node3D    # пол, стены, потолок, мебель
 var ceiling: Node3D
 var _ceiling_mesh: MeshInstance3D   # плита потолка: скрытая в Observe, она всё равно отбрасывает тень (закрывает солнце сверху)
 var table: Node3D
+var _layout_dirty := false
 var _room_lights: Node3D   # потолочные лампы RoomConfig.lamps: не часть visuals, чтобы кнопка «Комната» не гасила свет
 
 var _mats := {}
@@ -72,6 +75,7 @@ func _ready() -> void:
 	build()
 	_connect_observe()
 	_connect_gfx()
+	LYM.layout_changed.connect(_on_layout_changed)   # XX claude-table T3: секции и высота стола
 
 
 ## Debug: включает старую большую землю (WoodFloor) вместо подмакетника и комнаты
@@ -286,6 +290,7 @@ func _build_room() -> void:
 		_build_greybox()
 	# Состояние переживает пересборку
 	visuals.visible = _room_visible
+	_apply_height_offset()
 	_apply_ceiling()
 	set_walls_cast_shadow(_walls_shadow_now)
 	_apply_detail()
@@ -352,8 +357,12 @@ func set_variants(v: Dictionary) -> void:
 		rebuild_room()
 
 
+## Границы камеры. Верх сдвигается вместе с потолком при смене высоты стола (T3), низ остаётся над столешницей
 func get_bounds() -> AABB:
-	return config.bounds
+	var b := config.bounds
+	if config.shape != &"none":
+		b.size.y = maxf(b.size.y + floor_offset(), 10.0)
+	return b
 
 
 func set_room_visible(on: bool) -> void:
@@ -424,23 +433,60 @@ func _on_observe_action(_cat: StringName, _id: StringName, _pressed: bool) -> vo
 # ==========================================
 
 func _build_table() -> void:
-	var c := config
 	table = Node3D.new()
 	table.name = "Table"
 	add_child(table)
+	_build_supports()
 
-	# XX claude-table T1: плита (верх стола = ground, y = 0) это секция-Entity, ножки пока как в v1 от RoomConfig
-	var th := c.table_top_thickness
-	var leg_h := -c.floor_y - th
+
+## XX claude-table T3. Секции или высота изменились. Много событий за кадр (загрузка сейва) сливаются в одну пересборку
+func _on_layout_changed() -> void:
+	if _layout_dirty:
+		return
+	_layout_dirty = true
+	_apply_layout.call_deferred()
+
+
+func _apply_layout() -> void:
+	_layout_dirty = false
+	if not is_inside_tree() or table == null:
+		return
+	_apply_height_offset()
+	_build_supports()
+	room_layout_applied.emit()
+
+
+## Пол и всё, что к нему крепится (стены, потолок, мебель, лампы), смещаются так, чтобы верх стола был на y = 0, а пол на -высота.
+## Комната строится от RoomConfig.floor_y, поэтому достаточно сдвинуть корни узлов (пересборка комнаты не нужна)
+func _apply_height_offset() -> void:
+	var dy := floor_offset()
+	if is_instance_valid(visuals):
+		visuals.position.y = dy
+	if is_instance_valid(_room_lights):
+		_room_lights.position.y = dy
+
+
+## Насколько комната сдвинута от паспортного floor_y из-за высоты стола (LayoutConfig.height)
+func floor_offset() -> float:
+	return -LYM.config.height - config.floor_y
+
+
+## Ножки по футпринту (LYM.footprint): от низа плиты до пола. Стол v1 (200 x 100, высота 50) даёт те же 4 ножки
+func _build_supports() -> void:
+	if table == null:
+		return
+	for c in table.get_children():
+		table.remove_child(c)
+		c.queue_free()
+	var th := LYM.plate_thickness()
+	var floor_y := -LYM.config.height
+	var leg_h := -floor_y - th
 	if leg_h <= 0.0:
 		return
-	var lx := c.table_top.x * 0.5 - c.table_leg * 0.5 - 3.0
-	var lz := c.table_top.y * 0.5 - c.table_leg * 0.5 - 3.0
-	for sx in [-1.0, 1.0]:
-		for sz in [-1.0, 1.0]:
-			_box(table, "Leg", Vector3(c.table_leg, leg_h, c.table_leg),
-					Vector3(sx * lx, c.floor_y + leg_h * 0.5, sz * lz),
-					COL_TABLE_LEG, Global.active_layers(['room']), 1, true)
+	var leg := config.table_leg
+	for p in TableSupports.leg_positions(LYM.footprint(), leg):
+		_box(table, "Leg", Vector3(leg, leg_h, leg), Vector3(p.x, floor_y + leg_h * 0.5, p.y),
+				COL_TABLE_LEG, Global.active_layers(['room']), 1, true)
 
 
 # ==========================================
@@ -760,6 +806,7 @@ func _build_room_lights() -> void:
 		l.light_size = LAMP_SOFT
 		_room_lights.add_child(l)
 		i += 1
+	_room_lights.position.y = floor_offset()
 
 
 func _lamp_height() -> float:

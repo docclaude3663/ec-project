@@ -25,6 +25,7 @@ var cut_tool: ThermoCutTool
 var water_tool: WaterPourTool   # XX claude-terra 13.4 W3
 var plaster_tool: PlasterTool   # XX claude-terra 13.5 G3
 var wire_tool: WireTool   # D4 (ATTN_10): провода между клеммами
+var table_tool: TableTool   # XX claude-table T2: постановка секций подмакетника (режим «Секции»)
 #@onready var save_controller: SaveManager = %SaveManager
 
 
@@ -71,6 +72,9 @@ func _ready() -> void:
 	wire_tool = WireTool.new()
 	wire_tool.name = &"WireTool"
 	%Tools.add_child(wire_tool)
+	table_tool = TableTool.new()
+	table_tool.name = &"TableTool"
+	%Tools.add_child(table_tool)
 
 	# Инициализируем инструменты, передав им ссылку на себя
 	for tool in %Tools.get_children():
@@ -191,6 +195,12 @@ func select_build_object(setting: EntitySetting, variant: Dictionary = {}) -> vo
 		switch_tool(plaster_tool)
 		return
 
+	# XX claude-table T2: пресет секции (категория table) включает TableTool, режим «Секции»
+	if setting.category == &"table":
+		table_tool.ghost_setting = setting
+		switch_tool(table_tool)
+		return
+
 	# D4: кнопка «Провод» включает WireTool
 	if setting.build_behavior == EntitySetting.BuildBehavior.WIRE_TOOL:
 		switch_tool(wire_tool)
@@ -273,7 +283,9 @@ func on_current_mode_changed(_new_mode):
 			switch_tool(select_tool)
 	# XX claude-table T1b: режим «Секции» (ящики подмакетника): только выбор, без призрака и инструментов стройки.
 	# Выбор, которого в новом режиме быть не может (секция вне «Секции», объект дороги в «Секциях»), снимается
-	if _new_mode == &'sections' and active_tool != select_tool:
+	if active_tool == table_tool and _new_mode != &'sections':
+		switch_tool(select_tool)   # TableTool живёт только в режиме «Секции»
+	elif _new_mode == &'sections' and active_tool != select_tool:
 		switch_tool(select_tool)
 	select_tool.on_mode_changed()
 

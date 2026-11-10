@@ -28,4 +28,12 @@ func create_component(entity: Entity) -> Component:
 	section.thickness = thickness
 	entity.add_component(section)
 
+	# 3. Ховер и выбор: контуры в режиме «Секции» (T2). Сам режим решает, что можно выбрать (SelectTool._is_pickable)
+	var hov := C_Hoverable.new()
+	hov.name = 'C_Hoverable'
+	entity.add_component(hov)
+	var sel := C_Selectable.new()
+	sel.name = 'C_Selectable'
+	entity.add_component(sel)
+
 	return section
