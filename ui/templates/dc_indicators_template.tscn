@@ -1,0 +1,70 @@
+[gd_scene format=3]
+
+[node name="DcIndicators" type="PanelContainer"]
+custom_minimum_size = Vector2(417, 0)
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="Box" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ModelLabel" type="Label" parent="Margin/Box"]
+layout_mode = 2
+theme_type_variation = &"LabelDim"
+text = "Мульти · лимит 3,0 А"
+vertical_alignment = 1
+
+[node name="Lamps" type="HBoxContainer" parent="Margin/Box"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="LampMains" type="Label" parent="Margin/Box/Lamps"]
+layout_mode = 2
+theme_type_variation = &"LampOn"
+text = "● Сеть"
+vertical_alignment = 1
+
+[node name="LampOver" type="Label" parent="Margin/Box/Lamps"]
+layout_mode = 2
+theme_type_variation = &"LampWarn"
+text = "● Перегрузка"
+vertical_alignment = 1
+
+[node name="LampShort" type="Label" parent="Margin/Box/Lamps"]
+layout_mode = 2
+theme_type_variation = &"LampOff"
+text = "○ КЗ"
+vertical_alignment = 1
+
+[node name="CurrentBar" type="ProgressBar" parent="Margin/Box"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 12)
+max_value = 6.0
+value = 2.1
+show_percentage = false
+
+[node name="BarLabel" type="Label" parent="Margin/Box"]
+layout_mode = 2
+theme_type_variation = &"LabelDim"
+text = "Вывод 1: 1,20 А из 3,0 А\nВсего по источнику: 2,10 А"
+vertical_alignment = 1
+
+[node name="Buttons" type="HBoxContainer" parent="Margin/Box"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="MainsButton" type="CheckButton" parent="Margin/Box/Buttons"]
+layout_mode = 2
+text = "Сеть"
+button_pressed = true
+
+[node name="ResetButton" type="Button" parent="Margin/Box/Buttons"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 32)
+text = "Сброс"
