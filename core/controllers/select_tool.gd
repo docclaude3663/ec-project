@@ -204,7 +204,7 @@ func _get_entity_under_mouse() -> Entity:
 	#var hit = controller.get_mouse_ray((1 << 0) | (1 << 2) |(1 << 4)| (1 << 10)) 
 	var hit = _pick_ray()
 	if hit and hit.collider:
-		var e := _find_entity(hit.collider)
+		var e = _find_entity(hit.collider)
 		return e if _is_pickable(e) else null   # XX claude-table T1b: чужое под курсором это пустое место
 	return null
 
@@ -453,4 +453,3 @@ func _seed_group_from_single() -> void:
 	var e := selected_entity
 	_clear_single_selection()
 	_group.add_entity(e)
-
