@@ -126,6 +126,10 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
+[sub_resource type="StyleBoxLine" id="sep_h"]
+content_margin_top = 0.0
+color = Color(0.5412, 0.5412, 0.5412, 0.6)
+
 [sub_resource type="StyleBoxFlat" id="header_label"]
 content_margin_left = 10.0
 content_margin_top = 2.0
@@ -176,6 +180,22 @@ content_margin_bottom = 4.0
 bg_color = Color(0.1882, 0.302, 0.4471, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
+
+[sub_resource type="StyleBoxFlat" id="panel_warn"]
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 8.0
+bg_color = Color(1, 0.8353, 0.3098, 0.18)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.8353, 0.3098, 0.6)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="popup_hover"]
 bg_color = Color(1, 1, 1, 0.1)
@@ -250,17 +270,6 @@ content_margin_right = 10.0
 content_margin_bottom = 2.0
 bg_color = Color(1, 1, 1, 0)
 
-[sub_resource type="StyleBoxLine" id="sep_v"]
-content_margin_left = 0.0
-color = Color(0.5412, 0.5412, 0.5412, 0.6)
-thickness = 1
-vertical = true
-
-[sub_resource type="StyleBoxLine" id="sep_h"]
-content_margin_top = 0.0
-color = Color(0.5412, 0.5412, 0.5412, 0.6)
-thickness = 1
-
 [sub_resource type="StyleBoxFlat" id="tip_panel"]
 content_margin_left = 8.0
 content_margin_top = 4.0
@@ -277,21 +286,10 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxFlat" id="panel_warn"]
-content_margin_left = 10.0
-content_margin_top = 8.0
-content_margin_right = 10.0
-content_margin_bottom = 8.0
-bg_color = Color(1, 0.8353, 0.3098, 0.18)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(1, 0.8353, 0.3098, 0.6)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+[sub_resource type="StyleBoxLine" id="sep_v"]
+content_margin_left = 0.0
+color = Color(0.5412, 0.5412, 0.5412, 0.6)
+vertical = true
 
 [resource]
 default_font = ExtResource("1_font")
@@ -328,6 +326,8 @@ HScrollBar/styles/grabber = SubResource("grab")
 HScrollBar/styles/grabber_highlight = SubResource("grab_hi")
 HScrollBar/styles/grabber_pressed = SubResource("grab_pr")
 HScrollBar/styles/scroll = SubResource("scroll_bg")
+HSeparator/constants/separation = 12
+HSeparator/styles/separator = SubResource("sep_h")
 HeaderSmall/base_type = &"Label"
 HeaderSmall/colors/font_color = Color(1, 1, 1, 1)
 HeaderSmall/font_sizes/font_size = 18
@@ -335,6 +335,10 @@ HeaderSmall/styles/normal = SubResource("header_label")
 Label/colors/font_color = Color(0.902, 0.902, 0.902, 1)
 LabelDim/base_type = &"Label"
 LabelDim/colors/font_color = Color(0.7059, 0.7059, 0.7059, 1)
+LabelOnAccent/base_type = &"Label"
+LabelOnAccent/colors/font_color = Color(1, 1, 1, 1)
+LabelOnAccentDim/base_type = &"Label"
+LabelOnAccentDim/colors/font_color = Color(1, 1, 1, 0.75)
 LampBad/base_type = &"Label"
 LampBad/colors/font_color = Color(1, 0.5412, 0.502, 1)
 LampOff/base_type = &"Label"
@@ -355,6 +359,8 @@ Panel/styles/panel = SubResource("panel_float")
 PanelContainer/styles/panel = SubResource("panel_inner")
 PanelContainerHeader/base_type = &"PanelContainer"
 PanelContainerHeader/styles/panel = SubResource("header")
+PanelWarn/base_type = &"PanelContainer"
+PanelWarn/styles/panel = SubResource("panel_warn")
 PopupMenu/styles/hover = SubResource("popup_hover")
 PopupMenu/styles/panel = SubResource("popup_panel")
 ProgressBar/styles/background = SubResource("bar_bg")
@@ -374,19 +380,11 @@ TabContainer/styles/tab_selected = SubResource("tab_sel")
 TabContainer/styles/tab_unselected = SubResource("tab_unsel")
 TagButton/base_type = &"Button"
 TagButton/constants/icon_max_width = 20
+TooltipLabel/colors/font_color = Color(0.902, 0.902, 0.902, 1)
+TooltipPanel/styles/panel = SubResource("tip_panel")
 VScrollBar/styles/grabber = SubResource("grab")
 VScrollBar/styles/grabber_highlight = SubResource("grab_hi")
 VScrollBar/styles/grabber_pressed = SubResource("grab_pr")
 VScrollBar/styles/scroll = SubResource("scroll_bg")
 VSeparator/constants/separation = 12
 VSeparator/styles/separator = SubResource("sep_v")
-HSeparator/constants/separation = 12
-HSeparator/styles/separator = SubResource("sep_h")
-TooltipPanel/styles/panel = SubResource("tip_panel")
-TooltipLabel/colors/font_color = Color(0.902, 0.902, 0.902, 1)
-LabelOnAccent/base_type = &"Label"
-LabelOnAccent/colors/font_color = Color(1, 1, 1, 1)
-LabelOnAccentDim/base_type = &"Label"
-LabelOnAccentDim/colors/font_color = Color(1, 1, 1, 0.75)
-PanelWarn/base_type = &"PanelContainer"
-PanelWarn/styles/panel = SubResource("panel_warn")
