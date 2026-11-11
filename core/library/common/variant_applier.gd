@@ -45,7 +45,8 @@ static func _apply_mesh(mi: MeshInstance3D, zones: Dictionary, overlay: Material
 		var base: Material = mesh.surface_get_material(i) if (cur == null or ours) else cur
 		var prev: Variant = null
 		if ours:
-			prev = cur.get_meta(META_PREV, null)
+			# get_meta(ключ, null) при отсутствии ключа пишет ошибку (null считается «без умолчания»): сначала has_meta
+			prev = cur.get_meta(META_PREV) if cur.has_meta(META_PREV) else null
 			if prev != null:
 				base = prev
 		elif cur != null:
