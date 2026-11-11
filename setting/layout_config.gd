@@ -25,7 +25,7 @@ const PLINTH_HEIGHT_DEFAULT := 10.0
 ## Материал плиты (TableStyle, T6). Пока только метка
 @export var style: StringName = &"chipboard"
 ## Проход вокруг стола с рабочих сторон, u (лимит площади в T2)
-@export var aisle_min := 60.0
+@export var aisle_min := 0.0
 
 
 ## Допустимая высота верха стола для вида опор: x = наименьшая, y = наибольшая. Ножки и кронштейны 5–130, рама 5–20

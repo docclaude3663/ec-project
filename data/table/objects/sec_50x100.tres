@@ -1,16 +1,15 @@
-[gd_resource type="Resource" script_class="EntitySetting" format=3]
+[gd_resource type="Resource" script_class="EntitySetting" format=3 uid="uid://b72ug3p7rhamy"]
 
-[ext_resource type="Script" path="res://core/component_setting.gd" id="1_cs"]
-[ext_resource type="Script" path="res://core/entity_setting.gd" id="2_es"]
-[ext_resource type="Script" path="res://core/components/comp_settings/identity_setting.gd" id="3_id"]
-[ext_resource type="Script" path="res://setting/table_config.gd" id="4_tc"]
-[ext_resource type="Script" path="res://core/components/comp_settings/tablesection_setting.gd" id="5_ts"]
-[ext_resource type="Texture2D" path="res://ui/icons/resize.svg" id="6_ic"]
+[ext_resource type="Script" uid="uid://m4g5jbfwmaa0" path="res://core/component_setting.gd" id="1_cs"]
+[ext_resource type="Script" uid="uid://do5hjkm3r2pdg" path="res://core/entity_setting.gd" id="2_es"]
+[ext_resource type="Script" uid="uid://mpakwrr6lum8" path="res://core/components/comp_settings/identity_setting.gd" id="3_id"]
+[ext_resource type="Script" uid="uid://dglcmq730rgru" path="res://setting/table_config.gd" id="4_tc"]
+[ext_resource type="Script" uid="uid://vcnyex8g7w2n" path="res://core/components/comp_settings/tablesection_setting.gd" id="5_ts"]
+[ext_resource type="Texture2D" uid="uid://c3ghcnyfwhau1" path="res://ui/icons/resize.svg" id="6_ic"]
 
 [sub_resource type="Resource" id="Resource_cfg"]
 script = ExtResource("4_tc")
 size = Vector2(50, 100)
-thickness = 5.0
 
 [sub_resource type="Resource" id="Resource_id"]
 script = ExtResource("3_id")
@@ -22,10 +21,10 @@ script = ExtResource("5_ts")
 [resource]
 script = ExtResource("2_es")
 key = &"table.section.sec_50x100"
+sort_order = 3
 name = "sec_50x100"
 description = "Секция подмакетника 50x100, толщина 5"
 category = &"table"
 tag = &"section"
-sort_order = 3
 icon = ExtResource("6_ic")
 components = Array[ExtResource("1_cs")]([SubResource("Resource_id"), SubResource("Resource_sec")])
