@@ -215,7 +215,10 @@ static func snap_center(cur: Vector2, sz: Vector2, rects: Array[Rect2]) -> Vecto
 
 
 func _snap_center(cur: Vector2, sz: Vector2) -> Vector2:
-	return TableTool.snap_center(cur, sz, TableTool.existing_rects())
+	# XX claude-table T4b: к стенам прилипаем так же, как к рёбрам секций (кронштейны вплотную, ножки и рама на проходе)
+	var edges := TableTool.existing_rects()
+	edges.append_array(TableRules.wall_snap_rects(LYM.room_config(), int(LYM.config.support), LYM.config.aisle_min))
+	return TableTool.snap_center(cur, sz, edges)
 
 
 ## Общее ребро длиннее EPS (касание углом не считается)

@@ -68,26 +68,21 @@ static func _on_edge(pt: Vector2, poly: PackedVector2Array) -> bool:
 	return false
 
 
-## Секцию можно убрать: последняя остаётся (ATTN_23 §23.2, инвариант 4). Секция, которой нет в списке, убирается свободно
-func can_remove_section(e: Entity) -> bool:
-	var list := get_sections()
-	return not list.has(e) or list.size() > 1
-
-
 ## XX claude-table T2. Почему секцию нельзя убрать; пусто: можно. Последняя секция остаётся. Пока на секции стоят объекты
 ## (трак, вагон, лист, дом), убрать её нельзя: решение по умолчанию ATTN_23 §23.12, вопрос 3
 func removal_block_reason(e: Entity) -> String:
-	if not can_remove_section(e):
-		return "Последнюю секцию убрать нельзя"
+	# XX claude-table T4b: последнюю секцию убрать можно (пустой стол: ни плиты, ни опор, секцию можно поставить заново)
 	if config.support == LayoutConfig.Support.WALL:
-		# XX claude-table T4: оставшиеся секции должны держаться за стену
+		# XX claude-table T4: стол, державшийся за стену, не должен оторваться от неё из-за удаления
+		var all := section_rects()
 		var rest: Array[Rect2] = []
 		for o in get_sections():
 			if o != e:
 				var poly := section_polygon(o)
 				if poly.size() >= 3:
 					rest.append(C_Contour.bounds_of(poly))
-		if TableRules.wall_layout_reason(rest, room_config()) != "":
+		var cfg := room_config()
+		if TableRules.wall_layout_reason(all, cfg) == "" and TableRules.wall_layout_reason(rest, cfg) != "":
 			return "Остальные секции потеряют крепление к стене"
 	var on := objects_on_section(e)
 	if on.is_empty():
@@ -162,9 +157,7 @@ func footprint() -> Array[PackedVector2Array]:
 			polys.append(poly)
 	var merged: Array[PackedVector2Array] = []
 	if polys.is_empty():
-		var r := _room_table_rect()
-		merged.append(PackedVector2Array([r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)]))
-		return merged
+		return merged   # XX claude-table T4b: стол пуст (убрали все секции), опор нет
 	for poly in polys:
 		var cur := poly
 		var rest: Array[PackedVector2Array] = []
@@ -248,11 +241,27 @@ static func support_name(s: int) -> String:
 			return "Ножки"
 
 
-## Почему нельзя перейти на эти опоры; пусто: можно. Кронштейны требуют стену рядом с каждой группой секций
+## Почему нельзя перейти на эти опоры; пусто: можно. Кронштейнам нужна комната со стенами. Стол, не касающийся стены,
+## переход не запрещает: его контуры без стены стоят на ножках, пока секции не придвинут к стене (support_warning)
 func support_block_reason(s: int) -> String:
-	if s == LayoutConfig.Support.WALL:
-		return TableRules.wall_layout_reason(section_rects(), room_config())
+	if s == LayoutConfig.Support.WALL and not TableRules.has_walls(room_config()):
+		return "В этой комнате нет стен"
 	return ""
+
+
+## Предупреждение по текущим опорам: что не крепится к стене (стоит на ножках) и слишком ли глубокий стол. Пусто: всё в порядке
+func support_warning() -> String:
+	if config.support != LayoutConfig.Support.WALL:
+		return ""
+	var why := TableRules.wall_layout_reason(section_rects(), room_config())
+	if why != "":
+		return "%s: эта часть стоит на ножках. Придвиньте секцию к стене" % why
+	return depth_warning()
+
+
+## Проход вокруг стола, u (ножки и рама: от стен не ближе; кронштейны: с рабочих сторон)
+func set_aisle(v: float) -> void:
+	config.aisle_min = clampf(v, 0.0, 150.0)
 
 
 ## Сменить опоры. Возвращает причину отказа или пусто. Рама держит только низкий стол (5–20 u): высота подгоняется,
@@ -276,7 +285,8 @@ func set_support(s: int) -> String:
 		_height_before_plinth = -1.0
 	config.support = s as LayoutConfig.Support
 	layout_changed.emit()
-	notice.emit("Опоры: %s, высота стола %d u" % [support_name(s).to_lower(), int(config.height)])
+	var warn := support_warning()
+	notice.emit("Опоры: %s, высота стола %d u%s" % [support_name(s).to_lower(), int(config.height), ("\n" + warn) if warn != "" else ""])
 	return ""
 
 
@@ -293,7 +303,7 @@ func placement_reason(rect: Rect2) -> String:
 			return "Пересекает другую секцию"
 		if TableTool.shares_edge(rect, r):
 			touches = true
-	if config.support == LayoutConfig.Support.WALL and not rects.is_empty():
+	if config.support == LayoutConfig.Support.WALL:   # кронштейнам и первая секция нужна стена (или стол, уже стоящий у неё)
 		if not touches and TableRules.wall_contacts(rect, cfg).is_empty():
 			return "Кронштейнам нужна стена: секция должна касаться стены или стола"
 	return ""

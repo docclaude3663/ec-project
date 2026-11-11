@@ -98,6 +98,27 @@ static func placement_reason(rect: Rect2, cfg: RoomConfig, support: int, aisle: 
 	return ""
 
 
+## Для прилипания призрака к стенам: «виртуальные секции» за каждой стеной, внутренний край которых лежит там, где край секции
+## должен остановиться. Кронштейны: вплотную к стене (кроме скоса мансарды). Ножки и рама: на расстоянии aisle от стены.
+## Так прилипание к стене и к секциям считает один и тот же код TableTool.snap_center
+static func wall_snap_rects(cfg: RoomConfig, support: int, aisle: float) -> Array[Rect2]:
+	var res: Array[Rect2] = []
+	if not has_walls(cfg):
+		return res
+	var r := interior(cfg)
+	var big := 10000.0
+	var wall_mode := support == LayoutConfig.Support.WALL
+	var g_w := 0.0 if wall_mode and mountable(cfg, WEST) else aisle
+	var g_e := 0.0 if wall_mode and mountable(cfg, EAST) else aisle
+	var g_n := 0.0 if wall_mode and mountable(cfg, NORTH) else aisle
+	var g_s := 0.0 if wall_mode and mountable(cfg, SOUTH) else aisle
+	res.append(Rect2(r.position.x + g_w - big, r.position.y - big, big, r.size.y + 2.0 * big))   # запад: конец = стена + g
+	res.append(Rect2(r.end.x - g_e, r.position.y - big, big, r.size.y + 2.0 * big))              # восток: начало = стена - g
+	res.append(Rect2(r.position.x - big, r.position.y + g_n - big, r.size.x + 2.0 * big, big))   # север
+	res.append(Rect2(r.position.x - big, r.end.y - g_s, r.size.x + 2.0 * big, big))              # юг
+	return res
+
+
 ## Компоненты связности секций по общим рёбрам: списки индексов в rects
 static func components(rects: Array[Rect2]) -> Array[PackedInt32Array]:
 	var parent: Array[int] = []

@@ -126,6 +126,26 @@ func _ready() -> void:
 	check("сейв с рамой и высотой 90: высота в пределе рамы", LYM.config.support == plinth and LYM.config.height == 20.0)
 	LYM.reset()
 	a.free()
+	check("пустой стол: секций и футпринта нет", LYM.get_sections().is_empty() and LYM.footprint().is_empty())
+	check("пустой стол: опор нет", TableSupports.parts(legs, LYM.footprint(), 50.0, th, 6.0, cfg).is_empty())
+	LYM.set_aisle(200.0)
+	check("проход не больше 150", LYM.config.aisle_min == 150.0)
+	LYM.set_aisle(-5.0)
+	check("проход не отрицательный", LYM.config.aisle_min == 0.0)
+	LYM.reset()
+	check("проход по умолчанию возвращается (reset)", LYM.config.aisle_min == LayoutConfig.new().aisle_min)
+
+	print("== 4b. Прилипание к стенам")
+	var big := Vector2(100, 100)
+	var wall_edges := TableRules.wall_snap_rects(cfg, wall, 60.0)
+	check("кронштейны: вплотную к западной стене", TableTool.snap_center(Vector2(-185, 0), big, wall_edges) == Vector2(-190, 0), str(TableTool.snap_center(Vector2(-185, 0), big, wall_edges)))
+	var leg_edges := TableRules.wall_snap_rects(cfg, legs, 60.0)
+	var sn := TableTool.snap_center(Vector2(-125, 0), big, leg_edges)
+	check("ножки: на проходе 60 от западной стены", sn == Vector2(-130, 0) and TableRules.placement_reason(Rect2(sn - big * 0.5, big), cfg, legs, 60.0) == "", str(sn))
+	var attic_edges := TableRules.wall_snap_rects(attic, wall, 60.0)
+	check("мансарда: у скоса проход 60, а не стена", TableTool.snap_center(Vector2(155, 0), big, attic_edges) == Vector2(150, 0))
+	check("стенд без стен: прилипать не к чему", TableRules.wall_snap_rects(none, wall, 60.0).is_empty())
+	check("далеко от стены без прилипания", TableTool.snap_center(Vector2(0, 0), big, wall_edges) == Vector2(0, 0))
 
 	if Global.fast_debug:
 		print("  пропуск: Global.fast_debug = true, комнату не строим")
@@ -138,7 +158,20 @@ func _ready() -> void:
 	var s1 := LYM.ensure_start_section(self)
 	await get_tree().physics_frame
 	await get_tree().physics_frame
-	check("кронштейны: стол посреди комнаты, отказ", LYM.set_support(wall) == "Часть стола не касается стены")
+	check("кронштейны принимаются и у стола посреди комнаты", LYM.set_support(wall) == "" and LYM.config.support == wall)
+	check("предупреждение: стол не касается стены", LYM.support_warning().contains("Придвиньте"), LYM.support_warning())
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var legs_fb := 0
+	var brk_fb := 0
+	for ch in rb.table.get_children():
+		if ch.name.begins_with("Leg"):
+			legs_fb += 1
+		elif ch.name.begins_with("Bracket"):
+			brk_fb += 1
+	check("без стены стол стоит на ножках", legs_fb == 4 and brk_fb == 0, "%d / %d" % [legs_fb, brk_fb])
+	check("первая секция в воздухе красная", LYM.placement_reason(Rect2(150, 0, 100, 100)) != "")
+	LYM.set_support(legs)
 	var s2 := _section(Vector2(-170, 0), Vector2(140, 100))
 	await get_tree().physics_frame
 	await get_tree().physics_frame

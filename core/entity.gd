@@ -101,7 +101,7 @@ func add_component(comp: Component):
 
 
 func kill_me():
-	# XX claude-table T1/T2: последнюю секцию и секцию с объектами на ней не убираем (ATTN_23 §23.2, §23.12 вопрос 3)
+	# XX claude-table T1/T2: секцию с объектами на ней не убираем (ATTN_23 §23.12 вопрос 3). Последнюю можно (T4b)
 	if has_comp(C_TableSection) and not has_comp(C_Ghost):
 		var why := LYM.removal_block_reason(self)
 		if why != "":

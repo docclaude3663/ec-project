@@ -156,7 +156,7 @@ func clear_scene() -> void:
 		child.queue_free()
 	# Сеть питания: напряжения в ноль, защита снята, пульты ставят ручки в ноль (ATTN_10 P5)
 	PGM.reset_state()
-	# XX claude-table T1: очищен и стол, макет без плиты не бывает
+	# XX claude-table T1: очищен и стол: новый макет со стартовой секцией (убрать все секции игрок может и сам, T4b)
 	LYM.reset()
 	LYM.ensure_start_section(root_node)
 		
@@ -278,8 +278,10 @@ func load_game(slot_name: String  ='savegame', dir: String = SAVE_DIR, style_ove
 			_n += _skipped[_p]
 		push_warning("SaveManager: пропущено объектов без сеттинга: %d (%s)" % [_n, ", ".join(_skipped.keys())])
 
-	# XX claude-table T1: сейв до подмакетника (секций нет): стартовая секция 200 x 100, как стол v1
-	LYM.ensure_start_section(root_node)
+	# XX claude-table T1: сейв до подмакетника (layout пуст): стартовая секция 200 x 100, как стол v1.
+	# Сейв нового формата с пустым столом (T4b: убрали все секции) остаётся с пустым столом
+	if _saved_game.layout.is_empty():
+		LYM.ensure_start_section(root_node)
 
 	# Источники питания: команды и защита из сейва, пульты ставят ручки (старый сейв: словарь пуст, остаются нули)
 	PGM.load_state(_saved_game.power_state)

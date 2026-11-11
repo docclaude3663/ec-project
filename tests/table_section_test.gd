@@ -45,11 +45,19 @@ func _ready() -> void:
 	check("за краем земли нет", _top(Vector2(-150, 0)) == null)
 	check("contains: внутри и снаружи", LYM.contains(0, 0) and LYM.contains(100, 50) and not LYM.contains(101, 0))
 
-	print("== 3. Последняя секция")
-	check("последнюю убирать нельзя", not LYM.can_remove_section(a))
+	print("== 3. Последняя секция (T4b: убрать можно, стол остаётся пустым)")
+	check("пустую последнюю убирать можно", LYM.removal_block_reason(a) == "")
 	a.kill_me()
 	await get_tree().physics_frame
-	check("kill_me её не убрал", is_instance_valid(a) and not a.is_queued_for_deletion() and LYM.get_sections().size() == 1)
+	await get_tree().physics_frame
+	check("kill_me её убрал", not is_instance_valid(a) or a.is_queued_for_deletion())
+	check("секций нет, футпринт пуст", LYM.get_sections().is_empty() and LYM.footprint().is_empty())
+	check("земли нет", _top(Vector2(0, 0)) == null)
+	check("table_rect по паспорту комнаты", LYM.table_rect() == Rect2(-100.0, -50.0, 200.0, 100.0), str(LYM.table_rect()))
+	a = LYM.ensure_start_section(self)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	check("стартовая секция создаётся снова", a != null and LYM.get_sections().size() == 1 and _top(Vector2(0, 0)) != null)
 
 	print("== 4. Вторая секция")
 	var setting := load("res://data/table/objects/sec_100x100.tres") as EntitySetting
@@ -64,7 +72,7 @@ func _ready() -> void:
 	check("table_rect вырос", LYM.table_rect() == Rect2(-100.0, -50.0, 300.0, 100.0), str(LYM.table_rect()))
 	var tb = _top(Vector2(150, 0))
 	check("верх второй на y = 0", tb != null and absf(tb) < 0.001, str(tb))
-	check("теперь убирать можно", LYM.can_remove_section(b))
+	check("вторую убирать можно", LYM.removal_block_reason(b) == "")
 
 	print("== 5. Запись и чтение")
 	var sec := b.get_comp(C_TableSection) as C_TableSection
