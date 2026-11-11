@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://rrllljincnpq"]
 
-[ext_resource type="Theme" path="res://ui/themes/theme_hud_dark.tres" id="1_theme"]
+[ext_resource type="Theme" uid="uid://t2vamkehlekl" path="res://ui/themes/theme_hud_dark.tres" id="1_theme"]
 [ext_resource type="PackedScene" path="res://ui/templates/dc_indicators_template.tscn" id="2_dci"]
 
 [node name="HudLayoutTemplate" type="Control" unique_id=817729144]
@@ -236,117 +236,122 @@ text = "Toast"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="CategoriesBlock" type="PanelContainer" parent="HUD" unique_id=1948173981]
+[node name="ToolDock" type="HBoxContainer" parent="HUD" unique_id=1076262265]
 layout_mode = 1
-anchors_preset = 2
+anchors_preset = 12
 anchor_top = 1.0
+anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -128.0
-offset_right = 316.0
+offset_top = -136.0
+grow_horizontal = 2
 grow_vertical = 0
+theme_override_constants/separation = 4
 
-[node name="CatMargin" type="MarginContainer" parent="HUD/CategoriesBlock" unique_id=761171352]
+[node name="CategoriesBlock" type="PanelContainer" parent="HUD/ToolDock" unique_id=1948173981]
+layout_mode = 2
+
+[node name="CatMargin" type="MarginContainer" parent="HUD/ToolDock/CategoriesBlock" unique_id=761171352]
 layout_mode = 2
 theme_override_constants/margin_left = 3
 theme_override_constants/margin_top = 3
 theme_override_constants/margin_right = 3
 theme_override_constants/margin_bottom = 3
 
-[node name="CatGrid" type="GridContainer" parent="HUD/CategoriesBlock/CatMargin" unique_id=140331347]
+[node name="CatGrid" type="GridContainer" parent="HUD/ToolDock/CategoriesBlock/CatMargin" unique_id=140331347]
 layout_mode = 2
 theme_override_constants/h_separation = 4
 theme_override_constants/v_separation = 4
-columns = 3
+columns = 2
 
-[node name="Category1" type="Button" parent="HUD/CategoriesBlock/CatMargin/CatGrid" unique_id=1043225590]
-custom_minimum_size = Vector2(100, 58)
+[node name="Category1" type="Button" parent="HUD/ToolDock/CategoriesBlock/CatMargin/CatGrid" unique_id=1043225590]
+custom_minimum_size = Vector2(0, 50)
+custom_maximum_size = Vector2(40, 40)
 layout_mode = 2
 text = "Кат. 1"
 
-[node name="Category2" type="Button" parent="HUD/CategoriesBlock/CatMargin/CatGrid" unique_id=369331806]
-custom_minimum_size = Vector2(100, 58)
+[node name="Category2" type="Button" parent="HUD/ToolDock/CategoriesBlock/CatMargin/CatGrid" unique_id=369331806]
+custom_minimum_size = Vector2(0, 50)
+custom_maximum_size = Vector2(40, 40)
 layout_mode = 2
 text = "Кат. 2"
 
-[node name="Category3" type="Button" parent="HUD/CategoriesBlock/CatMargin/CatGrid" unique_id=1907035729]
-custom_minimum_size = Vector2(100, 58)
+[node name="Category3" type="Button" parent="HUD/ToolDock/CategoriesBlock/CatMargin/CatGrid" unique_id=1907035729]
+custom_minimum_size = Vector2(0, 50)
+custom_maximum_size = Vector2(40, 40)
 layout_mode = 2
 text = "Кат. 3"
 
-[node name="Category4" type="Button" parent="HUD/CategoriesBlock/CatMargin/CatGrid" unique_id=526099270]
-custom_minimum_size = Vector2(100, 58)
+[node name="Category4" type="Button" parent="HUD/ToolDock/CategoriesBlock/CatMargin/CatGrid" unique_id=526099270]
+custom_minimum_size = Vector2(0, 50)
+custom_maximum_size = Vector2(40, 40)
 layout_mode = 2
 text = "Кат. 4"
 
-[node name="Category5" type="Button" parent="HUD/CategoriesBlock/CatMargin/CatGrid" unique_id=1226043305]
-custom_minimum_size = Vector2(100, 58)
+[node name="Category5" type="Button" parent="HUD/ToolDock/CategoriesBlock/CatMargin/CatGrid" unique_id=1226043305]
+custom_minimum_size = Vector2(0, 50)
+custom_maximum_size = Vector2(40, 40)
 layout_mode = 2
 text = "Кат. 5"
 
-[node name="ActionsStrip" type="HBoxContainer" parent="HUD/CategoriesBlock/CatMargin/CatGrid" unique_id=1433388521]
-custom_minimum_size = Vector2(100, 58)
+[node name="ActionsStrip" type="HBoxContainer" parent="HUD/ToolDock/CategoriesBlock/CatMargin/CatGrid" unique_id=1433388521]
+custom_minimum_size = Vector2(0, 50)
+custom_maximum_size = Vector2(40, 40)
 layout_mode = 2
 
-[node name="DuplicateButton" type="Button" parent="HUD/CategoriesBlock/CatMargin/CatGrid/ActionsStrip" unique_id=60618859]
+[node name="DuplicateButton" type="Button" parent="HUD/ToolDock/CategoriesBlock/CatMargin/CatGrid/ActionsStrip" unique_id=60618859]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 text = "V"
 
-[node name="ToolDock" type="VBoxContainer" parent="HUD" unique_id=50470384]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 324.0
-offset_top = -164.0
-offset_right = -380.0
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_constants/separation = 4
-
-[node name="TagsRow" type="HBoxContainer" parent="HUD/ToolDock" unique_id=1911786083]
-custom_minimum_size = Vector2(0, 32)
+[node name="TagsRow" type="GridContainer" parent="HUD/ToolDock" unique_id=918729208]
+custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
-theme_override_constants/separation = 4
+columns = 2
 
 [node name="Tag1" type="Button" parent="HUD/ToolDock/TagsRow" unique_id=1675730049]
-custom_minimum_size = Vector2(88, 32)
+custom_minimum_size = Vector2(40, 40)
+custom_maximum_size = Vector2(40, -1)
 layout_mode = 2
 text = "Тег 1"
 
 [node name="Tag2" type="Button" parent="HUD/ToolDock/TagsRow" unique_id=433311787]
-custom_minimum_size = Vector2(88, 32)
+custom_minimum_size = Vector2(40, 40)
+custom_maximum_size = Vector2(40, -1)
 layout_mode = 2
 text = "Тег 2"
 
 [node name="Tag3" type="Button" parent="HUD/ToolDock/TagsRow" unique_id=1289824313]
-custom_minimum_size = Vector2(88, 32)
+custom_minimum_size = Vector2(40, 40)
+custom_maximum_size = Vector2(40, -1)
 layout_mode = 2
 text = "Тег 3"
 
 [node name="Tag4" type="Button" parent="HUD/ToolDock/TagsRow" unique_id=327056334]
-custom_minimum_size = Vector2(88, 32)
+custom_minimum_size = Vector2(40, 40)
+custom_maximum_size = Vector2(40, -1)
 layout_mode = 2
 text = "Тег 4"
 
 [node name="Tag5" type="Button" parent="HUD/ToolDock/TagsRow" unique_id=733413187]
-custom_minimum_size = Vector2(88, 32)
+custom_minimum_size = Vector2(40, 40)
+custom_maximum_size = Vector2(40, -1)
 layout_mode = 2
 text = "Тег 5"
 
 [node name="Tag6" type="Button" parent="HUD/ToolDock/TagsRow" unique_id=1130534326]
-custom_minimum_size = Vector2(88, 32)
+custom_minimum_size = Vector2(40, 40)
+custom_maximum_size = Vector2(40, -1)
 layout_mode = 2
 text = "Тег 6"
 
-[node name="ObjectsRow" type="PanelContainer" parent="HUD/ToolDock" unique_id=1995547974]
-custom_minimum_size = Vector2(0, 128)
+[node name="ObjectsRow" type="HBoxContainer" parent="HUD/ToolDock" unique_id=1568156480]
 layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="ObjectsMargin" type="MarginContainer" parent="HUD/ToolDock/ObjectsRow" unique_id=969343217]
 layout_mode = 2
+size_flags_horizontal = 19
 theme_override_constants/margin_left = 8
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 8
@@ -354,6 +359,7 @@ theme_override_constants/margin_bottom = 4
 
 [node name="ObjectsScroll" type="ScrollContainer" parent="HUD/ToolDock/ObjectsRow/ObjectsMargin" unique_id=2043259186]
 layout_mode = 2
+size_flags_horizontal = 17
 vertical_scroll_mode = 0
 
 [node name="ObjectsBox" type="HBoxContainer" parent="HUD/ToolDock/ObjectsRow/ObjectsMargin/ObjectsScroll" unique_id=982455332]
@@ -452,7 +458,7 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = -372.0
-offset_top = -548.0
+offset_top = -697.0
 offset_right = -12.0
 grow_horizontal = 0
 grow_vertical = 0
