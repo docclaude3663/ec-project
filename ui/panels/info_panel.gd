@@ -40,6 +40,7 @@ func _ready() -> void:
 	_add_tab(InfoTransformTab.new(), tab_container.get_node("TransformTab"))
 	_add_tab(InfoMechTab.new())
 	_add_tab(InfoTerrainTab.new())
+	_add_tab(InfoTableTab.new())   # XX claude-table T4: опоры и высота стола
 	_add_tab(InfoSwitchTab.new())
 	_add_tab(InfoDevicesTab.new())   # D4: 3D-пульт и провода
 	_add_tab(InfoSwitchboxTab.new())   # D5: коммутаторы и задачи

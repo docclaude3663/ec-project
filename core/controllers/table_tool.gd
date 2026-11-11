@@ -7,8 +7,11 @@ class_name TableTool extends Node
 ## Призрак это настоящая секция с C_Ghost (контуры как у объектов Build: зелёный можно, красный нельзя).
 ## Положение: курсор на плоскости стола (y = 0, за краем стола земли нет, поэтому не лучом по ground), левый верхний угол
 ## на сетке 1 u. Рядом с существующей секцией угол прилипает: ребро к ребру (контакт), а вдоль ребра выравнивается по краю.
-## Красный призрак (причина над курсором): пересекает другую секцию, не касается стола общим ребром, выходит за комнату
+## Красный призрак (причина над курсором): пересекает другую секцию, выходит за комнату (правила опор ниже)
 ## или в проход aisle_min, мешает мебель или стена (слой room).
+## T4+T5: вид опор LayoutConfig.support меняет правила. Ножки и рама: секцию можно поставить отдельно на пол (кликом по полу),
+## от стен проход aisle_min. Кронштейны: секция касается стены (окно и дверь нельзя закрывать) или стола; дальше 60 u от стены
+## только жёлтое предупреждение «нужны опоры». Правила комнаты считает TableRules, остальное LYM.placement_reason.
 ## Ввод: ЛКМ поставить, Q/E повернуть на 90°, R/F высота стола ±5 (Shift и PgUp/PgDn ±25), Ctrl+Z убрать последнюю поставленную,
 ## ПКМ выйти в SelectTool. Секции прямоугольные; снап считает по ограничивающим прямоугольникам.
 
@@ -34,6 +37,7 @@ var _cursor := Vector2.ZERO
 var _has_cursor := false
 var _center := Vector2.ZERO
 var _reason := ""
+var _warn := ""
 var _rmb_pos := Vector2.ZERO
 var _msg := ""
 var _msg_t := 0.0
@@ -83,6 +87,12 @@ func process_tick(delta: float) -> void:
 			var p: Vector3 = hit["position"]
 			_cursor = Vector2(p.x, p.z)
 			has = true
+			# XX claude-table T4: далеко от стола ножки и рама ставятся кликом по полу (луч до плоскости пола)
+			if LYM.config.support != LayoutConfig.Support.WALL and not _near_table(_cursor):
+				var fh := controller.get_mouse_plane_hit(-LYM.config.height)
+				if not fh.is_empty():
+					var fp: Vector3 = fh["position"]
+					_cursor = Vector2(fp.x, fp.z)
 	_has_cursor = has
 	ghost.visible = has
 	if has:
@@ -115,6 +125,15 @@ func handle_input(event: InputEvent) -> void:
 		LYM.step_height(n)
 
 
+## Курсор (на плоскости верха стола) у существующего стола: рядом работает прилипание ребро к ребру
+func _near_table(cur: Vector2) -> bool:
+	var reach := SNAP_DIST + maxf(_world_size().x, _world_size().y) * 0.5
+	for r in TableTool.existing_rects():
+		if r.grow(reach).has_point(cur):
+			return true
+	return false
+
+
 func _apply_size() -> void:
 	if not is_instance_valid(ghost):
 		return
@@ -133,7 +152,9 @@ func _update_ghost() -> void:
 	var sz := _world_size()
 	_center = _snap_center(_cursor, sz)
 	ghost.global_position = Vector3(_center.x, 0.0, _center.y)
-	_reason = _check(Rect2(_center - sz * 0.5, sz))
+	var rect := Rect2(_center - sz * 0.5, sz)
+	_reason = _check(rect)
+	_warn = LYM.depth_warning(rect) if _reason == "" else ""
 	var blocked := ghost.has_comp(C_Blocked)
 	if _reason != "" and not blocked:
 		ghost.add_component(C_Blocked.new())
@@ -208,22 +229,11 @@ static func shares_edge(a: Rect2, b: Rect2) -> bool:
 	return false
 
 
-## Почему здесь нельзя ставить; пусто: можно
+## Почему здесь нельзя ставить; пусто: можно. Комната, опоры и соседи: LYM.placement_reason, затем мебель и стены (слой room)
 func _check(rect: Rect2) -> String:
-	var limits := LYM.placement_limits()
-	if limits.size == Vector2.ZERO:
-		return "Комната слишком мала для стола"
-	if not limits.grow(EPS).encloses(rect):
-		return "Выходит за пределы комнаты (проход %d u)" % int(LYM.config.aisle_min)
-	var rects := TableTool.existing_rects()
-	var touches := rects.is_empty()
-	for r in rects:
-		if rect.grow(-EPS).intersects(r):
-			return "Пересекает другую секцию"
-		if TableTool.shares_edge(rect, r):
-			touches = true
-	if not touches:
-		return "Секция должна касаться стола общим ребром"
+	var why := LYM.placement_reason(rect)
+	if why != "":
+		return why
 	if _hits_room(rect):
 		return "Мешает мебель или стена"
 	return ""
@@ -308,6 +318,9 @@ func _update_note() -> void:
 	elif _reason != "":
 		lines.append(_reason)
 		col = COL_BAD
+	elif _warn != "":
+		lines.append(_warn)
+		col = Color(1.0, 0.85, 0.3)
 	_label.text = "\n".join(lines)
 	_label.modulate = col
 	_label.position = Vector3(_center.x, 14.0, _center.y)

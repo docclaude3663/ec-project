@@ -478,15 +478,18 @@ func _build_supports() -> void:
 	for c in table.get_children():
 		table.remove_child(c)
 		c.queue_free()
-	var th := LYM.plate_thickness()
-	var floor_y := -LYM.config.height
-	var leg_h := -floor_y - th
-	if leg_h <= 0.0:
-		return
-	var leg := config.table_leg
-	for p in TableSupports.leg_positions(LYM.footprint(), leg):
-		_box(table, "Leg", Vector3(leg, leg_h, leg), Vector3(p.x, floor_y + leg_h * 0.5, p.y),
-				COL_TABLE_LEG, Global.active_layers(['room']), 1, true)
+	# XX claude-table T4: вид опор из LayoutConfig (ножки, рама, кронштейны), детали строит план TableSupports.parts
+	var room_layer := Global.active_layers(['room'])
+	for part in TableSupports.parts(int(LYM.config.support), LYM.footprint(), LYM.config.height, LYM.plate_thickness(),
+			config.table_leg, config):
+		var mi := _box(table, part["name"], part["size"], part["center"], COL_TABLE_LEG, room_layer, 1, true)
+		if mi != null:
+			var b := part["basis"] as Basis
+			if not b.is_equal_approx(Basis.IDENTITY):
+				var body := mi.get_parent() as Node3D
+				var tf := body.transform
+				tf.basis = b
+				body.transform = tf
 
 
 # ==========================================

@@ -22,13 +22,13 @@ func _ready() -> void:
 	print("== 1. LayoutConfig: состояние и пределы")
 	var c := LayoutConfig.new()
 	check("версия в состоянии", c.get_state().get("version") == LayoutConfig.VERSION)
-	c.support = LayoutConfig.Support.PLINTH
+	c.support = LayoutConfig.Support.WALL
 	c.height = 80.0
 	c.style = &"plywood"
 	c.aisle_min = 75.0
 	var back := LayoutConfig.new()
 	back.set_state(c.get_state())
-	check("круг записи и чтения", back.support == LayoutConfig.Support.PLINTH and back.height == 80.0
+	check("круг записи и чтения", back.support == LayoutConfig.Support.WALL and back.height == 80.0
 			and back.style == &"plywood" and back.aisle_min == 75.0, str(back.get_state()))
 	back.set_state({"height": 500.0, "support": 9, "aisle_min": -5.0})
 	check("высота не больше предела", back.height == LayoutConfig.HEIGHT_MAX)

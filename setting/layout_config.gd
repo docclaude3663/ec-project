@@ -14,6 +14,9 @@ enum Support { LEGS, PLINTH, WALL }
 const VERSION := 1
 const HEIGHT_MIN := 5.0
 const HEIGHT_MAX := 130.0
+## XX claude-table T4. Рама на полу низкая: высота стола 5–20 u, по умолчанию 10
+const PLINTH_HEIGHT_MAX := 20.0
+const PLINTH_HEIGHT_DEFAULT := 10.0
 
 ## Опоры: ножки, низкая рама на полу, кронштейны к стене (T3 и далее)
 @export var support: Support = Support.LEGS
@@ -23,6 +26,11 @@ const HEIGHT_MAX := 130.0
 @export var style: StringName = &"chipboard"
 ## Проход вокруг стола с рабочих сторон, u (лимит площади в T2)
 @export var aisle_min := 60.0
+
+
+## Допустимая высота верха стола для вида опор: x = наименьшая, y = наибольшая. Ножки и кронштейны 5–130, рама 5–20
+static func height_range(s: Support) -> Vector2:
+	return Vector2(HEIGHT_MIN, PLINTH_HEIGHT_MAX if s == Support.PLINTH else HEIGHT_MAX)
 
 
 ## Состояние для сейва. Всегда непустой (есть version): по нему загрузка отличает новый сейв от старого
@@ -40,6 +48,7 @@ func get_state() -> Dictionary:
 func set_state(d: Dictionary) -> void:
 	var def := LayoutConfig.new()
 	support = clampi(int(d.get("support", int(def.support))), 0, Support.size() - 1) as Support
-	height = clampf(float(d.get("height", def.height)), HEIGHT_MIN, HEIGHT_MAX)
+	var range_h := height_range(support)
+	height = clampf(float(d.get("height", def.height)), range_h.x, range_h.y)
 	style = StringName(String(d.get("style", String(def.style))))
 	aisle_min = maxf(0.0, float(d.get("aisle_min", def.aisle_min)))

@@ -26,6 +26,10 @@ const START_SECTION := "res://data/table/objects/sec_200x100.tres"
 ## Паспорт текущего макета. Заменяется целиком только через set_state / reset
 var config := LayoutConfig.new()
 
+## XX claude-table T4. Высота стола до входа в режим рамы и высота, которую поставила рама (чтобы вернуть при выходе)
+var _height_before_plinth := -1.0
+var _plinth_set_height := -1.0
+
 
 ## Настоящие секции стола: без призраков и удаляемых
 func get_sections() -> Array[Entity]:
@@ -75,6 +79,16 @@ func can_remove_section(e: Entity) -> bool:
 func removal_block_reason(e: Entity) -> String:
 	if not can_remove_section(e):
 		return "Последнюю секцию убрать нельзя"
+	if config.support == LayoutConfig.Support.WALL:
+		# XX claude-table T4: оставшиеся секции должны держаться за стену
+		var rest: Array[Rect2] = []
+		for o in get_sections():
+			if o != e:
+				var poly := section_polygon(o)
+				if poly.size() >= 3:
+					rest.append(C_Contour.bounds_of(poly))
+		if TableRules.wall_layout_reason(rest, room_config()) != "":
+			return "Остальные секции потеряют крепление к стене"
 	var on := objects_on_section(e)
 	if on.is_empty():
 		return ""
@@ -205,6 +219,96 @@ func placement_limits() -> Rect2:
 	return Rect2(-half, half * 2.0)
 
 
+## XX claude-table T4. Паспорт комнаты, в которой стоит стол; null, если комнаты нет (быстрая загрузка)
+func room_config() -> RoomConfig:
+	var rb := get_tree().get_first_node_in_group(&"room_root") if is_inside_tree() else null
+	if rb != null and rb.get("config") is RoomConfig:
+		return rb.get("config") as RoomConfig
+	return null
+
+
+## Ограничивающие прямоугольники настоящих секций
+func section_rects() -> Array[Rect2]:
+	var res: Array[Rect2] = []
+	for e in get_sections():
+		var poly := section_polygon(e)
+		if poly.size() >= 3:
+			res.append(C_Contour.bounds_of(poly))
+	return res
+
+
+## Названия опор для игрока
+static func support_name(s: int) -> String:
+	match s:
+		LayoutConfig.Support.PLINTH:
+			return "Рама на полу"
+		LayoutConfig.Support.WALL:
+			return "Кронштейны к стене"
+		_:
+			return "Ножки"
+
+
+## Почему нельзя перейти на эти опоры; пусто: можно. Кронштейны требуют стену рядом с каждой группой секций
+func support_block_reason(s: int) -> String:
+	if s == LayoutConfig.Support.WALL:
+		return TableRules.wall_layout_reason(section_rects(), room_config())
+	return ""
+
+
+## Сменить опоры. Возвращает причину отказа или пусто. Рама держит только низкий стол (5–20 u): высота подгоняется,
+## при возврате на ножки прежняя высота возвращается, если её не меняли
+func set_support(s: int) -> String:
+	if s == int(config.support):
+		return ""
+	var why := support_block_reason(s)
+	if why != "":
+		notice.emit(why)
+		return why
+	var prev := config.support
+	if s == LayoutConfig.Support.PLINTH:
+		_height_before_plinth = config.height
+		var r := LayoutConfig.height_range(LayoutConfig.Support.PLINTH)
+		config.height = LayoutConfig.PLINTH_HEIGHT_DEFAULT if config.height > r.y else clampf(config.height, r.x, r.y)
+		_plinth_set_height = config.height
+	elif prev == LayoutConfig.Support.PLINTH:
+		if _height_before_plinth > 0.0 and is_equal_approx(config.height, _plinth_set_height):
+			config.height = _height_before_plinth
+		_height_before_plinth = -1.0
+	config.support = s as LayoutConfig.Support
+	layout_changed.emit()
+	notice.emit("Опоры: %s, высота стола %d u" % [support_name(s).to_lower(), int(config.height)])
+	return ""
+
+
+## Можно ли поставить секцию rect по правилам комнаты, опор и соседей; пусто: можно
+func placement_reason(rect: Rect2) -> String:
+	var cfg := room_config()
+	var why := TableRules.placement_reason(rect, cfg, int(config.support), config.aisle_min)
+	if why != "":
+		return why
+	var rects := section_rects()
+	var touches := false
+	for r in rects:
+		if rect.grow(-TableRules.EPS).intersects(r):
+			return "Пересекает другую секцию"
+		if TableTool.shares_edge(rect, r):
+			touches = true
+	if config.support == LayoutConfig.Support.WALL and not rects.is_empty():
+		if not touches and TableRules.wall_contacts(rect, cfg).is_empty():
+			return "Кронштейнам нужна стена: секция должна касаться стены или стола"
+	return ""
+
+
+## Мягкое предупреждение по стоящим секциям и новой (extra): глубина от стены при кронштейнах. Пусто: нет
+func depth_warning(extra: Rect2 = Rect2()) -> String:
+	if config.support != LayoutConfig.Support.WALL:
+		return ""
+	var rects := section_rects()
+	if extra.size != Vector2.ZERO:
+		rects.append(extra)
+	return TableRules.wall_depth_warning(rects, room_config())
+
+
 ## Шаг высоты стола клавишами (режим «Секции»): n шагов по HEIGHT_STEP, игроку сообщается итог
 func step_height(n: int) -> void:
 	var before := config.height
@@ -215,7 +319,8 @@ func step_height(n: int) -> void:
 
 ## Высота стола: из LayoutConfig, в пределах (T3). Пересборка пола, ножек и границ камеры идёт по layout_changed
 func set_height(h: float) -> void:
-	h = clampf(h, LayoutConfig.HEIGHT_MIN, LayoutConfig.HEIGHT_MAX)
+	var r := LayoutConfig.height_range(config.support)   # XX claude-table T4: у рамы свой предел
+	h = clampf(h, r.x, r.y)
 	if is_equal_approx(h, config.height):
 		return
 	config.height = h
@@ -281,6 +386,8 @@ func get_state() -> Dictionary:
 
 ## Загрузка сейва. Пустой словарь (сейв до подмакетника): значения по умолчанию, стол как в v1
 func set_state(d: Dictionary) -> void:
+	_height_before_plinth = -1.0
+	_plinth_set_height = -1.0
 	config = LayoutConfig.new()
 	if not d.is_empty():
 		config.set_state(d)
