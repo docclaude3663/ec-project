@@ -147,6 +147,14 @@ static func _probe_points(e: Entity) -> Array[Vector2]:
 	return pts
 
 
+# XX claude-table T4c: пустой стол
+const EMPTY_NOTE := "Нет ни одной секции подмакетника: поставьте секцию в режиме «Секции», пока без неё ничего ставить нельзя"
+
+## Есть ли стол, на котором можно строить: хотя бы одна секция (в fast_debug стол из паспорта комнаты, секций нет)
+func has_table() -> bool:
+	return Global.fast_debug or not get_sections().is_empty()
+
+
 ## Объединение плит: внешние контуры (дыры не учитываем). Касающиеся секции сливаются в один контур, разрозненные остаются отдельными.
 ## Секций нет: стол v1 одним прямоугольником
 func footprint() -> Array[PackedVector2Array]:

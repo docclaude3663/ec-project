@@ -133,6 +133,9 @@ func duplicate_last_object() -> void:
 		return
 	if active_tool != select_tool and active_tool != build_tool:
 		return
+	if not LYM.has_table():   # XX claude-table T4c
+		LYM.notice.emit(LYM.EMPTY_NOTE)
+		return
 	# Выбран объект: дублируем его (копия на курсоре), иначе последний поставленный
 	var sel := selected_for_duplicate()
 	if sel != null:
@@ -172,6 +175,12 @@ var consist_drag: Dictionary = {}
 func select_build_object(setting: EntitySetting, variant: Dictionary = {}) -> void:
 	if setting == null :
 		# Очищаем селекта в UI если null
+		build_selection_cleared.emit()
+		return
+
+	# XX claude-table T4c: без секций стола строить нечего, разрешены только пресеты секций
+	if setting.category != &"table" and not LYM.has_table():
+		LYM.notice.emit(LYM.EMPTY_NOTE)
 		build_selection_cleared.emit()
 		return
 

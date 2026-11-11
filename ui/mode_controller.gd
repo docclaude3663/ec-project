@@ -101,6 +101,10 @@ func on_mode_selected(new_mode: StringName) -> void:
 	
 	if new_mode == current_m:	return
 
+	# XX claude-table T4c: выход из «Секций» при пустом столе. Режим меняется, но игрока предупреждаем
+	if current_m == &"sections" and not LYM.has_table():
+		LYM.notice.emit(LYM.EMPTY_NOTE)
+
 	# Выключаем панель категорий текущего режима и сбрасываем его выбор
 	_hide_mode_ui(current_m)
 	
