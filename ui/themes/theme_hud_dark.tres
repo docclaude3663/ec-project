@@ -277,6 +277,22 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
+[sub_resource type="StyleBoxFlat" id="panel_warn"]
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 8.0
+bg_color = Color(1, 0.8353, 0.3098, 0.18)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.8353, 0.3098, 0.6)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
 [resource]
 default_font = ExtResource("1_font")
 default_font_size = 15
@@ -368,3 +384,9 @@ HSeparator/constants/separation = 12
 HSeparator/styles/separator = SubResource("sep_h")
 TooltipPanel/styles/panel = SubResource("tip_panel")
 TooltipLabel/colors/font_color = Color(0.902, 0.902, 0.902, 1)
+LabelOnAccent/base_type = &"Label"
+LabelOnAccent/colors/font_color = Color(1, 1, 1, 1)
+LabelOnAccentDim/base_type = &"Label"
+LabelOnAccentDim/colors/font_color = Color(1, 1, 1, 0.75)
+PanelWarn/base_type = &"PanelContainer"
+PanelWarn/styles/panel = SubResource("panel_warn")

@@ -236,6 +236,7 @@ theme_type_variation = &"PanelContainerHeader"
 
 [node name="InfoTitle" type="Label" parent="HUD/RightColumn/InfoPanel/InfoBox/InfoHeader"]
 layout_mode = 2
+theme_type_variation = &"LabelOnAccent"
 text = "InfoPanel"
 vertical_alignment = 1
 
@@ -273,6 +274,7 @@ theme_override_constants/separation = 8
 
 [node name="ModeLabel" type="Label" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow"]
 layout_mode = 2
+theme_type_variation = &"LabelOnAccent"
 text = "Build"
 vertical_alignment = 1
 
@@ -281,6 +283,7 @@ layout_mode = 2
 
 [node name="CategoryLabel" type="Label" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow"]
 layout_mode = 2
+theme_type_variation = &"LabelOnAccent"
 text = "Траки"
 vertical_alignment = 1
 
@@ -289,6 +292,7 @@ layout_mode = 2
 
 [node name="TagLabel" type="Label" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow"]
 layout_mode = 2
+theme_type_variation = &"LabelOnAccent"
 text = "Прямые"
 vertical_alignment = 1
 
@@ -297,7 +301,7 @@ layout_mode = 2
 
 [node name="CountLabel" type="Label" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow"]
 layout_mode = 2
-theme_type_variation = &"LabelDim"
+theme_type_variation = &"LabelOnAccentDim"
 text = "12 объектов"
 vertical_alignment = 1
 
@@ -831,6 +835,7 @@ theme_type_variation = &"PanelContainerHeader"
 
 [node name="SideTitle" type="Label" parent="HUD/SideDock/SideBox/SideHeader"]
 layout_mode = 2
+theme_type_variation = &"LabelOnAccent"
 text = "SideDock"
 vertical_alignment = 1
 

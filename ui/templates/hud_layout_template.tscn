@@ -487,6 +487,7 @@ layout_mode = 2
 theme_type_variation = &"PanelContainerHeader"
 
 [node name="InfoTitle" type="Label" parent="HUD/RightColumn/InfoPanel/InfoBox/InfoHeader" unique_id=814748645]
+theme_type_variation = &"LabelOnAccent"
 layout_mode = 2
 text = "InfoPanel"
 vertical_alignment = 1
@@ -512,6 +513,7 @@ layout_mode = 2
 theme_type_variation = &"PanelContainerHeader"
 
 [node name="SideTitle" type="Label" parent="HUD/SideDock/SideBox/SideHeader" unique_id=1942713343]
+theme_type_variation = &"LabelOnAccent"
 layout_mode = 2
 text = "SideDock"
 vertical_alignment = 1
