@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://dyxctuy7elbsq"
-path="res://.godot/imported/track239n.glb-b1fa1c436a8b776d33d386004fecbdbf.scn"
+uid="uid://bxrfg6qcm3h28"
+path="res://.godot/imported/wagon_coal_01.glb-7b8ce5f48f2ef96332d57433b7d1e2b6.scn"
 
 [deps]
 
-source_file="res://data/import/track239n.glb"
-dest_files=["res://.godot/imported/track239n.glb-b1fa1c436a8b776d33d386004fecbdbf.scn"]
+source_file="res://data/trains/models/wagon_coal_01.glb"
+dest_files=["res://.godot/imported/wagon_coal_01.glb-7b8ce5f48f2ef96332d57433b7d1e2b6.scn"]
 
 [params]
 
@@ -20,7 +20,7 @@ mesh_library/use_node_names_as_mesh_names=false
 mesh_library/create_categories_from_hierarchy=false
 array_mesh/deduplicate_surfaces=true
 nodes/apply_root_scale=true
-nodes/root_scale=10.0
+nodes/root_scale=1.0
 nodes/import_as_skeleton_bones=false
 nodes/use_name_suffixes=true
 nodes/use_node_type_suffixes=true

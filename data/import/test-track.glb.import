@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://bsgspn528gyqu"
-path="res://.godot/imported/28334-Materialwagen_GLB.glb-29de21cf440a55ff6f00d6510310b97c.scn"
+uid="uid://dpw4xfmtoxbjv"
+path="res://.godot/imported/test-track.glb-cb220f53f4de73f03fbb4a22811ef80a.scn"
 
 [deps]
 
-source_file="res://data/import/28334-Materialwagen_GLB.glb"
-dest_files=["res://.godot/imported/28334-Materialwagen_GLB.glb-29de21cf440a55ff6f00d6510310b97c.scn"]
+source_file="res://data/import/test-track.glb"
+dest_files=["res://.godot/imported/test-track.glb-cb220f53f4de73f03fbb4a22811ef80a.scn"]
 
 [params]
 
