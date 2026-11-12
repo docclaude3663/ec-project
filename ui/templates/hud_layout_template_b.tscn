@@ -261,6 +261,7 @@ layout_mode = 2
 theme_override_constants/separation = 0
 
 [node name="HeadBar" type="PanelContainer" parent="HUD/ToolDock/DockBox" unique_id=1803435502]
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 theme_type_variation = &"PanelContainerHeader"
 
@@ -306,6 +307,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="OtherActionsButton" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow" unique_id=530353126]
+theme_type_variation = &"ButtonSmall"
 custom_minimum_size = Vector2(36, 24)
 layout_mode = 2
 text = "…"
@@ -315,31 +317,37 @@ layout_mode = 2
 theme_override_constants/separation = 4
 
 [node name="HeadTag1" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=1362868325]
+theme_type_variation = &"ButtonSmall"
 custom_minimum_size = Vector2(36, 24)
 layout_mode = 2
 text = "Т1"
 
 [node name="HeadTag2" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=888740276]
+theme_type_variation = &"ButtonSmall"
 custom_minimum_size = Vector2(36, 24)
 layout_mode = 2
 text = "Т2"
 
 [node name="HeadTag3" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=1631295298]
+theme_type_variation = &"ButtonSmall"
 custom_minimum_size = Vector2(36, 24)
 layout_mode = 2
 text = "Т3"
 
 [node name="HeadTag4" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=124039702]
+theme_type_variation = &"ButtonSmall"
 custom_minimum_size = Vector2(36, 24)
 layout_mode = 2
 text = "Т4"
 
 [node name="HeadTag5" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=1564302283]
+theme_type_variation = &"ButtonSmall"
 custom_minimum_size = Vector2(36, 24)
 layout_mode = 2
 text = "Т5"
 
 [node name="HeadTag6" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=2002620664]
+theme_type_variation = &"ButtonSmall"
 custom_minimum_size = Vector2(36, 24)
 layout_mode = 2
 text = "Т6"
@@ -348,6 +356,7 @@ text = "Т6"
 layout_mode = 2
 
 [node name="DuplicateButton" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/ActionsStrip" unique_id=1383708415]
+theme_type_variation = &"ButtonSmall"
 custom_minimum_size = Vector2(36, 24)
 layout_mode = 2
 text = "V"
@@ -483,84 +492,84 @@ layout_mode = 2
 theme_override_constants/separation = 4
 
 [node name="Object1" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollH/ObjectsBox" unique_id=944401179]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 1
 сводка"
 
 [node name="Object2" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollH/ObjectsBox" unique_id=975049537]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 2
 сводка"
 
 [node name="Object3" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollH/ObjectsBox" unique_id=1091501337]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 3
 сводка"
 
 [node name="Object4" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollH/ObjectsBox" unique_id=436144354]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 4
 сводка"
 
 [node name="Object5" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollH/ObjectsBox" unique_id=280250181]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 5
 сводка"
 
 [node name="Object6" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollH/ObjectsBox" unique_id=1911506971]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 6
 сводка"
 
 [node name="Object7" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollH/ObjectsBox" unique_id=1954118440]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 7
 сводка"
 
 [node name="Object8" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollH/ObjectsBox" unique_id=403675030]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 8
 сводка"
 
 [node name="Object9" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollH/ObjectsBox" unique_id=1321151853]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 9
 сводка"
 
 [node name="Object10" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollH/ObjectsBox" unique_id=261851699]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 10
 сводка"
 
 [node name="Object11" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollH/ObjectsBox" unique_id=395112354]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 11
 сводка"
 
 [node name="Object12" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollH/ObjectsBox" unique_id=1233737601]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 12
@@ -578,140 +587,140 @@ theme_override_constants/h_separation = 4
 theme_override_constants/v_separation = 4
 
 [node name="FlowObject1" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=589540891]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 1
 сводка"
 
 [node name="FlowObject2" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=157907477]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 2
 сводка"
 
 [node name="FlowObject3" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=123076951]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 3
 сводка"
 
 [node name="FlowObject4" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=1416844491]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 4
 сводка"
 
 [node name="FlowObject5" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=953065178]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 5
 сводка"
 
 [node name="FlowObject6" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=758591464]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 6
 сводка"
 
 [node name="FlowObject7" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=751297990]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 7
 сводка"
 
 [node name="FlowObject8" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=389270930]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 8
 сводка"
 
 [node name="FlowObject9" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=1608503087]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 9
 сводка"
 
 [node name="FlowObject10" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=312453684]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 10
 сводка"
 
 [node name="FlowObject11" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=768594480]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 11
 сводка"
 
 [node name="FlowObject12" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=63010386]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 12
 сводка"
 
 [node name="FlowObject13" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=998399243]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 13
 сводка"
 
 [node name="FlowObject14" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=565053313]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 14
 сводка"
 
 [node name="FlowObject15" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=829738464]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 15
 сводка"
 
 [node name="FlowObject16" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=1108502878]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 16
 сводка"
 
 [node name="FlowObject17" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=498565728]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 17
 сводка"
 
 [node name="FlowObject18" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=847481553]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 18
 сводка"
 
 [node name="FlowObject19" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=1385989091]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 19
 сводка"
 
 [node name="FlowObject20" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=1761578064]
-custom_minimum_size = Vector2(120, 100)
+custom_minimum_size = Vector2(120, 112)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 20
@@ -810,13 +819,13 @@ vertical_alignment = 1
 
 [node name="TipSummary" type="Label" parent="HUD/InfoToolTipButton/TipMargin/TipRow/TipText" unique_id=974904206]
 layout_mode = 2
-theme_type_variation = &"LabelDim"
+theme_type_variation = &"LabelSmall"
 text = "Прямой трак · 36 · 30°"
 vertical_alignment = 1
 
 [node name="TipInfo" type="Label" parent="HUD/InfoToolTipButton/TipMargin/TipRow/TipText" unique_id=639368695]
 layout_mode = 2
-theme_type_variation = &"LabelDim"
+theme_type_variation = &"LabelSmall"
 text = "Длина 0,3 м, балласт, 4 вывода"
 autowrap_mode = 3
 
@@ -875,7 +884,7 @@ theme_override_constants/separation = 6
 
 [node name="StyleLabel" type="Label" parent="HUD/SideDock/SideBox/SideMargin/SideItems" unique_id=194378122]
 layout_mode = 2
-theme_type_variation = &"LabelDim"
+theme_type_variation = &"LabelSmall"
 text = "Стиль трака"
 vertical_alignment = 1
 

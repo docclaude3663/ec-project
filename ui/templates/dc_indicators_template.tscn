@@ -16,7 +16,7 @@ theme_override_constants/separation = 6
 
 [node name="ModelLabel" type="Label" parent="Margin/Box"]
 layout_mode = 2
-theme_type_variation = &"LabelDim"
+theme_type_variation = &"LabelSmall"
 text = "Мульти · лимит 3,0 А"
 vertical_alignment = 1
 
@@ -51,7 +51,7 @@ show_percentage = false
 
 [node name="BarLabel" type="Label" parent="Margin/Box"]
 layout_mode = 2
-theme_type_variation = &"LabelDim"
+theme_type_variation = &"LabelSmall"
 text = "Вывод 1: 1,20 А из 3,0 А\nВсего по источнику: 2,10 А"
 vertical_alignment = 1
 

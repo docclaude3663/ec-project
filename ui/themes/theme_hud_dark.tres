@@ -1,7 +1,5 @@
 [gd_resource type="Theme" format=3 uid="uid://t2vamkehlekl"]
 
-[ext_resource type="FontFile" uid="uid://duse2ur8g7qn6" path="res://ui/font/Play-Regular.ttf" id="1_font"]
-
 [sub_resource type="StyleBoxFlat" id="btn_disabled"]
 content_margin_left = 10.0
 content_margin_top = 4.0
@@ -292,8 +290,7 @@ color = Color(0.5412, 0.5412, 0.5412, 0.6)
 vertical = true
 
 [resource]
-default_font = ExtResource("1_font")
-default_font_size = 15
+default_font_size = 16
 Button/colors/font_color = Color(0.902, 0.902, 0.902, 1)
 Button/colors/font_disabled_color = Color(0.902, 0.902, 0.902, 0.4)
 Button/colors/font_focus_color = Color(0.902, 0.902, 0.902, 1)
@@ -388,3 +385,10 @@ VScrollBar/styles/grabber_pressed = SubResource("grab_pr")
 VScrollBar/styles/scroll = SubResource("scroll_bg")
 VSeparator/constants/separation = 12
 VSeparator/styles/separator = SubResource("sep_v")
+LabelSmall/base_type = &"Label"
+LabelSmall/font_sizes/font_size = 14
+LabelSmall/colors/font_color = Color(0.7059, 0.7059, 0.7059, 1)
+ButtonSmall/base_type = &"Button"
+ButtonSmall/font_sizes/font_size = 14
+ObjectButton/font_sizes/font_size = 14
+TooltipLabel/font_sizes/font_size = 14
