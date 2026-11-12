@@ -97,20 +97,22 @@ func handle_input(event: InputEvent):
 	# XX claude-terra 13.1.7: Shift+Q/E поворот на ROT_FINE (5°), без Shift ROT_STEP (45°)
 	var _shift := Actions.shift()
 	var _rot := ROT_FINE if _shift else ROT_STEP
-	if Input.is_action_just_pressed(&"rotate_left"):
+	# XX claude-switch: клавиши по событию (Actions.pressed_shift_ok), а не опросом Input.is_action_just_pressed: опрос был истинен
+	# на любом событии кадра (и на движении мыши: поворот мог удвоиться) и не замечал, что клавишу забрал LineEdit
+	if Actions.pressed_shift_ok(event, &"rotate_left"):
 		target_entity.send_event("on_rotate_input", {"axis": "y", "amount": _rot})
-	if Input.is_action_just_pressed(&"rotate_right"):
+	if Actions.pressed_shift_ok(event, &"rotate_right"):
 		target_entity.send_event("on_rotate_input", {"axis": "y", "amount": -_rot})
 	# XX claude-terra 13.1.4: с Shift R/F идут крупным шагом через ElevationInput, обычный шаг без Shift
-	if Input.is_action_just_pressed(&"level_up") and not _shift:
+	if Actions.pressed_shift_ok(event, &"level_up") and not _shift:
 		target_entity.send_event("on_rotate_input", {"axis": "x", "amount": ROT_STEP})
-	if Input.is_action_just_pressed(&"level_down") and not _shift:
+	if Actions.pressed_shift_ok(event, &"level_down") and not _shift:
 		target_entity.send_event("on_rotate_input", {"axis": "x", "amount": -ROT_STEP})
 	# XX claude-terra 13.1.4: Shift+R/F и PageUp/PageDown, крупный шаг уровня (трак, лист, вагон, 13.1.7)
 	var _levels := ElevationInput.levels_from_event(event)
 	if _levels != 0:
 		target_entity.send_event("on_elevation_input", {"levels": _levels})
-	if Input.is_action_just_pressed(&"reset_transform"):
+	if Actions.pressed(event, &"reset_transform"):
 		target_entity.send_event("on_drag_reset", {}) # сбросить состояние
 	# 13.1.7: PageUp/PageDown теперь крупный шаг уровня (ElevationInput выше) для всех, и для вагона тоже
 		

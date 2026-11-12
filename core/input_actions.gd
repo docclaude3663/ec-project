@@ -7,12 +7,15 @@ extends Node
 ## Одна запись описывает действие: id, ключ локализации названия, группа, контексты и клавиша по умолчанию.
 ## Окно ремапа (U11) и подсказки (U6.3) строятся из реестра, новые действия добавляются одной строкой в DEFAULTS.
 ##
-## Контекст: где действие живёт (global, build, select, drag, terrain_tools, observe, debug).
+## Контекст: где действие живёт (global, build, select, operate, sections, drag, terrain_tools, wire, observe, debug).
+## Контекст это место, где ввод читается: build, select, drag это инструменты режима Build (SelectTool, BuildTool, DragTool),
+## operate это SelectTool в режиме Operate, sections это SelectTool и TableTool в режиме «Секции», wire это WireTool.
 ## Одна клавиша может стоять в разных контекстах (законный повтор), конфликтом считается только повтор
 ## внутри одного контекста, а также повтор с действием контекста global (оно действует везде).
 ##
 ## Модификаторы (Shift, Ctrl, Alt) не переназначаются: инструменты читают их через shift(), ctrl(), alt().
-## Сочетания с мышью (Shift+ЛКМ, Ctrl+ЛКМ) остаются как есть.
+## Жесты с мышью (Alt + мышь, Ctrl + мышь, Shift+ЛКМ, рамка) описаны в реестре записями без клавиши (register_gesture):
+## окно ремапа показывает их справкой, подсказки берут текст жеста токеном «@id». В конфликтах они не участвуют.
 ##
 ## Действия, которые уже есть в Project Settings -> Input Map, берутся оттуда (клавиша по умолчанию = то, что записано
 ## в project.godot). Остальные заводятся здесь кодом. Переопределения игрока лежат в Settings, секция [input].
@@ -24,12 +27,16 @@ const BOOKMARK_COUNT := 5
 const G_GLOBAL := &"global"
 const G_BUILD := &"build"
 const G_SELECT := &"select"
+const G_OPERATE := &"operate"
+const G_SECTIONS := &"sections"
 const G_DRAG := &"drag"
 const G_TERRAIN := &"terrain_tools"
+const G_WIRE := &"wire"
 const G_OBSERVE := &"observe"
 const G_DEBUG := &"debug"
 
 ## id -> {id, title_key, group, contexts: Array, defaults: Array[InputEvent], remappable: bool}
+## У жеста (register_gesture) вместо клавиши поле gesture: текст для подсказки; defaults пуст, в InputMap действия нет
 var _entries: Dictionary = {}
 ## Порядок регистрации (для окна ремапа)
 var _order: Array[StringName] = []
@@ -46,23 +53,27 @@ func _ready() -> void:
 ## Клавиша = физическая (раскладка не важна). Если действие уже есть в project.godot, колонка клавиши игнорируется.
 func _register_defaults() -> void:
 	# Повороты и уровень: Build и Drag
-	register(&"rotate_left", "action.rotate_left", &"build", [G_BUILD, G_DRAG], _key(KEY_Q))
-	register(&"rotate_right", "action.rotate_right", &"build", [G_BUILD, G_DRAG], _key(KEY_E))
-	# R/F и PgUp/PgDn: уровень. В инструментах рельефа то же по смыслу (плоскость выреза, глубина воды, уровень листа)
-	register(&"level_up", "action.level_up", &"build", [G_BUILD, G_DRAG, G_TERRAIN], _key(KEY_R))
-	register(&"level_down", "action.level_down", &"build", [G_BUILD, G_DRAG, G_TERRAIN], _key(KEY_F))
-	register(&"level_up_x5", "action.level_up_x5", &"build", [G_BUILD, G_DRAG, G_TERRAIN], _key(KEY_PAGEUP))
-	register(&"level_down_x5", "action.level_down_x5", &"build", [G_BUILD, G_DRAG, G_TERRAIN], _key(KEY_PAGEDOWN))
+	# В режиме «Секции» Q/E поворачивают секцию на 90° (TableTool)
+	register(&"rotate_left", "action.rotate_left", &"build", [G_BUILD, G_DRAG, G_SECTIONS], _key(KEY_Q))
+	register(&"rotate_right", "action.rotate_right", &"build", [G_BUILD, G_DRAG, G_SECTIONS], _key(KEY_E))
+	# R/F и PgUp/PgDn: уровень. В инструментах рельефа то же по смыслу (плоскость выреза, глубина воды, уровень листа),
+	# в режиме «Секции» это высота стола (LYM.step_height)
+	register(&"level_up", "action.level_up", &"build", [G_BUILD, G_DRAG, G_TERRAIN, G_SECTIONS], _key(KEY_R))
+	register(&"level_down", "action.level_down", &"build", [G_BUILD, G_DRAG, G_TERRAIN, G_SECTIONS], _key(KEY_F))
+	register(&"level_up_x5", "action.level_up_x5", &"build", [G_BUILD, G_DRAG, G_TERRAIN, G_SECTIONS], _key(KEY_PAGEUP))
+	register(&"level_down_x5", "action.level_down_x5", &"build", [G_BUILD, G_DRAG, G_TERRAIN, G_SECTIONS], _key(KEY_PAGEDOWN))
 	register(&"duplicate_last", "action.duplicate_last", &"build", [G_BUILD, G_SELECT], _key(KEY_V))
 	register(&"flex_limits_toggle", "action.flex_limits_toggle", &"build", [G_BUILD], _key(KEY_L))
 	register(&"flex_zones_toggle", "action.flex_zones_toggle", &"build", [G_BUILD], _key(KEY_Z))
 	register(&"tunnel_toggle", "action.tunnel_toggle", &"build", [G_BUILD, G_SELECT], _key(KEY_U))
 	# Select
-	register(&"delete", "action.delete", &"select", [G_SELECT], _key(KEY_DELETE))
+	# Del работает во всех режимах SelectTool; в «Секциях» убирает секцию. Пинок вагона и стрелка: не в «Секциях»
+	# (там PgUp/PgDn это высота стола, SelectTool возвращается раньше, до пинка)
+	register(&"delete", "action.delete", &"select", [G_SELECT, G_OPERATE, G_SECTIONS], _key(KEY_DELETE))
 	register(&"embankment_toggle", "action.embankment_toggle", &"select", [G_SELECT], _key(KEY_B))
-	register(&"wagon_kick_fwd", "action.wagon_kick_fwd", &"select", [G_SELECT], _key(KEY_PAGEUP))
-	register(&"wagon_kick_back", "action.wagon_kick_back", &"select", [G_SELECT], _key(KEY_PAGEDOWN))
-	register(&"switch_throw", "action.switch_throw", &"select", [G_SELECT], _key(KEY_T))
+	register(&"wagon_kick_fwd", "action.wagon_kick_fwd", &"select", [G_SELECT, G_OPERATE], _key(KEY_PAGEUP))
+	register(&"wagon_kick_back", "action.wagon_kick_back", &"select", [G_SELECT, G_OPERATE], _key(KEY_PAGEDOWN))
+	register(&"switch_throw", "action.switch_throw", &"select", [G_SELECT, G_OPERATE], _key(KEY_T))
 	# Drag
 	register(&"reset_transform", "action.reset_transform", &"drag", [G_DRAG], _key(KEY_HOME))
 	# Инструменты рельефа и рисование листа (ATTN_13 §13.11). Смысл одинаков во всех: подтвердить, отменить шаг, ширина, глубина
@@ -73,7 +84,10 @@ func _register_defaults() -> void:
 	register(&"depth_up", "action.depth_up", &"terrain", [G_TERRAIN], _key(KEY_R, false, true))
 	register(&"depth_down", "action.depth_down", &"terrain", [G_TERRAIN], _key(KEY_F, false, true))
 	register(&"cut_through", "action.cut_through", &"terrain", [G_TERRAIN], _key(KEY_END))
-	register(&"tool_undo", "action.tool_undo", &"terrain", [G_TERRAIN], _key(KEY_Z, false, true))
+	# Ctrl+Z: терморезак, вода, гипс и «убрать последнюю секцию» (TableTool)
+	register(&"tool_undo", "action.tool_undo", &"terrain", [G_TERRAIN, G_SECTIONS], _key(KEY_Z, false, true))
+	# Провода: Esc отменяет провод, повторно выходит. Не переназначается: Esc займёт стек окон (U10), как observe_cancel
+	register(&"wire_cancel", "action.wire_cancel", &"wire", [G_WIRE], _key(KEY_ESCAPE), false)
 	# Observe
 	register(&"photo_hide_ui", "action.photo_hide_ui", &"observe", [G_OBSERVE], _key(KEY_H))
 	register(&"photo_snap", "action.photo_snap", &"observe", [G_OBSERVE], _key(KEY_P))
@@ -106,6 +120,15 @@ func _register_defaults() -> void:
 	register(&"key_s", "action.camera_back", &"camera", [G_GLOBAL], _key(KEY_S))
 	register(&"key_a", "action.camera_left", &"camera", [G_GLOBAL], _key(KEY_A))
 	register(&"key_d", "action.camera_right", &"camera", [G_GLOBAL], _key(KEY_D))
+	# Жесты с модификаторами: справка для окна ремапа и подсказок, клавиши у них нет (читаются Actions.shift/ctrl/alt)
+	register_gesture(&"gesture_rotate", "action.gesture_rotate", [G_BUILD, G_DRAG], "Alt + мышь")
+	register_gesture(&"gesture_height", "action.gesture_height", [G_BUILD, G_DRAG], "Ctrl + мышь вверх/вниз")
+	register_gesture(&"gesture_fine", "action.gesture_fine", [G_BUILD, G_DRAG], "Shift")
+	register_gesture(&"gesture_no_snap", "action.gesture_no_snap", [G_DRAG], "Alt")
+	register_gesture(&"gesture_add_select", "action.gesture_add_select", [G_SELECT, G_OPERATE], "Shift+ЛКМ")
+	register_gesture(&"gesture_marquee", "action.gesture_marquee", [G_SELECT], "Тащить ЛКМ по пустому месту")
+	register_gesture(&"gesture_marquee_add", "action.gesture_marquee_add", [G_SELECT], "Shift+тащить")
+	register_gesture(&"gesture_marquee_through", "action.gesture_marquee_through", [G_SELECT], "Ctrl+тащить")
 	# Мышь: описаны для справки, не переназначаются
 	register(&"lmb", "action.mouse_left", &"mouse", [G_GLOBAL], null, false)
 	register(&"rmb", "action.mouse_right", &"mouse", [G_GLOBAL], null, false)
@@ -143,8 +166,31 @@ func register(id: StringName, title_key: String, group: StringName, contexts: Ar
 		push_warning("Actions: %s и %s на одной клавише в одном контексте" % [id, clash])
 
 
+## Жест с модификатором или мышью (Alt + мышь, Shift+ЛКМ). Записи в InputMap нет, клавиши нет, не переназначается;
+## text показывают подсказки (токен «@id») и окно ремапа. Id не должен совпадать с действием InputMap
+func register_gesture(id: StringName, title_key: String, contexts: Array, text: String) -> void:
+	if _entries.has(id) or InputMap.has_action(id):
+		push_warning("Actions: жест %s уже зарегистрирован" % id)
+		return
+	_entries[id] = {
+		"id": id,
+		"title_key": title_key,
+		"group": &"gesture",
+		"contexts": contexts.duplicate(),
+		"defaults": [],
+		"remappable": false,
+		"gesture": text,
+	}
+	_order.append(id)
+
+
 func has(id: StringName) -> bool:
 	return _entries.has(id)
+
+
+## Запись реестра это жест (без клавиши и без действия в InputMap)
+func is_gesture(id: StringName) -> bool:
+	return _entries.has(id) and _entries[id].has("gesture")
 
 
 ## Все записи реестра в порядке регистрации (для окна ремапа)
@@ -158,6 +204,24 @@ func get_entries() -> Array[Dictionary]:
 ## Действие по событию. Модификаторы должны совпасть точно: Ctrl+V не сработает как V, Shift+R не как R
 func pressed(event: InputEvent, id: StringName) -> bool:
 	return event.is_action_pressed(id, false, true)
+
+
+## Действие по событию, где Shift допускается и не важен (Q и Shift+Q, R и Shift+R), а Ctrl, Alt и Meta должны совпасть
+## с записью действия. Для клавиш, у которых Shift только меняет шаг (поворот 45° и 5°, уровень): шаг читает вызывающий
+## через shift(). Без повтора (echo). В отличие от опроса Input.is_action_just_pressed, не срабатывает на движении мыши
+## и на клавише, которую уже забрал LineEdit
+func pressed_shift_ok(event: InputEvent, id: StringName) -> bool:
+	var k := event as InputEventKey
+	if k == null or not k.pressed or k.echo or not InputMap.has_action(id):
+		return false
+	var mask := k.get_modifiers_mask() & ~KEY_MASK_SHIFT
+	for b in InputMap.action_get_events(id):
+		if not b.is_match(k, false):
+			continue
+		var bk := b as InputEventKey
+		if bk != null and (bk.get_modifiers_mask() & ~KEY_MASK_SHIFT) == mask:
+			return true
+	return false
 
 
 ## Шаг по паре действий «больше, меньше»: +n или -n, 0 если это не они. n = shift_mult при зажатом Shift, иначе 1.
@@ -188,6 +252,8 @@ func alt() -> bool:
 
 ## Подпись клавиши действия для подсказок («R», «Ctrl+S»). Пусто, если клавиши нет
 func key_text(id: StringName) -> String:
+	if _entries.has(id) and _entries[id].has("gesture"):
+		return String(_entries[id].gesture)   # жест: «Alt + мышь», «Shift+ЛКМ»
 	if not InputMap.has_action(id):
 		return ""
 	for ev in InputMap.action_get_events(id):
@@ -211,7 +277,7 @@ func _pretty(text: String) -> String:
 ## Какое действие уже занимает эту клавишу в тех же контекстах. event == null: проверить текущую клавишу id.
 ## Возвращает &"" , если конфликта нет
 func find_conflict(id: StringName, event: InputEvent) -> StringName:
-	if not _entries.has(id):
+	if not _entries.has(id) or _entries[id].has("gesture"):
 		return &""
 	var mine: Array = _entries[id].contexts
 	var events: Array = [event] if event else InputMap.action_get_events(id)
@@ -219,6 +285,8 @@ func find_conflict(id: StringName, event: InputEvent) -> StringName:
 		if other_id == id:
 			continue
 		var other: Dictionary = _entries[other_id]
+		if other.has("gesture"):
+			continue   # у жеста нет клавиши и нет действия в InputMap
 		if not _contexts_overlap(mine, other.contexts):
 			continue
 		for ev in events:
@@ -243,7 +311,7 @@ func set_binding(id: StringName, event: InputEventKey) -> StringName:
 
 ## Вернуть клавишу по умолчанию
 func reset_binding(id: StringName) -> void:
-	if not _entries.has(id):
+	if not _entries.has(id) or _entries[id].has("gesture"):
 		return
 	InputMap.action_erase_events(id)
 	for ev in _entries[id].defaults:

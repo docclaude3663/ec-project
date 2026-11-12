@@ -143,14 +143,15 @@ func handle_input(event: InputEvent):
 	# XX claude-terra 13.1.7: Shift+Q/E поворот на ROT_FINE (5°), без Shift ROT_STEP (45°)
 	var _shift := Actions.shift()
 	var _rot := ROT_FINE if _shift else ROT_STEP
-	if Input.is_action_just_pressed(&"rotate_left"):
+	# XX claude-switch: по событию клавиши, как в DragTool (опрос Input.is_action_just_pressed срабатывал на любом событии кадра)
+	if Actions.pressed_shift_ok(event, &"rotate_left"):
 		ghost.send_event("on_rotate_input", {"axis": "y", "amount": _rot})
-	if Input.is_action_just_pressed(&"rotate_right"):
+	if Actions.pressed_shift_ok(event, &"rotate_right"):
 		ghost.send_event("on_rotate_input", {"axis": "y", "amount": -_rot})
 	# XX claude-terra 13.1.4: с Shift R/F идут крупным шагом через ElevationInput, обычный шаг без Shift
-	if Input.is_action_just_pressed(&"level_up") and not _shift:
+	if Actions.pressed_shift_ok(event, &"level_up") and not _shift:
 		ghost.send_event("on_rotate_input", {"axis": "x", "amount": ROT_STEP})
-	if Input.is_action_just_pressed(&"level_down") and not _shift:
+	if Actions.pressed_shift_ok(event, &"level_down") and not _shift:
 		ghost.send_event("on_rotate_input", {"axis": "x", "amount": -ROT_STEP})
 	# XX claude-terra 13.1.4: Shift+R/F и PageUp/PageDown, крупный шаг уровня
 	var _levels := ElevationInput.levels_from_event(event)

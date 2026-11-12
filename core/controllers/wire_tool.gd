@@ -61,8 +61,7 @@ func process_tick(_delta: float) -> void:
 
 
 func handle_input(event: InputEvent) -> void:
-	var k := event as InputEventKey
-	if k and k.pressed and not k.echo and k.keycode == KEY_ESCAPE:
+	if Actions.pressed(event, &"wire_cancel"):
 		_cancel()
 		return
 	var mb := event as InputEventMouseButton

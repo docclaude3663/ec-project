@@ -201,9 +201,9 @@ func handle_input(event: InputEvent):
 	if selected_entity and Actions.pressed(event, &"tunnel_toggle"):
 		selected_entity.send_event("on_tunnel_toggle", {})
 
-	if selected_entity and Input.is_action_just_pressed(&"wagon_kick_fwd"):
+	if selected_entity and Actions.pressed(event, &"wagon_kick_fwd"):
 		selected_entity.send_event("on_train_kicked", {"power_kick": 10.0}) # Пинок силой 10m\s
-	if selected_entity and Input.is_action_just_pressed(&"wagon_kick_back"):
+	if selected_entity and Actions.pressed(event, &"wagon_kick_back"):
 		selected_entity.send_event("on_train_kicked", {"power_kick": -10.0}) # Пинок силой 10m\s
 
 
