@@ -29,6 +29,14 @@ var _body: StaticBody3D
 var _shape: CollisionShape3D
 var _pending := false
 
+# XX claude-terra 13.13 K0
+## Замер пересборки: включается GlobalSetting.plaster_log_time, итог одной строкой в Output
+var _log := false
+var _log_t0 := 0       # начало пересборки, мкс
+var _log_last := 0     # конец предыдущей фазы, мкс
+var _log_laps: Array[String] = []
+var _log_info := ""    # размеры поля и число листов
+
 
 func _ready() -> void:
 	name = "PlasterSkin"
@@ -68,6 +76,11 @@ func clear() -> void:
 
 func rebuild() -> void:
 	_pending = false
+	_log = bool(Global.settings.plaster_log_time)   # XX claude-terra 13.13 K0
+	_log_laps.clear()
+	_log_info = ""
+	_log_t0 = Time.get_ticks_usec()
+	_log_last = _log_t0
 	var all: Array[C_TerrainLayer] = []
 	var smooth_sheets: Array[C_TerrainLayer] = []
 	for e in TGM.get_layers():
@@ -115,6 +128,8 @@ func rebuild() -> void:
 		return
 	var origin := Vector2(float(i0) * c, float(j0) * c)
 	region = box
+	_log_info = "поле %d x %d (%d яч.), листов с бинтом %d из %d" % [w, d, w * d, smooth_sheets.size(), all.size()]
+	_lap("зоны")
 
 	# 2. высоты ступеней: верх самого высокого твёрдого участка над центром ячейки
 	var hh := PackedFloat32Array()
@@ -135,6 +150,7 @@ func rebuild() -> void:
 				for iv: Vector2 in l.solid_intervals_at(p):
 					if iv.y > hh[j * w + i]:
 						hh[j * w + i] = iv.y
+	_lap("высоты")
 
 	# 3. кому принадлежит ячейка: сначала лист под ней, потом тот, чей пандус сюда дотягивается
 	var own := PackedInt32Array()
@@ -165,15 +181,35 @@ func rebuild() -> void:
 	for k in w * d:
 		if own[k] >= 0:
 			run_arr[k] = zones[own[k]]["run"]
+	_lap("владельцы")
 
 	# 4. ложе траков: оболочка там не поднимается над ступенью
 	var pin := _track_pin(origin, c, w, d, hh, box, T)
 	var f := PlasterField.pin_factor(pin, w, d, 2)
+	_lap("ложе траков")
 
 	# 5. оболочка
 	var max_up: float = float(gs.plaster_max_up) * T
 	var sk := PlasterField.smooth(hh, run_arr, f, w, d, c, T, max_up)
+	_lap("оболочка")
 	_build_mesh(sk, hh, own, zones, origin, c, w, d)
+
+
+## 13.13 K0. Закрыть очередную фазу пересборки: сколько мс она заняла
+func _lap(label: String) -> void:
+	if not _log:
+		return
+	var now := Time.get_ticks_usec()
+	_log_laps.append("%s %.1f" % [label, float(now - _log_last) / 1000.0])
+	_log_last = now
+
+
+## 13.13 K0. Итоговая строка замера в Output: общее время, размеры поля, фазы, число треугольников
+func _log_done(tri_count: int) -> void:
+	if not _log:
+		return
+	var total := float(Time.get_ticks_usec() - _log_t0) / 1000.0
+	print("[PlasterSkin] rebuild %.1f мс | %s | %s | треугольников %d" % [total, _log_info, ", ".join(_log_laps), tri_count])
 
 
 ## Ячейки под траками (балласт и зазор), где низ балласта стоит на ступени
@@ -249,17 +285,25 @@ func _build_mesh(sk: PackedFloat32Array, hh: PackedFloat32Array, own: PackedInt3
 					st.set_normal(PlasterField.normal(sk, w, d, vi, vj, c))
 					st.add_vertex(Vector3(origin.x + (float(vi) + 0.5) * c, sk[v], origin.y + (float(vj) + 0.5) * c))
 				counts[stage] += 1
+	_lap("меш: ячейки в вершины")
+	var tri_total := 0
+	for stage in counts:
+		tri_total += int(counts[stage])
 	if tools.is_empty():
 		clear()
 		region = Rect2()
+		_log_done(0)
 		return
 	var mesh := ArrayMesh.new()
 	for stage in tools:
 		(tools[stage] as SurfaceTool).commit(mesh)
 	_mi.mesh = mesh
+	_lap("меш: commit")
 	if is_instance_valid(_shape):
 		_shape.queue_free()
 	_shape = CollisionShape3D.new()
 	_shape.shape = mesh.create_trimesh_shape()
 	_body.add_child(_shape)
 	has_content = true
+	_lap("коллизия")
+	_log_done(tri_total)
