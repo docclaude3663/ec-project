@@ -6,3 +6,10 @@
 *.patch
 *.bat
 *.kanban
+# Blender: резервные копии
+*.blend1
+*.blend@
+
+# Python (tools/)
+__pycache__/
+*.pyc
