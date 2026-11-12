@@ -32,6 +32,14 @@ class Mech extends RefCounted:
 	var target := 0.0
 	var enabled := true
 	var manual := false         # игрок взял управление (на будущее: AUTO-правила)
+	var player: AnimationPlayer # только ANIM: свой плеер механизма, анимация поставлена на паузу
+	var anim_len := 0.0         # только ANIM: длина анимации, с
+
+	## Часть найдена: узел (SLIDE, ROTATE) или плеер анимации (ANIM)
+	func found() -> bool:
+		if cfg.actuator == MechanismConfig.Actuator.ANIM:
+			return player != null
+		return node != null
 
 	func is_moving() -> bool:
 		return not is_equal_approx(t, target)
@@ -44,9 +52,14 @@ class Mech extends RefCounted:
 		return was_moving and not is_moving()
 
 	func apply() -> void:
+		var k := smoothstep(0.0, 1.0, t)
+		if cfg.actuator == MechanismConfig.Actuator.ANIM:
+			# Время анимации = состояние. Чуть меньше длины: у зацикленной анимации seek на конец вернул бы кадр 0
+			if player != null and is_instance_valid(player):
+				player.seek(minf(anim_len * k, maxf(anim_len - 0.0001, 0.0)), true)
+			return
 		if node == null or not is_instance_valid(node):
 			return
-		var k := smoothstep(0.0, 1.0, t)
 		var ax := cfg.axis.normalized() if cfg.axis.length_squared() > 0.0001 else Vector3.RIGHT
 		match cfg.actuator:
 			MechanismConfig.Actuator.SLIDE:
@@ -154,9 +167,12 @@ func on_entity_ready() -> void:
 		var m := Mech.new()
 		m.cfg = cfg
 		m.enabled = cfg.enabled
-		m.node = vis.parts.find_one(cfg.part_role, cfg.part_aliases, &"Node3D", null, str(entity.name)) as Node3D
-		if m.node:
-			m.rest = m.node.transform
+		if cfg.actuator == MechanismConfig.Actuator.ANIM:
+			_setup_anim(m, vis)
+		else:
+			m.node = vis.parts.find_one(cfg.part_role, cfg.part_aliases, &"Node3D", null, str(entity.name)) as Node3D
+			if m.node:
+				m.rest = m.node.transform
 		m.t = cfg.start_state
 		m.target = cfg.start_state
 		_mechs[cfg.id] = m
@@ -177,6 +193,33 @@ func on_entity_ready() -> void:
 	_register_bus()
 	if not _lamps.is_empty() and GFX.light_budget:
 		GFX.light_budget.register(self)
+
+
+## ANIM: находит в модели AnimationPlayer с нужной анимацией и заводит для механизма СВОЙ плеер (тот же родитель и root_node,
+## общий ресурс Animation). Свой плеер нужен, потому что один плеер показывает одну анимацию, а механизмов в модели несколько.
+## Плеер модели не трогаем. Анимацию ведёт seek по состоянию, сам плеер стоит на паузе (Mech.apply)
+func _setup_anim(m: Mech, vis: C_Visual) -> void:
+	var aname: StringName = m.cfg.anim_name if m.cfg.anim_name != &"" else StringName("mech_%s" % m.cfg.id)
+	var src: AnimationPlayer = null
+	for n in vis.instance.find_children("*", "AnimationPlayer", true, false):
+		if (n as AnimationPlayer).has_animation(aname):
+			src = n
+			break
+	if src == null:
+		push_warning("[C_Mechanisms] %s: анимация '%s' не найдена в модели (экспорт из Blender: режим Actions, имя mech_<id>)" % [entity.name if entity else "?", aname])
+		return
+	var anim: Animation = src.get_animation(aname)
+	var lib := AnimationLibrary.new()
+	lib.add_animation(&"a", anim)
+	var p := AnimationPlayer.new()
+	p.name = "MechPlayer_%s" % m.cfg.id
+	src.get_parent().add_child(p)
+	p.root_node = src.root_node
+	p.add_animation_library(&"", lib)
+	p.play(&"a")
+	p.pause()
+	m.player = p
+	m.anim_len = anim.length
 
 
 ## Лампы на шине аксессуаров нагружают её (D6): потребитель регистрируется в PGM.bus
@@ -260,7 +303,7 @@ func get_list() -> Array[Dictionary]:
 		var m: Mech = _mechs[id]
 		res.append({
 			"id": id, "title": m.cfg.title, "t": m.t, "target": m.target,
-			"found": m.node != null, "enabled": m.enabled, "moving": m.is_moving(),
+			"found": m.found(), "enabled": m.enabled, "moving": m.is_moving(),
 		})
 	return res
 
@@ -688,7 +731,7 @@ func get_debug_info() -> Array[String]:
 	for id in _order:
 		var m: Mech = _mechs[id]
 		res.append("%s: t=%.2f -> %.2f %s%s" % [id, m.t, m.target,
-				"" if m.node else "[NO PART] ", "" if m.enabled else "[off]"])
+				"" if m.found() else "[NO PART] ", "" if m.enabled else "[off]"])
 	for id in _lamp_order:
 		var l: Lamp = _lamps[id]
 		res.append("light %s: t=%.2f -> %.2f gain %.2f power %s rule %s%s %s%s%s" % [id, l.t, l.target, l.gain,
