@@ -1,5 +1,7 @@
 [gd_resource type="Theme" format=3 uid="uid://t2vamkehlekl"]
 
+[ext_resource type="FontFile" uid="uid://duse2ur8g7qn6" path="res://ui/font/Play-Regular.ttf" id="1_font"]
+
 [sub_resource type="StyleBoxFlat" id="btn_disabled"]
 content_margin_left = 10.0
 content_margin_top = 4.0
@@ -289,7 +291,24 @@ content_margin_left = 0.0
 color = Color(0.5412, 0.5412, 0.5412, 0.6)
 vertical = true
 
+[sub_resource type="StyleBoxFlat" id="key_chip"]
+content_margin_left = 6.0
+content_margin_top = 1.0
+content_margin_right = 6.0
+content_margin_bottom = 1.0
+bg_color = Color(1, 1, 1, 0.1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.5412, 0.5412, 0.5412, 0.8)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
 [resource]
+default_font = ExtResource("1_font")
 default_font_size = 16
 Button/colors/font_color = Color(0.902, 0.902, 0.902, 1)
 Button/colors/font_disabled_color = Color(0.902, 0.902, 0.902, 0.4)
@@ -392,3 +411,5 @@ VScrollBar/styles/grabber_pressed = SubResource("grab_pr")
 VScrollBar/styles/scroll = SubResource("scroll_bg")
 VSeparator/constants/separation = 12
 VSeparator/styles/separator = SubResource("sep_v")
+KeyChip/base_type = &"PanelContainer"
+KeyChip/styles/panel = SubResource("key_chip")
