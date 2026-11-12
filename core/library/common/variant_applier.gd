@@ -10,6 +10,9 @@ class_name VariantApplier extends RefCounted
 ## не нами) сохраняются и возвращаются при сбросе. Свои копии помечены метой META.
 ## Контур выделения (слои видимости) и подсветка состояний (material_overlay) от override не зависят.
 
+## Префикс имени материала красимой поверхности (0_ATTN_24 §24.4). Если у модели есть такие материалы,
+## зона «Весь корпус» красит только их; без них поведение прежнее (красятся все непрозрачные)
+const PAINT_PREFIX := "paint_"
 const META := &"library_paint"
 const META_PREV := &"library_paint_prev"
 
@@ -23,10 +26,11 @@ static func apply(meshes: Array, variant: Dictionary, overlays: Dictionary = {})
 	if pv is Dictionary:
 		paint = pv
 	var zones := PaintData.zones(paint)
+	var only_paint := has_paint_materials(meshes)
 	for mi in meshes:
 		if mi is MeshInstance3D and is_instance_valid(mi):
 			var ov: Variant = overlays.get(str(mi.name))
-			_apply_mesh(mi, zones, ov as Material)
+			_apply_mesh(mi, zones, ov as Material, only_paint)
 
 
 ## Снять покраску: вернуть материалы модели
@@ -34,7 +38,23 @@ static func clear(meshes: Array) -> void:
 	apply(meshes, {})
 
 
-static func _apply_mesh(mi: MeshInstance3D, zones: Dictionary, overlay: Material) -> void:
+## true, если у какого-нибудь меша есть поверхность с материалом paint_* (имя материала модели, не override)
+static func has_paint_materials(meshes: Array) -> bool:
+	for mi in meshes:
+		if not (mi is MeshInstance3D) or not is_instance_valid(mi) or (mi as MeshInstance3D).mesh == null:
+			continue
+		var mesh := (mi as MeshInstance3D).mesh
+		for i in mesh.get_surface_count():
+			if _is_paint_material(mesh.surface_get_material(i)):
+				return true
+	return false
+
+
+static func _is_paint_material(mat: Material) -> bool:
+	return mat != null and mat.resource_name.to_lower().begins_with(PAINT_PREFIX)
+
+
+static func _apply_mesh(mi: MeshInstance3D, zones: Dictionary, overlay: Material, only_paint := false) -> void:
 	var mesh := mi.mesh
 	if mesh == null:
 		return
@@ -51,7 +71,7 @@ static func _apply_mesh(mi: MeshInstance3D, zones: Dictionary, overlay: Material
 				base = prev
 		elif cur != null:
 			prev = cur
-		var spec := _spec_for(mi, i, base, zones)
+		var spec := _spec_for(mi, i, base, zones, only_paint)
 		var painted: Material = null
 		if not spec.is_empty() and base is BaseMaterial3D:
 			painted = _painted(base as BaseMaterial3D, spec)
@@ -76,10 +96,12 @@ static func _insert_overlay(m: Material, overlay: Material) -> void:
 	m.next_pass = ov
 
 
-static func _spec_for(mi: MeshInstance3D, surface: int, base: Material, zones: Dictionary) -> Dictionary:
+static func _spec_for(mi: MeshInstance3D, surface: int, base: Material, zones: Dictionary, only_paint := false) -> Dictionary:
 	var id := PaintZones.zone_id(mi, surface)
 	if zones.has(id):
 		return zones[id]
+	if only_paint and not _is_paint_material(base):
+		return {}
 	if zones.has(PaintData.ALL) and not PaintZones.is_transparent(base):
 		return zones[PaintData.ALL]
 	return {}

@@ -17,6 +17,7 @@ func _ready() -> void:
 	_test_paint_data()
 	_test_zones()
 	_test_applier()
+	_test_paint_prefix()
 	await _test_entity()
 	print("Library paint: %d/%d" % [_ok, _all])
 	get_tree().quit(0 if _ok == _all else 1)
@@ -53,6 +54,28 @@ func _paint(zones: Dictionary) -> Dictionary:
 		var z: Array = zones[id]
 		PaintData.set_zone(p, id, Color.from_string(z[0], Color.WHITE), z[1], z[2])
 	return {"paint": p}
+
+
+# --- Материалы paint_* (0_ATTN_24 §24.4, шаг S2) ---
+
+func _test_paint_prefix() -> void:
+	var body := _std(Color(0.2, 0.4, 0.6, 1.0), false)
+	body.resource_name = "paint_body"
+	var steel := _std(Color(0.5, 0.5, 0.5, 1.0), false)
+	steel.resource_name = "metal_steel"
+	var mi := _mesh_node("PBody", [body, steel])
+	VariantApplier.apply([mi], _paint({"all": ["#c0392b", "keep", true]}))
+	_check("есть paint_*: «Весь корпус» красит paint_body", mi.get_surface_override_material(0) != null
+		and (mi.get_surface_override_material(0) as StandardMaterial3D).albedo_color.to_html(false) == "c0392b")
+	_check("есть paint_*: «Весь корпус» не трогает остальные материалы", mi.get_surface_override_material(1) == null)
+	VariantApplier.apply([mi], _paint({"PBody#1": ["#00ff00", "keep", true]}))
+	_check("явная зона красит и не-paint поверхность", mi.get_surface_override_material(1) != null)
+	_check("has_paint_materials: true для модели с paint_*", VariantApplier.has_paint_materials([mi]))
+	var plain := _mesh_node("Plain", [_std(Color.WHITE, false), _std(Color.GRAY, false)])
+	VariantApplier.apply([plain], _paint({"all": ["#c0392b", "keep", true]}))
+	_check("нет paint_*: «Весь корпус» красит все непрозрачные, как раньше",
+		plain.get_surface_override_material(0) != null and plain.get_surface_override_material(1) != null
+		and not VariantApplier.has_paint_materials([plain]))
 
 
 # --- PaintData ---
