@@ -53,10 +53,11 @@ class_name WagonConfig extends ObjectConfig
 
 @export_category("Visuals & Layout")
 @export var scene = preload("res://data/trains/default_wagon.tscn")
-## Стандартная высота оси буферов над головкой рельса, единицы игры (метры прототипа, UIC 1065 мм). Новые модели рисуются от этой
-## метки (Z=0 в Blender это ось буферов), у них offset_mesh_y = BUFFER_HEIGHT: все вагоны стоят буферами на одной высоте (0_ATTN_24 §24.3).
-## Значение рабочее, сверить с NEM (§24.11, Q6). Дублируется в tools/glb_preflight.py и tools/blender/ec_model_tools.py
-const BUFFER_HEIGHT := 1.065
+## Стандартная высота оси буферов над головкой рельса, единицы игры (1 единица = 1 м прототипа). NEM 303 (2015), H0: 12.2 ±0.5 мм
+## при масштабе 1:87 это 1.061 ±0.043. Новые модели рисуются от этой метки (Z=0 в Blender это ось буферов), у них
+## offset_mesh_y = BUFFER_HEIGHT: все вагоны стоят буферами на одной высоте (0_ATTN_24 §24.3).
+## Дублируется в tools/glb_preflight.py и tools/blender/ec_model_tools.py
+const BUFFER_HEIGHT := 1.061
 ## Высота начала меша кузова над головкой рельса, абсолютная (колёса от неё не зависят). Старые паспорта подобраны под свои модели;
 ## новые: BUFFER_HEIGHT
 @export var offset_mesh_y: float = 1.2 # Смещение меша от пола (меньше диаметра колеса на ~0.2)

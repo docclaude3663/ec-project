@@ -44,8 +44,13 @@ DEFAULT_NAMES = re.compile(r"^(Cube|Plane|Sphere|Cylinder|Cone|Torus|Circle|Empt
 DEBUG_NAMES = {"sphere", "frontmarker", "ax", "ay", "az", "marker"}
 MAT_PREFIXES = ("paint_", "trim_", "glass_", "emit_", "rubber_", "metal_")
 TRI_BUDGET = {"trains": 50000, "buildings": 30000}
-BUFFER_H = 1.065   # высота оси буферов над головкой рельса, единицы игры (UIC 1065 мм)
-BUFFER_TOL = 0.03  # допуск, единицы игры (рабочий, сверить с NEM)
+# NEM 303 «Puffer» (2015), H0: высота середины буфера 12.2 ±0.5 мм, расстояние между осями 20.0 ±0.2 мм, нижняя кромка тарелки не ниже 9.6 мм.
+# В единицах игры (1 единица = 1 м прототипа, 1:87): 1.061 ±0.043, 1.74, 0.835
+BUFFER_H = 1.061
+BUFFER_TOL = 0.043
+BUFFER_SPACING = 1.74
+BUFFER_SPACING_TOL = 0.035
+BUFFER_UMIN = 0.835
 REF_COLLECTION = "EC_ref"
 REPORT_TEXT = "EC_report"
 PREFLIGHT_TEXT = "EC_preflight"
@@ -255,19 +260,32 @@ def check_model(scene, buffer_h=BUFFER_H, kind="trains", brush=False):
         add("INFO", "Коллизия кузова (BoxShape3D): size = (%.3f, %.3f, %.3f), position = (%.3f, %.3f, %.3f) в осях Godot." %
             (width, height, length, cx, (hi[2] + lo[2]) / 2.0, -cy))
 
-    # ---- буферы ----
+    # ---- буферы (NEM 303) ----
     bufs = [o for r, lst in roles.items() if r.startswith("buffer") for o in lst]
     if bufs:
-        zs = []
+        info = []  # (x, y, z центра, z низа) в мировых осях Blender
         for o in bufs:
-            a, b = world_bbox(o)
-            zs.append((a[2] + b[2]) / 2.0)
+            a_, b_ = world_bbox(o)
+            info.append(((a_[0] + b_[0]) / 2.0, (a_[1] + b_[1]) / 2.0, (a_[2] + b_[2]) / 2.0, a_[2], o))
+        zs = [t[2] for t in info]
         mean_z = sum(zs) / len(zs)
-        add("INFO", "Буферы (%d): ось на Z=%.3f относительно метки." % (len(bufs), mean_z))
+        add("INFO", "Буферы (%d): ось на Z=%.3f относительно метки (NEM 303: на метке, допуск %.3f)." % (len(bufs), mean_z, BUFFER_TOL))
         if abs(mean_z) > BUFFER_TOL:
-            add("ERROR", "Ось буферов на Z=%.3f, а должна быть на метке Z=0 (допуск %.3f): иначе вагон встанет буферами на другой высоте." % (mean_z, BUFFER_TOL))
+            add("ERROR", "Ось буферов на Z=%.3f, а должна быть на метке Z=0 (допуск NEM 303 ±%.3f): иначе вагон встанет буферами на другой высоте." % (mean_z, BUFFER_TOL))
         if max(zs) - min(zs) > BUFFER_TOL:
             add("WARN", "Оси буферов разной высоты (разброс %.3f)." % (max(zs) - min(zs)))
+        ends = {}
+        for x_, y_, z_, low_, o_ in info:
+            ends.setdefault(y_ > 0, []).append(x_)
+        for front, xs in ends.items():
+            if len(xs) == 2:
+                spacing = abs(xs[0] - xs[1])
+                if abs(spacing - BUFFER_SPACING) > BUFFER_SPACING_TOL:
+                    add("WARN", "Буферы %s торца: шаг осей %.3f, ожидается %.2f ±%.3f (NEM 303: 20.0 ±0.2 мм в H0, прототип 1750 мм)." %
+                        ("переднего (+Y)" if front else "заднего (-Y)", spacing, BUFFER_SPACING, BUFFER_SPACING_TOL))
+        for x_, y_, z_, low_, o_ in info:
+            if o_.type == "MESH" and low_ + buffer_h < BUFFER_UMIN - 0.01:
+                add("WARN", "Буфер '%s': нижняя кромка на %.3f над рельсом, NEM 303 требует не ниже %.3f." % (o_.name, low_ + buffer_h, BUFFER_UMIN), o_)
     else:
         add("WARN", "Нет объектов с ролью buffer_*: высоту буферов проверить нельзя. Назначьте buffer_1...buffer_4 мешам буферов или пустышкам на их осях.")
 
@@ -547,7 +565,7 @@ def default_export_path(s):
 class ECSettings(bpy.types.PropertyGroup):
     kind: EnumProperty(name="Вид", items=[("trains", "Подвижной состав", ""), ("buildings", "Здание", "")], default="trains")
     model_id: StringProperty(name="Id модели", description="Имя файла и папки: wagon_04", default="")
-    buffer_h: FloatProperty(name="Высота буферов", description="Ось буферов над головкой рельса, единицы игры (1 = 1 м прототипа)",
+    buffer_h: FloatProperty(name="Высота буферов", description="Ось буферов над головкой рельса, единицы игры (1 = 1 м прототипа), NEM 303: 12.2 мм в H0 = 1.061",
                             default=BUFFER_H, min=0.5, max=2.0, precision=3)
     wheel_d: FloatProperty(name="Диаметр колеса", description="Для эталонных колёс", default=1.0, min=0.3, max=3.0, precision=3)
     wheel_ys: StringProperty(name="Оси колёс по Y", description="Положения осей вдоль вагона через запятую (знак: +Y нос)", default="-5, -3.5, 3.5, 5")

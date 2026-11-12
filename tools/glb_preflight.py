@@ -4,7 +4,7 @@
 Запуск (из корня репозитория, Godot не нужен, только Python 3.8+):
 
     python tools/glb_preflight.py data/trains/models/wagon_coal_01.glb
-    python tools/glb_preflight.py model.glb                                        # новая модель: Z=0 это ось буферов, offset_mesh_y = 1.065
+    python tools/glb_preflight.py model.glb                                        # новая модель: Z=0 это ось буферов, offset_mesh_y = 1.061
     python tools/glb_preflight.py old.gltf --config data/trains/objects/wagon_03.tres --offset-y 1.15   # старая модель: её offset_mesh_y
     python tools/glb_preflight.py model.glb --brush      # нужна ли UV2 для кисти Library
 
@@ -33,9 +33,14 @@ ROLE_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 # Префиксы материалов (см. ATTN_24 §24.4). Остальные материалы считаются «как есть», не красятся
 MAT_PREFIXES = ("paint_", "trim_", "glass_", "emit_", "rubber_", "metal_")
 ANCHOR_PREFIXES = ("anchor_", "light_", "lamp_")
-# Высота оси буферов над головкой рельса: 1065 мм прототипа (UIC), единицы игры = метры прототипа. Допуск рабочий, сверить с NEM
-BUFFER_H = 1.065
-BUFFER_TOL = 0.03
+# NEM 303 «Puffer» (обязательная норма, издание 2015), H0: высота середины буфера над головкой рельса 12.2 ±0.5 мм,
+# расстояние между осями буферов 20.0 ±0.2 мм, нижняя кромка тарелки не ниже 9.6 мм.
+# В единицах игры (1 единица = 1 м прототипа, масштаб 1:87): 12.2 мм = 1.061, ±0.5 мм = ±0.043, 20.0 мм = 1.74, 9.6 мм = 0.835
+BUFFER_H = 1.061
+BUFFER_TOL = 0.043
+BUFFER_SPACING = 1.74
+BUFFER_SPACING_TOL = 0.035  # NEM даёт ±0.2 мм (0.017), берём вдвое шире: у прототипов шаг 1750 мм
+BUFFER_UMIN = 0.835
 TRI_BUDGET = {"wagon": 40000, "loco": 60000, "building": 30000}
 
 COMP_FMT = {5120: "b", 5121: "B", 5122: "h", 5123: "H", 5125: "I", 5126: "f"}
@@ -426,26 +431,42 @@ def main():
             else:
                 rep.add("WARN", "Анимация '%s', узел '%s': движения между первым и последним ключом нет." % (aname, nm))
 
-    # ---- Буферы: ось на метке Z=0, на стандартной высоте ----
+    # ---- Буферы (NEM 303): ось на метке Z=0, на стандартной высоте, шаг, нижняя кромка ----
     buf_nodes = [i for i in range(len(nodes)) if (role_of(i) or "").startswith("buffer")]
     if buf_nodes:
-        ys = []
+        pts = []  # (x, y, z) центра буфера в осях glTF
         for i in buf_nodes:
+            wt = world_translation(i)
             if i in part_bbox:
                 lo_, hi_ = part_bbox[i]
-                ys.append(world_translation(i)[1] + (lo_[1] + hi_[1]) / 2.0)
+                pts.append(((lo_[0] + hi_[0]) / 2.0 + wt[0], (lo_[1] + hi_[1]) / 2.0 + wt[1], (lo_[2] + hi_[2]) / 2.0 + wt[2]))
             else:
-                ys.append(world_translation(i)[1])
+                pts.append(wt)
+        ys = [p_[1] for p_ in pts]
         mean_y = sum(ys) / len(ys)
         height = mean_y + abs_y
-        rep.add("INFO", "Буферы (%d узл.): ось на Z=%.3f относительно метки, в игре на высоте %.3f над рельсом (стандарт %.3f, допуск %.3f)." %
+        rep.add("INFO", "Буферы (%d узл.): ось на Z=%.3f относительно метки, в игре на высоте %.3f над рельсом (NEM 303: %.3f ±%.3f)." %
                 (len(buf_nodes), mean_y, height, args.buffer_h, args.tol))
         if abs(height - args.buffer_h) > args.tol:
-            rep.add("WARN", "Высота буферов %.3f отличается от стандартной %.3f больше допуска %.3f: вагон встанет буферами выше или ниже остальных. "
+            rep.add("WARN", "Высота буферов %.3f вне допуска NEM 303 (%.3f ±%.3f): вагон встанет буферами выше или ниже остальных. "
                             "Ось буферов должна быть на Z=0 (offset_mesh_y %.3f)." % (height, args.buffer_h, args.tol, abs_y))
-        spread = max(ys) - min(ys)
-        if spread > args.tol:
-            rep.add("WARN", "Оси буферов разной высоты (разброс %.3f)." % spread)
+        if max(ys) - min(ys) > args.tol:
+            rep.add("WARN", "Оси буферов разной высоты (разброс %.3f)." % (max(ys) - min(ys)))
+        ends = {}
+        for x_, y_, z_ in pts:
+            ends.setdefault(z_ > 0, []).append(x_)
+        for pos, xs in ends.items():
+            if len(xs) == 2:
+                spacing = abs(xs[0] - xs[1])
+                rep.add("INFO", "Буферы %s торца: шаг осей %.3f (NEM 303: %.2f)." % ("заднего (+Z)" if pos else "переднего (-Z)", spacing, BUFFER_SPACING))
+                if abs(spacing - BUFFER_SPACING) > BUFFER_SPACING_TOL:
+                    rep.add("WARN", "Шаг осей буферов %.3f вне ожидаемых %.2f ±%.3f (NEM 303: 20.0 ±0.2 мм в H0, прототип 1750 мм)." % (spacing, BUFFER_SPACING, BUFFER_SPACING_TOL))
+        for i in buf_nodes:
+            if i in part_bbox:
+                low = world_translation(i)[1] + part_bbox[i][0][1] + abs_y
+                if low < BUFFER_UMIN - 0.01:
+                    rep.add("WARN", "Буфер '%s': нижняя кромка на %.3f над рельсом, NEM 303 требует не ниже %.3f (место для сцепки, уходящей под буферами)." %
+                            (node_name(g, i), low, BUFFER_UMIN))
     else:
         rep.add("INFO", "Узлов с ролью buffer* нет: высоту буферов автоматически проверить нельзя. Для проверки задайте роли buffer_1...buffer_4 мешам или пустышкам на осях буферов.")
 
