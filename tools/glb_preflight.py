@@ -3,9 +3,9 @@
 
 Запуск (из корня репозитория, Godot не нужен, только Python 3.8+):
 
-    python tools/glb_preflight.py data/import/28334-Materialwagen_GLB.glb
+    python tools/glb_preflight.py data/trains/models/wagon_coal_01.glb
     python tools/glb_preflight.py model.glb                                        # новая модель: Z=0 это ось буферов, offset_mesh_y = 1.065
-    python tools/glb_preflight.py old.glb --config data/trains/objects/wagon_03.tres --offset-y 1.15   # старая: её offset_mesh_y
+    python tools/glb_preflight.py old.gltf --config data/trains/objects/wagon_03.tres --offset-y 1.15   # старая модель: её offset_mesh_y
     python tools/glb_preflight.py model.glb --brush      # нужна ли UV2 для кисти Library
 
 Что делает: читает glb/gltf, ничего не меняет и не пишет. Печатает отчёт ERROR / WARN / INFO
