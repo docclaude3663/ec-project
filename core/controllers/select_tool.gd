@@ -29,6 +29,8 @@ var _marquee_start := Vector2.ZERO
 var _marquee_additive := false   # рамка с Shift: добавляет к группе
 var _shift_press := false        # ЛКМ нажата с Shift (Build): клик переключает объект в группе, драг добавляет рамкой
 var _shift_click: Entity         # объект под курсором в момент нажатия с Shift (null: пустое место)
+var _group_drag_candidate: Entity   # член группы под курсором в момент нажатия (без Shift/Ctrl): драг потащит всю группу
+const GROUP_MOVABLE: Array[StringName] = [&"track", &"building"]   # категории, которые группа умеет двигать
 var _group_layer: CanvasLayer
 var _marquee: MarqueeOverlay
 var _tooltip: InfoToolTip
@@ -97,9 +99,15 @@ func handle_input(event: InputEvent):
 			_marquee_additive = false
 			_shift_press = false
 			_shift_click = null
+			_group_drag_candidate = null
 			var in_build: bool = Global.current_mode == &'build'
 			var shift: bool = in_build and Actions.shift()
-			if in_build and (clicked_entity == null or shift or Actions.ctrl()):
+			# Нажатие на члене группы без модификаторов: группа остается, драг потащит ее всю, клик без драга выберет только его.
+			# Рамку при этом не взводим: иначе она начнется на 8 px, раньше драга на 10 px, и снимет группу
+			if in_build and clicked_entity != null and not shift and not Actions.ctrl() and _group.has_member(clicked_entity):
+				_group_drag_candidate = clicked_entity
+				clicked_entity = null
+			if in_build and _group_drag_candidate == null and (clicked_entity == null or shift or Actions.ctrl()):
 				_marquee_armed = true
 				_marquee_start = event.position
 				if shift:
@@ -122,6 +130,14 @@ func handle_input(event: InputEvent):
 				clicked_entity = null
 				return
 			_marquee_armed = false
+			if _group_drag_candidate != null:
+				# Клик без драга по члену группы: выбираем только его
+				var one := _group_drag_candidate
+				_group_drag_candidate = null
+				if is_instance_valid(one):
+					set_selection(one)
+				clicked_entity = null
+				return
 			if _shift_press:
 				# Shift+клик без драга: переключить объект в группе (по пустому месту ничего не меняет)
 				_shift_press = false
@@ -152,6 +168,15 @@ func handle_input(event: InputEvent):
 		if _marquee_active:
 			_marquee.set_rect(Rect2(_marquee_start, Vector2.ZERO).expand(event.position))
 
+	# XX claude-switch: протащили член группы: двигаем всю группу
+	if event is InputEventMouseMotion and Input.is_action_pressed("lmb") and _group_drag_candidate != null:
+		if lmb_start_pos.distance_to(event.position) > 10:
+			var leader := _group_drag_candidate
+			_group_drag_candidate = null
+			if is_instance_valid(leader):
+				_start_group_drag(leader)
+			return
+
 	# --- ЛКМ: Движение (Переход в Драг) ---
 	if event is InputEventMouseMotion and Input.is_action_pressed("lmb"):
 		if clicked_entity and clicked_entity == selected_entity and Global.current_mode != &'sections':   # XX claude-table T2: секции не таскаем, их ставит TableTool
@@ -160,21 +185,12 @@ func handle_input(event: InputEvent):
 				_start_drag(clicked_entity)
 				clicked_entity = null
 
-	# XX claude-switch: Del удаляет группу, выбранную рамкой
-	if not _group.members.is_empty() and Input.is_action_just_pressed(&"delete"):
-		_group.delete_members()
+	# XX claude-switch: Del удаляет группу, выбранную рамкой, а без группы выбранный объект.
+	# По событию клавиши (Actions.pressed), а не опросом Input.is_action_just_pressed: опрос был истинен на любом событии кадра,
+	# в том числе на движении мыши, и срабатывал, когда Del уже забрал LineEdit, а также на Shift+Del и Ctrl+Del
+	if Actions.pressed(event, &"delete"):
+		_delete_selection()
 		return
-	if selected_entity and Input.is_action_just_pressed(&"delete"):
-		# Вечная группа (паровоз с тендером, секции) удаляется целиком
-		var coupler := selected_entity.get_comp(C_Coupler) as C_Coupler
-		if coupler != null:
-			for member in coupler.get_permanent_group():
-				if member != selected_entity and is_instance_valid(member):
-					member.kill_me()
-		selected_entity.kill_me() #entity сама почистит за собой
-		#selected_entity.free()
-		#INFO ДЕРГАЕМ ПАНЕЛЬ!
-		controller.publish_selection(null)
 	# XX claude-terra 13.2 B6: B - автонасыпь под выбранным траком и цепочкой за ним (только Build)
 	if selected_entity and Actions.pressed(event, &"embankment_toggle") \
 			and Global.current_mode == &'build' and selected_entity.has_comp(C_Path):
@@ -190,6 +206,47 @@ func handle_input(event: InputEvent):
 	if selected_entity and Input.is_action_just_pressed(&"wagon_kick_back"):
 		selected_entity.send_event("on_train_kicked", {"power_kick": -10.0}) # Пинок силой 10m\s
 
+
+
+## Del: группа, выбранная рамкой, иначе одиночный выбор. Группа проверяется первой и только по живым членам (GroupSelection.clear
+## чистит members), поэтому после клика по другому объекту Del удаляет именно его, а не прежнюю рамку
+func _delete_selection() -> void:
+	if not _group.members.is_empty():
+		_delete_group()
+	elif selected_entity != null and is_instance_valid(selected_entity):
+		_delete_single(selected_entity)
+
+
+func _delete_group() -> void:
+	var removed := 0
+	for e in _group.take_members():
+		if e.is_queued_for_deletion():
+			continue   # уже ушел вместе с вечной группой соседа
+		_kill_entity(e)
+		removed += 1
+	if removed > 0:
+		_show_note("Удалено объектов: %d" % removed)
+
+
+func _delete_single(e: Entity) -> void:
+	_kill_entity(e)
+	# kill_me может отказать (секция с объектами на ней, LYM.notice скажет почему): тогда выбор остается как был
+	if e.is_queued_for_deletion():
+		selected_entity = null
+		Hints.set_context(&"selected", false)
+		Hints.set_context(&"switch", false)
+		#INFO ДЕРГАЕМ ПАНЕЛЬ!
+		controller.publish_selection(null)
+
+
+## Убрать объект. Вечная группа (паровоз с тендером, секции) уходит целиком, как при одиночном Del
+func _kill_entity(e: Entity) -> void:
+	var coupler := e.get_comp(C_Coupler) as C_Coupler
+	if coupler != null:
+		for member in coupler.get_permanent_group():
+			if member != e and is_instance_valid(member):
+				member.kill_me()
+	e.kill_me()   # entity сама почистит за собой
 
 
 ## XX claude-table T1b: что можно выбрать в текущем режиме. Секции стола (ящики) выбираются только в режиме «Секции»,
@@ -386,8 +443,10 @@ func clear_group() -> void:
 
 # при выходе из селекта чистим 
 func exit(_to_drag : bool = false):
-	# XX claude-switch: рамка и группа при выходе из выбора снимаются
-	_group.clear()
+	# XX claude-switch: рамка и группа при выходе из выбора снимаются (в драг группа уходит с инструментом, ее тащат)
+	if not _to_drag:
+		_group.clear()
+	_group_drag_candidate = null
 	_marquee_armed = false
 	_marquee_active = false
 	_marquee.set_rect(Rect2())
@@ -436,7 +495,7 @@ func _ensure_group_ui() -> void:
 	_note.add_theme_constant_override("outline_size", 8)
 	_group_layer.add_child(_note)
 	_tooltip.category_toggled.connect(func(cat: StringName, on: bool): _group.set_category_enabled(cat, on))
-	_tooltip.delete_pressed.connect(func(): _group.delete_members())
+	_tooltip.delete_pressed.connect(_delete_group)
 	_group.changed.connect(_on_group_changed)
 	_on_group_changed()
 
@@ -487,3 +546,16 @@ func _seed_group_from_single() -> void:
 	var e := selected_entity
 	_clear_single_selection()
 	_group.add_entity(e)
+
+
+## Групповой драг: лидер (тот, за кого взялись) тащится обычным драгом, остальные члены следуют за его позой (DragTool.sel_group).
+## Двигаем только траки и домики: вагоны и террейн имеют собственную логику драга (физика, сетка листов), жестко вести их за лидером пока нельзя.
+## Если такие объекты включены в группу, перемещение отклоняется с подсказкой в панели: снимите галки категорий.
+func _start_group_drag(leader: Entity) -> void:
+	for e in _group.members:
+		if is_instance_valid(e) and not GROUP_MOVABLE.has(GroupSelection.category_of(e)):
+			_tooltip.set_note("Двигать группу можно, если в ней только траки и домики. Снимите галки: вагоны, террейн.")
+			return
+	_tooltip.set_note("")
+	controller.drag_tool.sel_group.assign(_group.members)   # assign, а не присваивание: типизированный Array[Entity]
+	_start_drag(leader)

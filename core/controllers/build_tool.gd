@@ -37,12 +37,16 @@ signal last_changed(setting: EntitySetting)
 var last_setting: EntitySetting
 ## Стиль исходного трака при дубле выбранного (пусто: стиль сессии). Берется один раз в enter()
 var _dup_style: StringName = &""
-## XX claude-switch: вращение призрака Alt + мышь (см. AltRotate)
-var _alt_rotate := AltRotate.new()
+## XX claude-switch: вращение призрака Alt + мышь и высота Ctrl + мышь (см. DragModifiers)
+var _mods := DragModifiers.new()
 var last_entity: Entity
 ## Призрак получил готовую форму (flex): фазу растягивания пропускаем, ставится одним кликом
 var preshaped := false
 var _dup_pending := false
+
+
+func _ready() -> void:
+	add_child(_mods)   # XX claude-switch: DragModifiers слушает мышь через _input, ему нужно быть в дереве
 
 
 func enter():
@@ -50,7 +54,7 @@ func enter():
 	pending_consist = null
 	stretch_phase = 0
 	preshaped = false   # XX claude-terra 13.1.4
-	_alt_rotate.reset()
+	_mods.reset()
 	if ghost: ghost.queue_free()
 	# Дубль выбранного трака берет его стиль, остальные призраки стиль сессии (пустой запрос)
 	ghost = controller.entity_factory.create_from_setting(ghost_setting, _dup_style if _dup_pending else &"", ghost_variant)
@@ -411,8 +415,9 @@ func process_tick(_delta):
 		if not plane_hit.is_empty():
 			_poly().set_cursor(plane_hit.position)
 		return
-	# XX claude-switch: пока зажат Alt, призрак вращается мышью, позицию не обновляем (не во время растягивания flex)
-	if ghost and stretch_phase == 0 and _alt_rotate.tick(ghost, controller.get_viewport()):
+	# XX claude-switch: пока зажат Alt (вращение) или Ctrl (высота), призрак стоит на месте, позицию не обновляем.
+	# Не во время растягивания flex и не у листа, который рисуется по вершинам: там Ctrl+R/F это толщина, а Alt вращать нечего
+	if ghost and stretch_phase == 0 and not _draw_active() and _mods.tick(ghost, controller.get_viewport()):
 		return
 	#var hit = controller.get_mouse_ray((1 << 0) | (1 << 2)|(1 << 4))
 	# XX claude-terra слои из EntitySetting.pick_layers
@@ -423,7 +428,7 @@ func process_tick(_delta):
 		if stretch_phase == 1:   # XX claude-terra
 			ghost.send_event("on_stretch_moved", hit)
 		else:
-			_alt_rotate.remember(hit)   # XX claude-switch: позиция призрака (нужна при вращении Alt)
+			_mods.remember(hit)   # XX claude-switch: позиция призрака (нужна при Alt и Ctrl)
 			ghost.send_event("on_drag_moved", hit)
 			_update_consist_fit()
 
@@ -432,6 +437,7 @@ func process_tick(_delta):
 
 ## Выполняется при выходе из инстр.
 func exit(_to_drag : bool = false):
+	_mods.reset()   # XX claude-switch: вернуть курсор, если вышли из инструмента при зажатом Alt или Ctrl
 	consist = null
 	if TSM.current_changed.is_connected(_on_track_style_changed):
 		TSM.current_changed.disconnect(_on_track_style_changed)

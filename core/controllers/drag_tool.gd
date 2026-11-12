@@ -13,8 +13,8 @@ const ROT_FINE := 5.0 # Градусы, Shift+Q/E (XX claude-terra 13.1.7)
 # Флаг позиции пкм
 var rmb_pressed_pos := Vector2.ZERO
 
-# XX claude-switch: вращение Alt + мышь (см. AltRotate)
-var _alt_rotate := AltRotate.new()
+# XX claude-switch: вращение Alt + мышь и высота Ctrl + мышь (см. DragModifiers)
+var _mods := DragModifiers.new()
 
 # Группа на вечной сцепке тащится целиком: все части по порядку от головной, их {reversed, spacing},
 # индекс схваченной и её положение относительно каждой (для свободного перетаскивания без рельс)
@@ -23,13 +23,29 @@ var _group_parts: Array[Dictionary] = []
 var _group_index := -1
 var _group_rel: Array[Transform3D] = []
 
+# XX claude-switch: перемещение группы, выбранной рамкой (U22 шаг 2). Не путать с _group выше (состав на вечной сцепке).
+# Лидер (target_entity) тащится обычной логикой драга со всеми магнитами, остальные члены выбора (followers) жестко следуют
+# за его позой: поза = поза лидера * относительная поза на старте. Поэтому поворот (Q/E, Alt), уровень (R/F, Ctrl)
+# и привязка лидера к сокетам двигают всю группу как одно целое.
+## Члены выбора, включая лидера. Задает SelectTool перед входом в драг. Пусто: обычный драг одного объекта
+var sel_group: Array[Entity] = []
+var _sg_followers: Array[Entity] = []
+var _sg_rel := {}              # Entity -> Transform3D: поза в системе координат лидера
+var _sg_start := {}            # Entity -> Transform3D: поза на старте (для отката)
+var _sg_leader_start := Transform3D.IDENTITY
+
+
+func _ready() -> void:
+	add_child(_mods)   # DragModifiers слушает мышь через _input, ему нужно быть в дереве
+
+
 ## Начало драга
 func enter():
 	if not target_entity:
 		controller.switch_tool(controller.select_tool)
 		return
 
-	_alt_rotate.reset()
+	_mods.reset()
 	# Вешаем стейт (для визуала)
 	target_entity.add_component(C_Drag.new())
 	
@@ -44,6 +60,7 @@ func enter():
 		_group_collect()   # до on_drag_started: всем частям C_Drag, иначе связи внутри группы порвутся
 		target_entity.send_event("on_drag_started", hit)
 		_group_start(hit)
+		_sgroup_begin(hit)
 		
 
 
@@ -57,16 +74,20 @@ func _pick_mask() -> int:
 
 ## ⚡Сигнал(почти) о смене позиции в сущность. Там рзберется драгабл
 func process_tick(_delta):
-	# XX claude-switch: пока зажат Alt, объект вращается мышью, позицию не обновляем
-	if _alt_rotate.tick(target_entity, controller.get_viewport()):
+	# XX claude-switch: пока зажат Alt (вращение) или Ctrl (высота), курсор заморожен, объект стоит на месте, позицию не обновляем.
+	# Остальные части состава и члены выбора следуют за объектом и в этом кадре: поворот и уровень двигают их позы
+	if _mods.tick(target_entity, controller.get_viewport()):
+		_group_move()
+		_sgroup_follow()
 		return
 	#var hit = controller.get_mouse_ray((1 << 0) | (1 << 2)|(1 << 4))
 	var hit = controller.get_mouse_ray(_pick_mask())   # XX claude-terra слои из EntitySetting.pick_layers
 	if hit:
-		_alt_rotate.remember(hit)   # XX claude-switch: позиция, с которой объект стоит (нужна при вращении Alt)
+		_mods.remember(hit)   # XX claude-switch: позиция, с которой объект стоит (нужна при Alt и Ctrl)
 		# Отправляем приказ в сущность. Оттуда C_TrackDraggable сам разберется.
 		target_entity.send_event("on_drag_moved", hit)
 		_group_move()
+		_sgroup_follow()
 		pass
 
 
@@ -108,7 +129,9 @@ func handle_input(event: InputEvent):
 
 ## Драг окончен
 func exit(_to_drag : bool = false):
-	
+	_mods.reset()   # вернуть курсор, если драг кончился при зажатом Alt или Ctrl
+	# Выбор рамкой решает судьбу группы до конца драга лидера: его on_drag_ended сбросит флаг отказа привязки, а нам он нужен
+	_sgroup_end()
 	if target_entity:
 		target_entity.remove_component(C_Drag)
 		target_entity.send_event("on_drag_ended", {})
@@ -204,3 +227,76 @@ func _group_clear() -> void:
 	_group_parts.clear()
 	_group_rel.clear()
 	_group_index = -1
+
+
+# ==========================================
+# XX claude-switch. Перемещение группы, выбранной рамкой
+# ==========================================
+
+## Старт: запоминаем позы, вешаем ведомым состояние драга и сообщаем им о начале (как лидеру, тем же вводом курсора)
+func _sgroup_begin(hit: Dictionary) -> void:
+	_sg_followers.clear()
+	_sg_rel.clear()
+	_sg_start.clear()
+	if sel_group.size() < 2 or not is_instance_valid(target_entity):
+		return
+	_sg_leader_start = target_entity.global_transform
+	var inv := _sg_leader_start.affine_inverse()
+	for e in sel_group:
+		if e == target_entity or not is_instance_valid(e) or e.is_queued_for_deletion():
+			continue
+		_sg_followers.append(e)
+		_sg_start[e] = e.global_transform
+		_sg_rel[e] = inv * e.global_transform
+		e.add_component(C_GroupFollower.new())   # маркер: следует за лидером, сам к сокетам не привязывается
+		e.add_component(C_Drag.new())            # как у лидера: уходит со слоев выбора, чтобы курсор не попадал в него
+		e.send_event("on_drag_started", hit)
+
+
+## Каждый кадр после движения лидера: ведомые занимают свою позу относительно лидера
+func _sgroup_follow() -> void:
+	if _sg_followers.is_empty() or not is_instance_valid(target_entity):
+		return
+	var lx := target_entity.global_transform
+	for f in _sg_followers:
+		if is_instance_valid(f):
+			f.global_transform = lx * (_sg_rel[f] as Transform3D)
+
+
+## Конец: если заблокирован ХОТЬ ОДИН член группы (перекрытие, отказ привязки), откатываем ВСЮ группу, иначе она осталась бы разорванной
+func _sgroup_end() -> void:
+	if _sg_followers.is_empty():
+		sel_group = []
+		return
+	var blocked := _is_blocked(target_entity)
+	for f in _sg_followers:
+		if is_instance_valid(f) and _is_blocked(f):
+			blocked = true
+	if blocked:
+		if is_instance_valid(target_entity):
+			target_entity.global_transform = _sg_leader_start
+		for f in _sg_followers:
+			if is_instance_valid(f):
+				f.global_transform = _sg_start[f]
+		PGM.request_recalculate()
+	for f in _sg_followers:
+		if not is_instance_valid(f):
+			continue
+		if f.has_comp(C_GroupFollower):
+			f.remove_component(C_GroupFollower)
+		if f.has_comp(C_Drag):
+			f.remove_component(C_Drag)
+		f.send_event("on_drag_ended", {})
+	_sg_followers.clear()
+	_sg_rel.clear()
+	_sg_start.clear()
+	sel_group = []
+
+
+func _is_blocked(e: Entity) -> bool:
+	if not is_instance_valid(e):
+		return false
+	if e.has_comp(C_Blocked):
+		return true
+	var sock := e.get_comp(C_Socket) as C_Socket
+	return sock != null and sock.has_snap_rejection()

@@ -81,22 +81,25 @@ func set_category_enabled(category: StringName, on: bool) -> void:
 	_apply_filter()
 
 
-## Снять группу и рамку
+## Снять группу и рамку. members чистится вместе с candidates: по нему SelectTool решает, что удалять и тащить по Del и драгу,
+## и живая «группа-призрак» после снятия удаляла бы прежний выбор вместо нового (баг Del после рамки)
 func clear() -> void:
 	if candidates.is_empty() and members.is_empty():
 		return
 	_unmark_members()
 	candidates.clear()
+	members.clear()
 	changed.emit()
 
 
-## Удалить объекты группы (как Del у одиночного: Entity.kill_me)
-func delete_members() -> void:
-	var list := members.duplicate()
-	clear()
-	for e in list:
+## Забрать живые объекты группы (для удаления) и снять группу. Убирает их SelectTool: у него общий код с одиночным Del
+func take_members() -> Array[Entity]:
+	var list: Array[Entity] = []
+	for e in members:
 		if is_instance_valid(e) and not e.is_queued_for_deletion():
-			e.kill_me()
+			list.append(e)
+	clear()
+	return list
 
 
 ## Сколько кандидатов в каждой категории (до фильтра)

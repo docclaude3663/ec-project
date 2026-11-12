@@ -170,6 +170,8 @@ func _apply_vertical_magnet(pos: Vector3) -> Vector3:
 
 ## 💡Вызывается из C_Socket при успешной коллизии сокетов
 func start_snap(target_global_transform: Transform3D) -> void:
+	if entity.has_comp(C_GroupFollower):
+		return   # XX claude-switch: член группы следует за лидером, сам к сокетам не привязывается
 	snapped_entity_transform = target_global_transform
 	is_snapped_locked = true # Блокируем обычное влияние мыши
 	# Актуализируем углы сразу при снапе. Тогда после в драге снапа угол не возвращается

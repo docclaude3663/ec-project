@@ -19,6 +19,7 @@ const PANEL_TOP := 70.0
 var _title: Label
 var _checks := {}          # категория -> CheckBox
 var _delete_btn: Button
+var _note: Label
 var _syncing := false
 
 
@@ -58,24 +59,36 @@ func _init() -> void:
 		var cb := CheckBox.new()
 		cb.text = GroupSelection.LABELS[cat]
 		cb.button_pressed = true
+		cb.focus_mode = Control.FOCUS_NONE   # как у кнопок тулбара: Пробел и Enter не нажимают галку, клавиши остаются инструментам
 		cb.toggled.connect(_on_check_toggled.bind(cat))
 		box.add_child(cb)
 		_checks[cat] = cb
 
 	_delete_btn = Button.new()
 	_delete_btn.text = "Удалить (Del)"
+	_delete_btn.focus_mode = Control.FOCUS_NONE
 	_delete_btn.pressed.connect(func(): delete_pressed.emit())
 	box.add_child(_delete_btn)
 
 	var hint := Label.new()
-	hint.text = "ПКМ: снять выбор"
+	hint.text = "ПКМ: снять выбор. Тащить объект группы: двигать группу"
 	hint.modulate = Color(1, 1, 1, 0.55)
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hint.custom_minimum_size.x = PANEL_WIDTH - 24.0
 	box.add_child(hint)
+
+	_note = Label.new()
+	_note.modulate = Color(1.0, 0.45, 0.35)
+	_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_note.custom_minimum_size.x = PANEL_WIDTH - 24.0
+	_note.visible = false
+	box.add_child(_note)
 
 
 ## selected: сколько в группе; counts: категория -> число объектов рамки; enabled: категория -> галка
 func set_state(selected: int, counts: Dictionary, enabled: Dictionary) -> void:
 	_syncing = true
+	set_note("")   # состав группы изменился: старое сообщение устарело
 	_title.text = "Выбрано: %d" % selected
 	for cat in _checks:
 		var cb: CheckBox = _checks[cat]
@@ -85,6 +98,12 @@ func set_state(selected: int, counts: Dictionary, enabled: Dictionary) -> void:
 		cb.disabled = n == 0
 	_delete_btn.disabled = selected == 0
 	_syncing = false
+
+
+## Сообщение в панели (например, почему группа не двигается). Пустое скрывает
+func set_note(text: String) -> void:
+	_note.text = text
+	_note.visible = text != ""
 
 
 func _on_check_toggled(on: bool, category: StringName) -> void:
