@@ -6,7 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://gwsdt87qd0o8" path="res://data/trains/wheel_pair_03.tscn" id="4_68dxn"]
 [ext_resource type="Script" uid="uid://daeylhso0elsx" path="res://setting/light_config.gd" id="5_g6rui"]
 [ext_resource type="Script" uid="uid://gv2lrhu17dtf" path="res://setting/mechanism_config.gd" id="6_8nbd5"]
-[ext_resource type="PackedScene" uid="uid://c3830uoot3kae" path="res://data/trains/models/wagon_coal_01.tscn" id="7_od62w"]
+[ext_resource type="PackedScene" uid="uid://c3830uoot3kae" path="res://data/models/wagon_coal_01/wagon_coal_01.tscn" id="7_od62w"]
 [ext_resource type="Script" uid="uid://bicjny5dv1h3s" path="res://setting/wagon_config.gd" id="8_8qork"]
 [ext_resource type="Script" uid="uid://bwaluvayi2o8k" path="res://setting/suspension_config.gd" id="9_f83ox"]
 [ext_resource type="Script" uid="uid://mpakwrr6lum8" path="res://core/components/comp_settings/identity_setting.gd" id="10_kkuxg"]

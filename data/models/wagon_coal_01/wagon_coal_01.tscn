@@ -1,15 +1,15 @@
 [gd_scene format=3 uid="uid://c3830uoot3kae"]
 
-[ext_resource type="PackedScene" uid="uid://bxrfg6qcm3h28" path="res://data/trains/models/wagon_coal_01.glb" id="1_y2p1d"]
+[ext_resource type="PackedScene" uid="uid://2sx8p2g8xi5f" path="res://data/models/wagon_coal_01/wagon_coal_01.glb" id="1_ag4h2"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_1l2rq"]
 size = Vector3(3.6802003, 3.9971457, 14.981278)
 
 [node name="WagonRigidBody3D" type="RigidBody3D" unique_id=994244073]
 
-[node name="wagon_coal_01" parent="." unique_id=1115938222 instance=ExtResource("1_y2p1d")]
-
 [node name="WagonCollisionShape3D" type="CollisionShape3D" parent="." unique_id=816151352]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0708, -0.18189096)
 shape = SubResource("BoxShape3D_1l2rq")
 debug_color = Color(0, 0.6, 0.69803923, 1)
+
+[node name="wagon_coal_01" parent="." unique_id=795363489 instance=ExtResource("1_ag4h2")]
