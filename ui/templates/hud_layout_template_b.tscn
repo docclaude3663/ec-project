@@ -13,6 +13,7 @@ grow_vertical = 2
 theme = ExtResource("1_klsv0")
 
 [node name="Backdrops" type="Control" parent="." unique_id=1182112804]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -31,7 +32,6 @@ grow_vertical = 2
 color = Color(0.11, 0.14, 0.18, 1)
 
 [node name="BackdropLight" type="ColorRect" parent="Backdrops" unique_id=60527410]
-visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -261,7 +261,6 @@ layout_mode = 2
 theme_override_constants/separation = 0
 
 [node name="HeadBar" type="PanelContainer" parent="HUD/ToolDock/DockBox" unique_id=1803435502]
-custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 theme_type_variation = &"PanelContainerHeader"
 
@@ -293,8 +292,53 @@ theme_type_variation = &"LabelOnAccent"
 text = "Прямые"
 vertical_alignment = 1
 
-[node name="Sep3" type="VSeparator" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow" unique_id=950101756]
+[node name="Sep4" type="VSeparator" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow" unique_id=1016634357]
+custom_minimum_size = Vector2(30, 0)
 layout_mode = 2
+
+[node name="HeaderTags" type="HBoxContainer" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow" unique_id=1852622406]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HeadTag1" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=1362868325]
+custom_minimum_size = Vector2(36, 24)
+layout_mode = 2
+theme_type_variation = &"ButtonSmall"
+text = "Т1"
+
+[node name="HeadTag2" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=888740276]
+custom_minimum_size = Vector2(36, 24)
+layout_mode = 2
+theme_type_variation = &"ButtonSmall"
+text = "Т2"
+
+[node name="HeadTag3" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=1631295298]
+custom_minimum_size = Vector2(36, 24)
+layout_mode = 2
+theme_type_variation = &"ButtonSmall"
+text = "Т3"
+
+[node name="HeadTag4" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=124039702]
+custom_minimum_size = Vector2(36, 24)
+layout_mode = 2
+theme_type_variation = &"ButtonSmall"
+text = "Т4"
+
+[node name="HeadTag5" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=1564302283]
+custom_minimum_size = Vector2(36, 24)
+layout_mode = 2
+theme_type_variation = &"ButtonSmall"
+text = "Т5"
+
+[node name="HeadTag6" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=2002620664]
+custom_minimum_size = Vector2(36, 24)
+layout_mode = 2
+theme_type_variation = &"ButtonSmall"
+text = "Т6"
+
+[node name="HeadSpacer" type="Control" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow" unique_id=13008576]
+layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="CountLabel" type="Label" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow" unique_id=348109983]
 layout_mode = 2
@@ -302,63 +346,19 @@ theme_type_variation = &"LabelOnAccentDim"
 text = "12 объектов"
 vertical_alignment = 1
 
-[node name="HeadSpacer" type="Control" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow" unique_id=13008576]
-layout_mode = 2
-size_flags_horizontal = 3
-
 [node name="OtherActionsButton" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow" unique_id=530353126]
-theme_type_variation = &"ButtonSmall"
 custom_minimum_size = Vector2(36, 24)
 layout_mode = 2
+theme_type_variation = &"ButtonSmall"
 text = "…"
-
-[node name="HeaderTags" type="HBoxContainer" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow" unique_id=1852622406]
-layout_mode = 2
-theme_override_constants/separation = 4
-
-[node name="HeadTag1" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=1362868325]
-theme_type_variation = &"ButtonSmall"
-custom_minimum_size = Vector2(36, 24)
-layout_mode = 2
-text = "Т1"
-
-[node name="HeadTag2" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=888740276]
-theme_type_variation = &"ButtonSmall"
-custom_minimum_size = Vector2(36, 24)
-layout_mode = 2
-text = "Т2"
-
-[node name="HeadTag3" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=1631295298]
-theme_type_variation = &"ButtonSmall"
-custom_minimum_size = Vector2(36, 24)
-layout_mode = 2
-text = "Т3"
-
-[node name="HeadTag4" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=124039702]
-theme_type_variation = &"ButtonSmall"
-custom_minimum_size = Vector2(36, 24)
-layout_mode = 2
-text = "Т4"
-
-[node name="HeadTag5" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=1564302283]
-theme_type_variation = &"ButtonSmall"
-custom_minimum_size = Vector2(36, 24)
-layout_mode = 2
-text = "Т5"
-
-[node name="HeadTag6" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=2002620664]
-theme_type_variation = &"ButtonSmall"
-custom_minimum_size = Vector2(36, 24)
-layout_mode = 2
-text = "Т6"
 
 [node name="ActionsStrip" type="HBoxContainer" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow" unique_id=1192570763]
 layout_mode = 2
 
 [node name="DuplicateButton" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/ActionsStrip" unique_id=1383708415]
-theme_type_variation = &"ButtonSmall"
 custom_minimum_size = Vector2(36, 24)
 layout_mode = 2
+theme_type_variation = &"ButtonSmall"
 text = "V"
 
 [node name="Body" type="HBoxContainer" parent="HUD/ToolDock/DockBox" unique_id=293606182]
