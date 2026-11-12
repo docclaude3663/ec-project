@@ -6,7 +6,7 @@
 shader_type spatial;
 render_mode blend_mix, cull_back;
 
-uniform sampler2D layer : filter_linear, repeat_disable;
+uniform sampler2D layer : filter_linear_mipmap, repeat_disable;
 uniform bool premultiplied = true;
 uniform bool srgb_decode = true;
 uniform float rough : hint_range(0.0, 1.0) = 0.6;

@@ -343,6 +343,7 @@ func _refresh_saved() -> void:
 
 func _on_save(as_new: bool) -> void:
 	var v: ModelVariant = screen.variant
+	var old_id := v.id
 	if as_new or not ModelVariant.is_valid_id(v.id):
 		v.id = ModelVariant.make_id()
 	var typed := _name_edit.text.strip_edges()
@@ -351,14 +352,34 @@ func _on_save(as_new: bool) -> void:
 	elif v.name == "":
 		v.name = "Исполнение %d" % (_saved.size() + 1)
 	_name_edit.text = v.name
-	var err := VariantIO.save_variant(v)
+
+	# Слой кисти: живой слой движка, а без движка прежние файлы слоёв исполнения (при «Как новое» копируются)
+	var files := {}
+	var eng: PaintEngine = screen.paint_engine
+	if eng != null and eng.is_built:
+		await eng.wait_idle()
+		PaintData.remove_texture_layer(v.paint, PaintData.TEXTURE_LAYER_ID)
+		if not eng.is_empty():
+			var file := PaintData.TEXTURE_LAYER_ID + ".png"
+			files[file] = eng.to_png()
+			PaintData.set_texture_layer(v.paint, PaintData.TEXTURE_LAYER_ID, str(eng.target.name), eng.res, file)
+	else:
+		for layer in PaintData.texture_layers(v.paint):
+			var f := str(layer.get("file", ""))
+			if f != "" and ModelVariant.is_valid_id(old_id):
+				var bytes := VariantIO.load_layer_png(old_id, f)
+				if not bytes.is_empty():
+					files[f] = bytes
+	var err := VariantIO.save_layers(v.id, files)
+	if err == OK:
+		err = VariantIO.save_variant(v)
 	if err != OK:
 		_status.text = "Не удалось сохранить исполнение (код %d)." % err
 		return
 	if not screen.profile.variants.has(v.id):
 		screen.profile.variants.append(v.id)
 		VariantIO.save_profile(screen.profile)
-	_status.text = "Сохранено: %s." % v.name
+	_status.text = "Сохранено: %s%s." % [v.name, " (со слоем кисти)" if not files.is_empty() else ""]
 	_refresh_saved()
 
 
@@ -370,10 +391,31 @@ func _on_load() -> void:
 	loaded.base = String(screen.current_setting.get_key())
 	screen.variant = loaded
 	_name_edit.text = loaded.name
-	screen.apply_variant()
 	_build_zone_list()
 	_sync_controls()
+	await _sync_engine_from_variant()
 	_status.text = "Загружено: %s." % loaded.name
+
+
+## Слой кисти исполнения в Library: есть движок (режим «Кисть» уже включали) загружает в него PNG или очищает слой;
+## движка нет: слой показывается статичной накладкой из файла, движок подхватит его при входе в «Кисть»
+func _sync_engine_from_variant() -> void:
+	var v: ModelVariant = screen.variant
+	var layers := PaintData.texture_layers(v.paint)
+	var eng: PaintEngine = screen.paint_engine
+	if eng != null and eng.is_built:
+		var bytes := PackedByteArray()
+		if not layers.is_empty() and layers[0].has("file"):
+			bytes = VariantIO.load_layer_png(v.id, str(layers[0]["file"]))
+		if bytes.is_empty():
+			await eng.wait_idle()
+			if not eng.is_empty():
+				eng.clear()
+		else:
+			await eng.load_png(bytes)
+		screen.apply_variant()
+	else:
+		screen.show_variant_layers()
 
 
 func _on_delete() -> void:
@@ -424,9 +466,10 @@ func _build_brush_box() -> void:
 		tool_row.add_child(b)
 		_tool_buttons[id] = b
 
-	_size_slider = _add_slider("Размер, %", 1.0, 30.0, 1.0, "size")
-	_flow_slider = _add_slider("Поток, %", 5.0, 100.0, 5.0, "flow")
-	_hard_slider = _add_slider("Жёсткость, %", 0.0, 95.0, 5.0, "hardness")
+	# минимумы в три раза меньше прежних (размер 1 -> 0.33, поток 5 -> 1.67); у жёсткости минимум 0 и так
+	_size_slider = _add_slider("Размер, %", 0.33, 30.0, 0.01, "size")
+	_flow_slider = _add_slider("Поток, %", 1.67, 100.0, 0.01, "flow")
+	_hard_slider = _add_slider("Жёсткость, %", 0.0, 95.0, 1.0, "hardness")
 
 	var row := HBoxContainer.new()
 	_brush_box.add_child(row)
@@ -508,7 +551,8 @@ func _enter_brush() -> void:
 		return
 	if ok:
 		var ms := int(screen.paint_engine.bake_info.get("ms", 0))
-		_brush_note.text = "Карта кисти готова (%d мс). ЛКМ рисует, ПКМ вращает, колесо зум. Мазки пока не сохраняются в исполнение." % ms
+		_brush_note.text = "Карта кисти готова (%d мс). ЛКМ рисует, ПКМ вращает, колесо зум. Мазки сохраняются вместе с исполнением." % ms
+		await _sync_engine_from_variant()
 	else:
 		_brush_note.text = "Кисть недоступна для этой модели."
 		_mode_zones_btn.button_pressed = true

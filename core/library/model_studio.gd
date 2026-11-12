@@ -307,8 +307,8 @@ func _show_object(s: EntitySetting, keep_variant := false) -> void:
 		# Закрытая модель: тёмный силуэт без материалов (ATTN_22 §22.7.1)
 		if catalog.is_locked(s.get_key()):
 			_apply_silhouette(world.subject)
-		elif not PaintData.is_empty(variant.paint):
-			apply_variant()
+		elif not PaintData.is_blank(variant.paint):
+			show_variant_layers()   # заливка зон и сохранённые слои кисти (накладки из файлов)
 	_subject_ready = info.ok
 	_last_info = info
 	_last_ms = Time.get_ticks_msec() - t0
@@ -404,6 +404,19 @@ func _free_paint_engine() -> void:
 	paint_overlays = {}
 
 
+## Сохранённые слои кисти загруженного исполнения без движка: статичные накладки из PNG-файлов (движка ещё нет)
+func show_variant_layers() -> void:
+	paint_overlays = {}
+	for layer in PaintData.texture_layers(variant.paint):
+		var file := str(layer.get("file", ""))
+		if file == "" or not bool(layer.get("visible", true)):
+			continue
+		var tex := PaintLayers.texture_from_png(VariantIO.load_layer_png(variant.id, file))
+		if tex != null and str(layer.get("mesh", "")) != "":
+			paint_overlays[str(layer["mesh"])] = PaintLayers.make_overlay(tex)
+	apply_variant()
+
+
 func is_current_locked() -> bool:
 	return _current != null and catalog.is_locked(_current.get_key())
 
@@ -411,7 +424,19 @@ func is_current_locked() -> bool:
 func _on_place_pressed() -> void:
 	if _current == null or not _subject_ready or catalog.is_locked(_current.get_key()):
 		return
-	var v: Dictionary = {} if PaintData.is_empty(variant.paint) else variant.to_dict()
+	var v := variant.to_dict()
+	var pv: Dictionary = v["paint"]
+	var eng := paint_engine
+	if eng != null and eng.is_built:
+		# живой слой кисти уходит в игру байтами PNG внутри исполнения
+		await eng.wait_idle()
+		PaintData.remove_texture_layer(pv, PaintData.TEXTURE_LAYER_ID)
+		if not eng.is_empty():
+			PaintData.set_texture_layer(pv, PaintData.TEXTURE_LAYER_ID, str(eng.target.name), eng.res, "", eng.to_png())
+	elif PaintData.has_texture_layers(pv):
+		v = VariantIO.embed_layers(v, variant.id)   # сохранённый слой: PNG из файла
+	if PaintData.is_blank(v["paint"]):
+		v = {}
 	place_requested.emit(_current, v)
 
 

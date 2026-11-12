@@ -210,6 +210,28 @@ func _test_engine() -> void:
 	var a4 := float(_stats(eng.read_layer())["max_alpha"])
 	_check("набор краски: альфа растёт (%.2f -> %.2f)" % [a1, a4], a4 > a1 + 0.2)
 
+	# 8. PNG слоя: сохранение, пустота, загрузка, начало истории
+	eng.clear()
+	await _frames(8)
+	_check("очищенный слой пуст (is_empty)", eng.is_empty())
+	eng.begin_stroke()
+	eng.stamp(p1["position"], p1["normal"], r, Color(1, 0, 0), 1.0, 0.5)
+	eng.end_stroke()
+	await eng.wait_idle()
+	_check("слой с краской не пуст (is_empty)", not eng.is_empty())
+	var before := _stats(eng.read_layer())
+	var png := eng.to_png()
+	_check("to_png даёт читаемый PNG (%d КБ)" % (png.size() / 1024), png.size() > 0 and PaintLayers.texture_from_png(png) != null)
+	eng.clear()
+	await eng.wait_idle()
+	_check("после очистки слой пуст", eng.is_empty())
+	_check("load_png принял PNG", await eng.load_png(png))
+	var after := _stats(eng.read_layer())
+	_check("загруженный слой совпадает с сохранённым (плотных текселей %d и %d)" % [before["red"], after["red"]],
+		before["red"] > 0 and absi(int(before["red"]) - int(after["red"])) <= int(before["red"]) * 0.02)
+	_check("после загрузки история начинается заново", not eng.can_undo() and not eng.can_redo())
+	_check("мусор вместо PNG load_png не принимает", not await eng.load_png(PackedByteArray([1, 2, 3])))
+
 	eng.queue_free()
 	_mi.queue_free()
 

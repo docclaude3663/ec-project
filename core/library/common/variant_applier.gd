@@ -27,9 +27,12 @@ static func apply(meshes: Array, variant: Dictionary, overlays: Dictionary = {})
 		paint = pv
 	var zones := PaintData.zones(paint)
 	var only_paint := has_paint_materials(meshes)
+	# Слои кисти с PNG внутри исполнения (игра, сейв); живые накладки Library (параметр) главнее
+	var all_overlays := PaintLayers.overlays_from(variant)
+	all_overlays.merge(overlays, true)
 	for mi in meshes:
 		if mi is MeshInstance3D and is_instance_valid(mi):
-			var ov: Variant = overlays.get(str(mi.name))
+			var ov: Variant = all_overlays.get(str(mi.name))
 			_apply_mesh(mi, zones, ov as Material, only_paint)
 
 

@@ -41,7 +41,8 @@ static func save_variant(v: ModelVariant, dir: String = DEFAULT_DIR) -> Error:
 	if not ModelVariant.is_valid_id(v.id):
 		push_warning("VariantIO: недопустимый id исполнения '%s'" % v.id)
 		return ERR_INVALID_PARAMETER
-	return _write_json(variant_path(v.id, dir), v.to_dict())
+	# data (байты PNG) в JSON не пишется: слой лежит файлом рядом (save_layers)
+	return _write_json(variant_path(v.id, dir), _strip_data(v.to_dict()))
 
 
 ## Исполнение или null (нет файла, битый файл, недопустимый id)
@@ -82,7 +83,82 @@ static func delete_variant(id: String, dir: String = DEFAULT_DIR) -> Error:
 	var path := variant_path(id, dir)
 	if not FileAccess.file_exists(path):
 		return ERR_FILE_NOT_FOUND
-	return DirAccess.remove_absolute(path)
+	var err := DirAccess.remove_absolute(path)
+	save_layers(id, {}, dir)   # файлы слоёв кисти тоже
+	return err
+
+
+# --- слои кисти (PNG) ---
+
+static func layer_dir(id: String, dir: String = DEFAULT_DIR) -> String:
+	return dir.path_join(VARIANTS_DIR).path_join(id)
+
+
+## Имя файла слоя: латиница, цифры, «_», «-» и расширение .png (имя идёт в путь)
+static func is_valid_layer_file(file: String) -> bool:
+	var re := RegEx.new()
+	re.compile("^[A-Za-z0-9_-]+\\.png$")
+	return re.search(file) != null
+
+
+## Заменяет файлы слоёв исполнения: старые удаляются, записываются files (имя файла -> байты PNG). Пустой files чистит всё
+static func save_layers(id: String, files: Dictionary, dir: String = DEFAULT_DIR) -> Error:
+	if not ModelVariant.is_valid_id(id):
+		return ERR_INVALID_PARAMETER
+	for f in files:
+		if not is_valid_layer_file(str(f)):
+			push_warning("VariantIO: недопустимое имя файла слоя '%s'" % str(f))
+			return ERR_INVALID_PARAMETER
+	var folder := layer_dir(id, dir)
+	if DirAccess.dir_exists_absolute(folder):
+		for existing in DirAccess.get_files_at(folder):
+			DirAccess.remove_absolute(folder.path_join(existing))
+		if files.is_empty():
+			DirAccess.remove_absolute(folder)
+	if files.is_empty():
+		return OK
+	DirAccess.make_dir_recursive_absolute(folder)
+	for f in files:
+		var fa := FileAccess.open(folder.path_join(str(f)), FileAccess.WRITE)
+		if fa == null:
+			return FileAccess.get_open_error()
+		fa.store_buffer(files[f])
+		fa.close()
+	return OK
+
+
+## Байты PNG слоя или пустой массив (нет файла, недопустимое имя)
+static func load_layer_png(id: String, file: String, dir: String = DEFAULT_DIR) -> PackedByteArray:
+	if not ModelVariant.is_valid_id(id) or not is_valid_layer_file(file):
+		return PackedByteArray()
+	var path := layer_dir(id, dir).path_join(file)
+	if not FileAccess.file_exists(path):
+		return PackedByteArray()
+	return FileAccess.get_file_as_bytes(path)
+
+
+## Копия исполнения, где слои кисти, у которых есть файл, получили PNG внутри словаря (поле data): для сейва макета и игры
+static func embed_layers(variant: Dictionary, id: String, dir: String = DEFAULT_DIR) -> Dictionary:
+	var out := variant.duplicate(true)
+	var pv: Variant = out.get("paint")
+	if not (pv is Dictionary):
+		return out
+	for layer in PaintData.texture_layers(pv):
+		if layer.has("data") or not layer.has("file"):
+			continue
+		var bytes := load_layer_png(id, str(layer["file"]), dir)
+		if not bytes.is_empty():
+			layer["data"] = bytes
+	return out
+
+
+static func _strip_data(d: Dictionary) -> Dictionary:
+	var out := d.duplicate(true)
+	var pv: Variant = out.get("paint")
+	if pv is Dictionary:
+		for layer in PaintData.texture_layers(pv):
+			layer.erase("data")
+	return out
 
 
 # --- JSON ---

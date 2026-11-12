@@ -20,7 +20,6 @@ const DEFAULT_RES := 1024
 const STAMP_SHADER := preload("res://core/library/paint/stamp.gdshader")
 const ERASE_SHADER := preload("res://core/library/paint/stamp_erase.gdshader")
 const COPY_SHADER := preload("res://core/library/paint/copy.gdshader")
-const OVERLAY_SHADER := preload("res://core/library/paint/overlay.gdshader")
 
 var res := DEFAULT_RES
 var target: MeshInstance3D
@@ -137,10 +136,7 @@ func _make_stamp_material(shader: Shader, pos_tex: Texture2D, nrm_tex: Texture2D
 
 ## Материал накладки с этим слоем (на каждую поверхность делается копия: у каждой своя цепочка next_pass)
 func make_overlay() -> ShaderMaterial:
-	var m := ShaderMaterial.new()
-	m.shader = OVERLAY_SHADER
-	m.set_shader_parameter("layer", texture)
-	return m
+	return PaintLayers.make_overlay(texture)
 
 
 # ==========================================
@@ -318,6 +314,45 @@ func _copy_image(img: Image) -> void:
 	_rect.material = _stamp_mat
 	_restoring = false
 	changed.emit()
+
+
+## Ждёт, пока очередь штампов, штрих, отмена и снимок истории закончатся (перед чтением слоя для сохранения)
+func wait_idle() -> void:
+	while is_built and (not _queue.is_empty() or _stroke_open or _restoring or _dirty):
+		await get_tree().process_frame
+
+
+## Слой без краски (все байты нулевые: очистка и ластик умножают и цвет, и альфу). Читает с GPU
+func is_empty() -> bool:
+	var raw := read_layer().get_data()
+	var zeros := PackedByteArray()
+	zeros.resize(raw.size())
+	return raw == zeros
+
+
+## PNG слоя (RGBA8, цвет sRGB, умноженный на альфу). Читает с GPU: десятки миллисекунд
+func to_png() -> PackedByteArray:
+	return read_layer().save_png_to_buffer()
+
+
+## Загружает PNG в слой (сохранённое исполнение) и начинает историю заново. false: файл не читается
+func load_png(bytes: PackedByteArray) -> bool:
+	if not is_built:
+		return false
+	var img := Image.new()
+	if img.load_png_from_buffer(bytes) != OK:
+		return false
+	if img.get_format() != Image.FORMAT_RGBA8:
+		img.convert(Image.FORMAT_RGBA8)
+	if img.get_width() != res or img.get_height() != res:
+		img.resize(res, res, Image.INTERPOLATE_BILINEAR)
+	_queue.clear()
+	await _copy_image(img)
+	_history = [_compress_layer()]
+	_hist_index = 0
+	_dirty = false
+	_idle_frames = 0
+	return true
 
 
 func _settle() -> void:

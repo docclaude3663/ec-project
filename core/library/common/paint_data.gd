@@ -110,3 +110,66 @@ static func _normalize(v: Variant) -> Dictionary:
 		var finish := str(d.get("finish", "keep"))
 		return {"color": color, "finish": finish if FINISHES.has(finish) else "keep", "cover": bool(d.get("cover", true))}
 	return {}
+
+
+# ==========================================
+# СЛОИ С ТЕКСТУРОЙ (кисть, C2.1b)
+# ==========================================
+## Слой кисти: {"id": "p1", "name": "Кисть", "coverage": "texture", "mesh": имя меша, "res": 1024, "file": "p1.png",
+## "premultiplied": true, "blend": "normal", "opacity": 1.0, "relief": 0.0, "visible": true}. Краска лежит в PNG
+## (RGBA, UV2 меша, цвет sRGB, умноженный на альфу). В файле исполнения слой ссылается на PNG (file); в сейве макета и
+## у сущности в игре PNG лежит внутри словаря (поле data, PackedByteArray), поэтому макет не зависит от user://.
+## data в JSON не пишется никогда (VariantIO вырезает).
+
+const TEXTURE_LAYER_ID := "p1"
+
+
+## Слои с текстурой (ссылки на словари внутри paint)
+static func texture_layers(paint: Dictionary) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var layers: Variant = paint.get("layers")
+	if layers is Array:
+		for l in layers:
+			if l is Dictionary and str(l.get("coverage", "")) == "texture":
+				out.append(l)
+	return out
+
+
+static func has_texture_layers(paint: Dictionary) -> bool:
+	return not texture_layers(paint).is_empty()
+
+
+## Нет ни заливки зон, ни слоёв кисти
+static func is_blank(paint: Dictionary) -> bool:
+	return is_empty(paint) and not has_texture_layers(paint)
+
+
+## Создаёт или заменяет слой кисти. file: имя PNG рядом с исполнением; data: байты PNG внутри словаря (сейв, игра)
+static func set_texture_layer(paint: Dictionary, id: String, mesh_name: String, res: int, file := "", data := PackedByteArray()) -> Dictionary:
+	remove_texture_layer(paint, id)
+	var layers: Variant = paint.get("layers")
+	if not (layers is Array):
+		layers = []
+		paint["layers"] = layers
+	paint["v"] = VERSION
+	var layer := {
+		"id": id, "name": "Кисть", "coverage": "texture", "mesh": mesh_name, "res": res, "premultiplied": true,
+		"blend": "normal", "opacity": 1.0, "relief": 0.0, "visible": true,
+	}
+	if file != "":
+		layer["file"] = file
+	if not data.is_empty():
+		layer["data"] = data
+	(layers as Array).append(layer)
+	return layer
+
+
+static func remove_texture_layer(paint: Dictionary, id: String) -> void:
+	var layers: Variant = paint.get("layers")
+	if not (layers is Array):
+		return
+	var arr: Array = layers
+	for i in range(arr.size() - 1, -1, -1):
+		var l: Variant = arr[i]
+		if l is Dictionary and str(l.get("coverage", "")) == "texture" and str(l.get("id", "")) == id:
+			arr.remove_at(i)
