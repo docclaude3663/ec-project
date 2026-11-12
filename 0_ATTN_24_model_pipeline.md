@@ -22,7 +22,7 @@
 | A8 | Габарит `wagon_03` из `.glb`: длина по Z **15.943**, `coupler_offset` в паспорте **8.0** (у `loco_01` длина **11.030**, `coupler_offset` **5.5**) | `glb_preflight.py`, `wagon_03.tres`, `wheel_pair_position` | масштаб: **1 единица Blender = 1 м прототипа = 1 единица игры**, `coupler_offset` это половина длины кузова |
 | A9 | Резиновые головки буферов `wagon_03` (материал `Rubber`, торцы, Z ±7.57…7.83) центрированы на высоте около **1.09** над рельсом (`offset_mesh_y` 1.15, центр головки на -0.06 от origin). Норма NEM 303 (H0: 12.2 ±0.5 мм) даёт **1.061 ±0.043** | разбор `.glb`, `wagon_03.tres` | высота буферов у старой модели уже близка к стандарту; её фиксируем как правило для всех (§24.3, п. 3) |
 
-> После аудита автор удалил размеченный `28334-Materialwagen_GLB.glb` (коммит `models`) и начал первую модель по новой схеме: `data/trains/models/wagon_coal_01.glb` + сцена-обёртка `wagon_coal_01.tscn` (инстанс `.glb` под `RigidBody3D`, 688 байт). Выводы A1, A3-A5, A8-A9 остаются в силе как история. Первый прогон `glb_preflight.py` по `wagon_coal_01.glb`: ERROR нет `role=body` (монолит из одного меша), WARN низ модели на 0.12 ниже головки рельса при `offset_mesh_y = 1.061`, центр габарита смещён по длине на −0.29, нет UV0 и UV2, нет `paint_*`; габарит 15.187 × 3.690 × 4.254. Это и есть список правок для переэкспорта по алгоритму §24.3.
+> После аудита автор удалил размеченный `28334-Materialwagen_GLB.glb` (коммит `models`) и начал первую модель по новой схеме: `wagon_coal_01`, сначала в `data/trains/models/`, затем в `data/models/wagon_coal_01/` (`.glb`, `.glb.import`, сцена-обёртка `.tscn`: инстанс `.glb` под `RigidBody3D`). Выводы A1, A3-A5, A8-A9 остаются в силе как история. Прогон `glb_preflight.py` по первому экспорту (монолит): ERROR нет `role=body`, низ модели ниже рельса на 0.12, центр смещён на −0.29, нет UV0, UV2 и `paint_*`. Прогон по второму экспорту (`data/models/wagon_coal_01/wagon_coal_01.glb`, 9 узлов, 1457 треугольников): корень `Wagon_Body` и детали-дети, материалы `paint_frame`, `paint_coal`, `paint_body`, две анимации (`mech_door_left`: поворот на 61°, `mech_door_slide`: сдвиг на 1.373); осталось **проставить роли** (в узлах нет `extras`: роли не назначены или при экспорте не включено Include, Custom Properties), роли `buffer_*`, центр по длине (смещён на −0.176), UV2 у одной поверхности. Лишние ключи покоя в «чужих» каналах анимации (STEP у неподвижного канала) безвредны.
 
 ## 24.2. Контракт: что код ждёт от модели
 
@@ -74,8 +74,8 @@
     - Mesh: Apply Modifiers, UVs, Normals включены; Tangents только при нормал-мапе; Vertex Colors выключить, если не используются; **Compression (Draco) выключить** (Godot его не читает; **проверить в редакторе** при первом экспорте);
     - Material: Export; Images: Automatic или JPEG/PNG;
     - Animation: режим **Actions** (каждое Action отдельной анимацией с именем Action), Always Sample Animations выключить, Shape Keys и Skinning выключить.
-16. **Файл.** Каталог `res://data/models/<вид>/<id>/`, имя `<id>.glb` (панель EC кладёт сама, если `.blend` лежит в `art/blender/`). При повторном экспорте **то же имя поверх старого**: `uid` в `.import` сохраняется. В git идут `.glb` и `.glb.import`.
-17. **Проверка:** панель EC запускает `glb_preflight.py` после экспорта сама; вручную: `python tools/glb_preflight.py data/models/<вид>/<id>/<id>.glb --config data/trains/objects/<объект>.tres --brush`. ERROR исправить, WARN прочитать, числа из INFO перенести в конфиги.
+16. **Файл.** Каталог `res://data/models/<id>/`, имя `<id>.glb` (панель EC кладёт сама, если `.blend` лежит в `art/blender/`). При повторном экспорте **то же имя поверх старого**: `uid` в `.import` сохраняется. В git идут `.glb` и `.glb.import`.
+17. **Проверка:** панель EC запускает `glb_preflight.py` после экспорта сама; вручную: `python tools/glb_preflight.py data/models/<id>/<id>.glb --config data/trains/objects/<объект>.tres --brush`. ERROR исправить, WARN прочитать, числа из INFO перенести в конфиги.
 
 Все шаги 1-16 в виде короткой шпаргалки с кнопками панели EC: [tools/blender/CHEATSHEET.md](tools/blender/CHEATSHEET.md).
 
@@ -109,7 +109,7 @@
 
 ## 24.5. Сборка в Godot
 
-1. **Импорт.** Новые модели кладутся в `res://data/models/<вид>/<id>/` (§24.12), старые остаются в `res://data/import/`. Дождаться импорта. Параметры по умолчанию подходят: `use_name_suffixes=true`, `generate_lods=true`, `light_baking=1` (Static, без UV2).
+1. **Импорт.** Новые модели кладутся в `res://data/models/<id>/` (§24.12), старые остаются в `res://data/import/`. Дождаться импорта. Параметры по умолчанию подходят: `use_name_suffixes=true`, `generate_lods=true`, `light_baking=1` (Static, без UV2).
 2. **UV2.** Если вторая UV-карта из Blender есть, ничего не делать. Если нет, а кисть нужна: Advanced Import Settings, Meshes, Light Baking = **Static Lightmaps** (значение 2); UV2 создаётся при импорте и кэшируется (`*.unwrap_cache`). **Проверить в редакторе:** `tests/uv2_audit.gd`.
 3. **Сцена объекта: обёртка вместо копирования мешей.** Вместо переноса мешей в `.tscn` собрать сцену так:
 
@@ -147,11 +147,11 @@ WagonRigidBody3D (RigidBody3D)          # как сейчас
 
 - [x] **S0. Документ и проверка.** Этот файл, `tools/glb_preflight.py`.
 - [x] **S0b. Скрипт Blender и шпаргалка.** `tools/blender/ec_model_tools.py`, `tools/blender/CHEATSHEET.md`; проверено на Blender 5.0.1 (панель, проверка, экспорт, ключи механизма, командный режим).
-- [ ] **S1. Первая модель по новым правилам: `wagon_coal_01`.** Сцена-обёртка (`wagon_coal_01.tscn`) и `.glb` уже есть. Осталось: в Blender оси и метка Z=0 на оси буферов, роли `body` и `buffer_1`...`buffer_4`, материалы `paint_*`, UV0 и UV2, переэкспорт панелью EC (ERROR 0), числа в паспорт (`offset_mesh_y = 1.061`, `coupler_offset`, коллизия). **`wagon_03` и другие старые сцены не трогаем** (тяжёлые для тестов, ссылки на них живут в паспортах и сейвах).
+- [ ] **S1. Первая модель по новым правилам: `wagon_coal_01`.** Сцена-обёртка (`wagon_coal_01.tscn`) и `.glb` уже есть (второй экспорт: `paint_*`, две анимации). Осталось: в Blender метка Z=0 на оси буферов, роли `body`, дверей и `buffer_1`...`buffer_4`, центр по длине, UV2, переэкспорт панелью EC (ERROR 0, Custom Properties включены), числа в паспорт (`offset_mesh_y = 1.061` вместо старого 1.305, `coupler_offset`, коллизия, `MechanismConfig` из заготовок отчёта). **`wagon_03` и другие старые сцены не трогаем** (тяжёлые для тестов, ссылки на них живут в паспортах и сейвах).
 - [x] **S2. Зоны покраски по материалам.** `VariantApplier._spec_for` (константа `PAINT_PREFIX`, функция `has_paint_materials`; тест `_test_paint_prefix` в `tests/library_paint_test`): если у модели есть материалы с префиксом `paint_`, зона `all` красит только их; без префиксов поведение прежнее (старые модели и сейвы не ломаются).
 - [x] **S3. `Actuator.ANIM`.** `MechanismConfig.Actuator.ANIM` (в конец enum), `anim_name`; `C_Mechanisms._setup_anim`, `Mech.found()`; тест `tests/mech_anim_test.tscn`. Для пантографов и дышел (ATTN_16 M2, M4); старые механизмы остаются на `SLIDE` и `ROTATE`.
 - [ ] **S4. Проверка внутри редактора.** Порт `glb_preflight.py` в `tests/model_audit.gd` (по образцу `uv2_audit.gd`) или `EditorScenePostImport`: убирает свет и камеры, печатает отчёт при импорте.
-- [ ] **S5. Папки.** Начато: заготовки `art/`, `data/models/` (§24.12). Первым переезжает `wagon_coal_01` из `data/trains/models/` в `data/models/trains/wagon_coal_01/` (в редакторе), старые модели позже, потом чистка `data/import/`.
+- [x] **S5. Папки.** Заготовки `art/`, `data/models/` (§24.12); `wagon_coal_01` переехал в `data/models/wagon_coal_01/` (схема без подпапки вида). Старые модели переезжают позже, по одной; потом чистка `data/import/` и `data/trains/models/`.
 
 ## 24.9. Проверки: `glb_preflight.py` и скрипт Blender
 
@@ -169,28 +169,28 @@ WagonRigidBody3D (RigidBody3D)          # как сейчас
 | 3. Механизм | ключ покоя (кадр 1, имя `mech_<id>`) и рабочего положения (кадр 1 + длина хода), интерполяция Linear |
 | 4. Экспорт | glb с настройками проекта (+Y Up, Custom Properties, без света и камер, без Draco, действия отдельными анимациями), затем `glb_preflight.py` по готовому файлу |
 
-Без интерфейса: `blender -b art/blender/<id>.blend -P tools/blender/ec_model_tools.py -- check` (или `export --id <id> --kind trains`); код возврата 1 при ERROR.
+Без интерфейса: `blender -b art/blender/<id>.blend -P tools/blender/ec_model_tools.py -- check` (или `export --id <id>`); код возврата 1 при ERROR.
 
-Ожидаемый результат `glb_preflight.py` на `data/trains/models/wagon_coal_01.glb` (монолит, первый прогон): ERROR 1 (нет `role=body`), WARN 7 (UV0, UV2, `paint_*`, низ ниже рельса на 0.12, смещение центра), габарит 15.187 × 3.690 × 4.254; после переэкспорта по шпаргалке ожидается ERROR 0.
+Результат `glb_preflight.py` на втором экспорте `data/models/wagon_coal_01/wagon_coal_01.glb` (с `--config` паспорта и `--brush`): ERROR 3 (нет `role=body`; анимации двигают `DoorL` и `DoorR` без ролей), WARN 2 (UV2 у одной поверхности, центр смещён по длине на 0.176), INFO: габарит 15.383 × 3.690 × 3.926, заготовки `MechanismConfig` (`mech_door_left` ROTATE 61° вокруг оси (0, 0, -1), `mech_door_slide` SLIDE 1.373 вдоль (1, 0, 0)), узлов `buffer*` нет. После проставления ролей и переэкспорта ожидается ERROR 0.
 
 ## 24.10. Что проверить в редакторе (по шагам)
 
 **S0, S0b.** Godot не нужен.
-1. `python tools/glb_preflight.py data/trains/models/wagon_coal_01.glb --brush`: код возврата 1, **ERROR** про отсутствие `role=body` (монолит), перечисленные в §24.9 WARN; скрипт не падает.
+1. `python tools/glb_preflight.py data/models/wagon_coal_01/wagon_coal_01.glb --brush`: код возврата 1, ERROR про отсутствие ролей и WARN из §24.9; скрипт не падает.
 2. `python tools/glb_preflight.py data/import/loco_01.gltf --kind loco`: **ERROR** про отсутствие `role=body` (монолит), код возврата 1.
 3. Blender: запустить скрипт (Scripting, Run Script), справа вкладка EC. Сделать кубик, назначить `body`, нажать «Проверить модель»: в тексте `EC_report` ошибки про буферы и масштаб, если они есть.
 4. В Godot после открытия проекта нет новых ошибок импорта; файлы `art/` не видны в FileSystem (там `.gdignore`), `.py` движок не трогает.
 
 **S1.** (тестовая модель автора)
-1. Экспорт из панели EC, в `data/models/trains/<id>/` лежит `.glb`; в отчёте `EC_preflight` ERROR 0.
+1. Экспорт из панели EC, в `data/models/<id>/` лежит `.glb`; в отчёте `EC_preflight` ERROR 0.
 2. В Godot `.glb` импортируется без ошибок, дерево: корень (кузов, `role=body`), дети (детали); Metadata `extras` есть у кузова и деталей.
 3. Сцена-обёртка по §24.5 п. 3, паспорт с `offset_mesh_y = 1.061`: вагон на треке стоит буферами **на той же высоте**, что и старые вагоны (сравнить с `wagon_03` рядом; у `wagon_03` буферы около 1.09, то есть выше нормы на 0.03, это в допуске NEM 303), колёса на рельсе.
 4. Заменить `.glb` новым экспортом из Blender (сдвинуть любую деталь): вагон в игре изменился без правок сцены.
 5. Поставить другой диаметр колеса в тележке (`wheel_pair_position.y`): тележка встаёт на рельс, кузов остаётся на высоте; при слишком большом колесе оно проходит сквозь кузов (ожидаемо).
 
-**S5 (переезд `wagon_coal_01`, в редакторе).**
-1. В панели FileSystem создать `data/models/trains/wagon_coal_01/` и перетащить туда `wagon_coal_01.glb` и `wagon_coal_01.tscn` (вместе с `.import`).
-2. Открыть `wagon_coal_01.tscn`: инстанс `.glb` на месте, нет жёлтых предупреждений о путях; в `data/trains/models/` ничего не осталось.
+**S5 (переезд `wagon_coal_01`: выполнен автором, для будущих переездов).**
+1. В панели FileSystem перетащить `.glb` и `.tscn` модели (вместе с `.import`) в `data/models/<id>/`.
+2. Открыть `.tscn`: инстанс `.glb` на месте, нет жёлтых предупреждений о путях; в старой папке модели не осталось.
 3. Всё, что ссылалось на сцену (объект каталога, паспорт), открывается без ошибок: поставить вагон на трак из каталога.
 4. Перезапустить проект: нет ошибок «resource not found»; `git status` показывает перемещения (rename), а не удаление и создание заново.
 
@@ -224,14 +224,14 @@ WagonRigidBody3D (RigidBody3D)          # как сейчас
 - `.tres` объектов каталога остаются в `data/<категория>/objects/`. Каталог читает только эти папки и только `*.tres`, **без рекурсии** (`EntityCatalogProvider.list_resources`, `Global.object_dirs`), пути к ним записаны в сейвах и `data/debug/reference.tres`. Папки перечислены ещё в `tests/catalog_lint.gd` и `tests/uv2_audit.gd`.
 - Паспорт `data/library/info/<key>.tres` ищется по ключу (`ModelInfo.path_for`).
 
-Уже есть первая плоская папка `data/trains/models/` (`wagon_coal_01.glb`, `.tscn`): её содержимое переезжает в схему ниже (S5).
+Первая модель `wagon_coal_01` уже лежит по этой схеме (`data/models/wagon_coal_01/`); подпапки вида (`trains`, `buildings`) не используются, вид читается по id.
 
 Схема: **всё тяжёлое группируется по модели, лёгкие каталожные ресурсы остаются на месте.**
 
 ```
 art/                                   # исходники; пустой .gdignore, Godot папку не видит
   blender/<id>.blend                   # или вне репозитория / Git LFS, если файлы большие
-data/models/<вид>/<id>/                # вид: trains, buildings
+data/models/<id>/                      # по одной папке на модель
   <id>.glb (+ <id>.glb.import)         # экспорт из Blender, имя постоянное
   <id>.tscn                            # сцена-обёртка (RigidBody3D, инстанс .glb, коллизия)
   tex/                                 # внешние текстуры, если не вшиты в .glb

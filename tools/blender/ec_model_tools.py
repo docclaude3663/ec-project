@@ -555,7 +555,7 @@ def default_export_path(s):
     root = repo_root()
     mid = s.model_id or "model"
     if root:
-        return str(root / "data" / "models" / s.kind / mid / (mid + ".glb"))
+        return str(root / "data" / "models" / mid / (mid + ".glb"))
     base = os.path.dirname(bpy.data.filepath) if bpy.data.filepath else os.getcwd()
     return os.path.join(base, mid + ".glb")
 
@@ -574,7 +574,7 @@ class ECSettings(bpy.types.PropertyGroup):
     mech_id: StringProperty(name="Id механизма", description="Имя действия станет mech_<id>", default="door_left")
     mech_frames: IntProperty(name="Кадров хода", description="Длина хода механизма в кадрах (24 кадра = 1 с при 24 к/с)", default=24, min=2, max=600)
     brush: BoolProperty(name="Нужна кисть (UV2)", description="Отсутствие второй UV-карты считать предупреждением", default=False)
-    export_path: StringProperty(name="Файл .glb", description="Пусто: <репозиторий>/data/models/<вид>/<id>/<id>.glb", subtype="FILE_PATH", default="")
+    export_path: StringProperty(name="Файл .glb", description="Пусто: <репозиторий>/data/models/<id>/<id>.glb", subtype="FILE_PATH", default="")
 
 
 class EC_OT_check(bpy.types.Operator):
@@ -773,7 +773,7 @@ def _cli(argv):
     ap.add_argument("--kind", choices=["trains", "buildings"], default="trains")
     ap.add_argument("--buffer-h", type=float, default=BUFFER_H)
     ap.add_argument("--brush", action="store_true")
-    ap.add_argument("--out", default="", help="путь .glb (по умолчанию <репозиторий>/data/models/<вид>/<id>/<id>.glb)")
+    ap.add_argument("--out", default="", help="путь .glb (по умолчанию <репозиторий>/data/models/<id>/<id>.glb)")
     a = ap.parse_args(argv)
     scene = bpy.context.scene
     items = check_model(scene, a.buffer_h, a.kind, a.brush)

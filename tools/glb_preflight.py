@@ -3,7 +3,7 @@
 
 Запуск (из корня репозитория, Godot не нужен, только Python 3.8+):
 
-    python tools/glb_preflight.py data/trains/models/wagon_coal_01.glb
+    python tools/glb_preflight.py data/models/wagon_coal_01/wagon_coal_01.glb
     python tools/glb_preflight.py model.glb                                        # новая модель: Z=0 это ось буферов, offset_mesh_y = 1.061
     python tools/glb_preflight.py old.gltf --config data/trains/objects/wagon_03.tres --offset-y 1.15   # старая модель: её offset_mesh_y
     python tools/glb_preflight.py model.glb --brush      # нужна ли UV2 для кисти Library
@@ -202,6 +202,10 @@ def main():
         if len(lst) > 1:
             rep.add("WARN", "Роль '%s' у %d узлов (%s): PartRegistry возьмёт первый. Для пар используйте _l/_r, _1/_2." %
                     (r, len(lst), ", ".join(node_name(g, i) for i in lst)))
+
+    if nodes and not roles:
+        rep.add("INFO", "Ни у одного узла нет extras (ролей). Если роли в Blender назначены, в экспорте не включено Include, Custom Properties "
+                        "(панель EC включает сама); роль должна стоять на объекте, не на данных меша.")
 
     # ---- Имена узлов ----
     for i, n in enumerate(nodes):
@@ -404,8 +408,6 @@ def main():
             actuator, axis, travel = None, None, None
             if tr:
                 smp = a["samplers"][tr["sampler"]]
-                if smp.get("interpolation", "LINEAR") != "LINEAR":
-                    rep.add("WARN", "Анимация '%s', '%s': interpolation %s, механизм идёт плавно сам (smoothstep), в Blender ставьте Linear." % (aname, nm, smp["interpolation"]))
                 times = [t[0] for t in read_accessor(g, binb, smp["input"])]
                 vals = read_accessor(g, binb, smp["output"])
                 d = tuple(vals[-1][k] - vals[0][k] for k in range(3))
@@ -413,6 +415,8 @@ def main():
                 dur = max(dur, times[-1] - times[0])
                 if L > 1e-5:
                     actuator, axis, travel = "SLIDE", tuple(c / L for c in d), L
+                    if smp.get("interpolation", "LINEAR") != "LINEAR":
+                        rep.add("WARN", "Анимация '%s', '%s': сдвиг с интерполяцией %s, механизм идёт плавно сам (smoothstep), в Blender ставьте Linear." % (aname, nm, smp["interpolation"]))
             if ro:
                 smp = a["samplers"][ro["sampler"]]
                 times = [t[0] for t in read_accessor(g, binb, smp["input"])]
@@ -421,13 +425,15 @@ def main():
                 ax, ang = quat_to_axis_angle(dq)
                 dur = max(dur, times[-1] - times[0])
                 if ang > 0.01:
+                    if smp.get("interpolation", "LINEAR") != "LINEAR":
+                        rep.add("WARN", "Анимация '%s', '%s': поворот с интерполяцией %s, механизм идёт плавно сам (smoothstep), в Blender ставьте Linear." % (aname, nm, smp["interpolation"]))
                     if actuator == "SLIDE":
                         rep.add("WARN", "Анимация '%s', '%s': и сдвиг, и поворот. Один механизм это одно движение: разделите на два узла." % (aname, nm))
                     actuator, axis, travel = "ROTATE", ax, ang
             if actuator:
                 rep.add("INFO", "Заготовка MechanismConfig из анимации '%s': part_role = &\"%s\", actuator = %s, axis = Vector3%s, travel = %.3f%s, duration = %.2f. "
                                 "Ось дана в локальных осях родителя узла (у дочерних частей кузова это оси кузова)." %
-                        (aname, part_role, actuator, fmt3(axis), travel, " (градусы)" if actuator == "ROTATE" else "", dur))
+                        (aname, part_role or "<role не задана, узел '%s'>" % nm, actuator, fmt3(axis), travel, " (градусы)" if actuator == "ROTATE" else "", dur))
             else:
                 rep.add("WARN", "Анимация '%s', узел '%s': движения между первым и последним ключом нет." % (aname, nm))
 

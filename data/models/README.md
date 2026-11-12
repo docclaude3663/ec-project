@@ -1,9 +1,9 @@
 # data/models
 
-Новые модели, по одной папке на модель: `data/models/<вид>/<id>/` (`trains`, `buildings`).
+Модели, по одной папке на модель: `data/models/<id>/`. Вид модели читается по id (`wagon_`, `loco_`, `house_`), отдельных подпапок по видам нет.
 
 ```
-data/models/trains/wagon_04/
+data/models/wagon_04/
   wagon_04.glb (+ .import)   экспорт из Blender, имя постоянное
   wagon_04.tscn              сцена-обёртка: RigidBody3D + инстанс .glb + коллизия
   tex/                       внешние текстуры, если не вшиты в .glb
