@@ -19,7 +19,7 @@
 bl_info = {
     "name": "EC model tools",
     "author": "ec-project",
-    "version": (1, 0, 0),
+    "version": (1, 1, 0),
     "blender": (4, 2, 0),
     "location": "3D Viewport > Sidebar (N) > EC",
     "description": "Проверка и экспорт моделей вагонов, локомотивов и зданий для ec-project",
@@ -70,7 +70,8 @@ ROLE_PRESETS = [
     ("light_cab", "light_cab: якорь света кабины", ""),
 ]
 
-LAST_REPORT = []  # [(level, text)] для панели
+# Последний отчёт: панель, крупное окно, редактор Text и буфер обмена берут его отсюда
+LAST = {"title": "", "text": "", "block": REPORT_TEXT, "lines": []}  # lines: [(ERROR|WARN|INFO|SUMMARY, текст)]
 
 
 # ---------------------------------------------------------------- общее
@@ -382,6 +383,80 @@ def write_text(name, text):
     t.write(text)
 
 
+def wrap_text(text, width):
+    """Перенос строки по ширине в символах (для подписей панели и окна)"""
+    import textwrap
+    return textwrap.wrap(text, width=max(20, int(width)), break_long_words=True, break_on_hyphens=False) or [""]
+
+
+def parse_report_lines(text):
+    """Строки отчёта: '[ERROR] ...' -> ('ERROR', ...); итоговая строка -> ('SUMMARY', ...)"""
+    import re as _re
+    out = []
+    for ln in text.splitlines():
+        m = _re.match(r"^\[(ERROR|WARN|INFO)\]\s*(.*)$", ln)
+        if m:
+            out.append((m.group(1), m.group(2)))
+        elif ln.startswith("Итог"):
+            out.append(("SUMMARY", ln))
+    return out
+
+
+def copy_to_clipboard(text):
+    """Копирует в буфер обмена. True, если после записи буфер не пуст (без окна, например в blender -b, буфер не работает)"""
+    try:
+        wm = bpy.context.window_manager
+        wm.clipboard = text
+        return wm.clipboard != ""
+    except Exception:
+        return False
+
+
+def publish_report(title, text, block=REPORT_TEXT):
+    """Делает отчёт видимым везде: панель, окно, текстовый блок и буфер обмена. Возвращает True, если скопирован в буфер"""
+    LAST["title"] = title
+    LAST["text"] = text
+    LAST["block"] = block
+    LAST["lines"][:] = parse_report_lines(text)
+    write_text(block, text)
+    return copy_to_clipboard(text)
+
+
+def open_text_window(block_name):
+    """Открывает текстовый блок в новом окне Blender (редактор Text, с переносом строк). True при успехе"""
+    txt = bpy.data.texts.get(block_name)
+    if txt is None:
+        return False
+    try:
+        wm = bpy.context.window_manager
+        before = set(wm.windows)
+        bpy.ops.wm.window_new()
+        new = [w for w in wm.windows if w not in before]
+        if not new:
+            return False
+        area = new[0].screen.areas[0]
+        area.type = "TEXT_EDITOR"
+        space = area.spaces.active
+        space.text = txt
+        try:
+            space.show_word_wrap = True
+        except AttributeError:
+            pass
+        return True
+    except Exception:
+        return False
+
+
+def draw_wrapped(layout, level, text, width):
+    """Подпись с переносом: первая строка с иконкой уровня, остальные с отступом"""
+    icon = {"ERROR": "ERROR", "WARN": "QUESTION", "INFO": "INFO"}.get(level, "NONE")
+    col = layout.column(align=True)
+    col.scale_y = 0.85
+    col.alert = level == "ERROR"
+    for k, part in enumerate(wrap_text(text, width)):
+        col.label(text=part, icon=icon if k == 0 else "BLANK1")
+
+
 # ---------------------------------------------------------------- помощники
 
 def prepare_transforms(scene):
@@ -480,7 +555,7 @@ def export_params(op, **wanted):
 
 
 def do_export(scene, filepath, kind="trains", buffer_h=BUFFER_H, brush=False, run_preflight=True):
-    """Экспорт кузова с потомками. Возвращает (ok, сообщение, отчёт preflight)"""
+    """Экспорт кузова с потомками. Возвращает (ok, сообщение, отчёт: проверка модели и проверка готового файла)"""
     items = check_model(scene, buffer_h, kind, brush)
     if any(lv == "ERROR" for lv, _, _ in items):
         return False, "Экспорт остановлен: в проверке есть ERROR.", format_report(items)
@@ -517,8 +592,10 @@ def do_export(scene, filepath, kind="trains", buffer_h=BUFFER_H, brush=False, ru
                 pass
         view.objects.active = prev_act
     report = ""
-    if run_preflight:
-        report = run_preflight_tool(filepath, kind, brush)
+    pre = run_preflight_tool(filepath, kind, brush) if run_preflight else ""
+    report = format_report(items)
+    if pre:
+        report += "\n\n=== Проверка готового файла (glb_preflight) ===\n" + pre
     return True, "Экспортировано: %s" % filepath, report
 
 
@@ -573,6 +650,8 @@ class ECSettings(bpy.types.PropertyGroup):
     role_preset: EnumProperty(name="Шаблон", items=ROLE_PRESETS, default="body")
     mech_id: StringProperty(name="Id механизма", description="Имя действия станет mech_<id>", default="door_left")
     mech_frames: IntProperty(name="Кадров хода", description="Длина хода механизма в кадрах (24 кадра = 1 с при 24 к/с)", default=24, min=2, max=600)
+    wrap: IntProperty(name="Перенос строк", description="Ширина строки отчёта в панели, символов (подберите под ширину панели)", default=46, min=24, max=200)
+    show_info: BoolProperty(name="Показывать INFO", description="В панели показывать и справочные строки (габариты, заготовки конфигов); в окне и буфере обмена они есть всегда", default=False)
     brush: BoolProperty(name="Нужна кисть (UV2)", description="Отсутствие второй UV-карты считать предупреждением", default=False)
     export_path: StringProperty(name="Файл .glb", description="Пусто: <репозиторий>/data/models/<id>/<id>.glb", subtype="FILE_PATH", default="")
 
@@ -580,18 +659,71 @@ class ECSettings(bpy.types.PropertyGroup):
 class EC_OT_check(bpy.types.Operator):
     bl_idname = "ec.check"
     bl_label = "Проверить модель"
-    bl_description = "Проверка по правилам 0_ATTN_24; подробный отчёт в текстовом блоке EC_report (редактор Text)"
+    bl_description = "Проверка по правилам 0_ATTN_24. Отчёт появляется в панели, копируется в буфер обмена и пишется в текст EC_report"
 
     def execute(self, context):
         s = settings(context.scene)
         items = check_model(context.scene, s.buffer_h, s.kind, s.brush)
         text = format_report(items)
-        write_text(REPORT_TEXT, text)
-        LAST_REPORT[:] = [(lv, tx) for lv, tx, _ in sorted(items, key=lambda x: {"ERROR": 0, "WARN": 1, "INFO": 2}[x[0]])]
+        copied = publish_report("Проверка модели", text, REPORT_TEXT)
         e, w, i = summarize(items)
-        self.report({"ERROR"} if e else ({"WARNING"} if w else {"INFO"}), "ERROR %d, WARN %d, INFO %d (отчёт: текст EC_report)" % (e, w, i))
+        self.report({"ERROR"} if e else ({"WARNING"} if w else {"INFO"}),
+                    "ERROR %d, WARN %d, INFO %d. %s" % (e, w, i, "Отчёт скопирован в буфер обмена" if copied else "Отчёт в тексте EC_report"))
         print(text)
         return {"FINISHED"}
+
+
+class EC_OT_show_report(bpy.types.Operator):
+    bl_idname = "ec.show_report"
+    bl_label = "Показать отчёт"
+    bl_description = "Весь последний отчёт крупным окном (без обрезки)"
+
+    def invoke(self, context, event):
+        try:
+            return context.window_manager.invoke_props_dialog(self, width=900, confirm_text="Закрыть")
+        except TypeError:
+            return context.window_manager.invoke_props_dialog(self, width=900)
+
+    def draw(self, context):
+        lay = self.layout
+        lay.label(text=LAST["title"] or "Отчёта ещё нет")
+        order = {"ERROR": 0, "WARN": 1, "INFO": 2, "SUMMARY": 3}
+        for lv, tx in sorted(LAST["lines"], key=lambda x: order[x[0]]):
+            draw_wrapped(lay, lv, tx, 118)
+
+    def execute(self, context):
+        return {"FINISHED"}
+
+
+class EC_OT_copy_report(bpy.types.Operator):
+    bl_idname = "ec.copy_report"
+    bl_label = "Копировать отчёт"
+    bl_description = "Копирует весь последний отчёт в буфер обмена (потом Ctrl+V в чат или файл)"
+
+    def execute(self, context):
+        if not LAST["text"]:
+            self.report({"WARNING"}, "Отчёта ещё нет: нажмите «Проверить модель»")
+            return {"CANCELLED"}
+        if copy_to_clipboard(LAST["text"]):
+            self.report({"INFO"}, "Отчёт скопирован в буфер обмена (%d строк)" % len(LAST["text"].splitlines()))
+            return {"FINISHED"}
+        self.report({"WARNING"}, "Не удалось записать в буфер обмена: откройте отчёт кнопкой «В Text» и скопируйте из редактора")
+        return {"CANCELLED"}
+
+
+class EC_OT_open_report(bpy.types.Operator):
+    bl_idname = "ec.open_report"
+    bl_label = "Открыть в Text"
+    bl_description = "Открывает последний отчёт в новом окне с редактором Text (можно выделять и копировать)"
+
+    def execute(self, context):
+        if not LAST["text"]:
+            self.report({"WARNING"}, "Отчёта ещё нет: нажмите «Проверить модель»")
+            return {"CANCELLED"}
+        if open_text_window(LAST["block"]):
+            return {"FINISHED"}
+        self.report({"WARNING"}, "Окно не открылось. Отчёт в текстовом блоке %s: переключите любую область на Text Editor" % LAST["block"])
+        return {"CANCELLED"}
 
 
 class EC_OT_set_role(bpy.types.Operator):
@@ -673,17 +805,16 @@ class EC_OT_mech_key(bpy.types.Operator):
 class EC_OT_export(bpy.types.Operator):
     bl_idname = "ec.export"
     bl_label = "Экспорт .glb"
-    bl_description = "Проверка, экспорт кузова с потомками и проверка готового файла (glb_preflight). Отчёт в тексте EC_preflight"
+    bl_description = "Проверка, экспорт кузова с потомками и проверка готового файла (glb_preflight). Отчёт в панели, буфере обмена и тексте EC_preflight"
 
     def execute(self, context):
         s = settings(context.scene)
         path = bpy.path.abspath(s.export_path) if s.export_path else default_export_path(s)
         ok, msg, rep = do_export(context.scene, path, s.kind, s.buffer_h, s.brush)
-        write_text(PREFLIGHT_TEXT, rep or "")
-        LAST_REPORT[:] = [("INFO", ln) for ln in (rep or "").splitlines() if ln.startswith("[ERROR]") or ln.startswith("[WARN]") or ln.startswith("Итог")]
+        copied = publish_report("Экспорт: " + msg, (msg + "\n\n" + rep) if rep else msg, PREFLIGHT_TEXT)
         print(msg)
         print(rep)
-        self.report({"INFO"} if ok else {"ERROR"}, msg)
+        self.report({"INFO"} if ok else {"ERROR"}, msg + (". Отчёт скопирован в буфер обмена" if copied else ""))
         return {"FINISHED"} if ok else {"CANCELLED"}
 
 
@@ -736,19 +867,25 @@ class EC_PT_panel(bpy.types.Panel):
         box.prop(s, "export_path")
         box.operator("ec.export", icon="EXPORT")
 
-        if LAST_REPORT:
+        if LAST["text"]:
             box = lay.box()
-            box.label(text="Последний отчёт:")
-            for lv, tx in LAST_REPORT[:14]:
-                row = box.row()
-                row.alert = lv == "ERROR"
-                short = tx if len(tx) < 70 else tx[:67] + "..."
-                row.label(text=short, icon={"ERROR": "ERROR", "WARN": "QUESTION"}.get(lv, "INFO"))
-            if len(LAST_REPORT) > 14:
-                box.label(text="... полностью в тексте EC_report")
+            box.label(text=LAST["title"] or "Последний отчёт")
+            row = box.row(align=True)
+            row.operator("ec.show_report", text="Показать", icon="TEXT")
+            row.operator("ec.copy_report", text="Копировать", icon="COPYDOWN")
+            row.operator("ec.open_report", text="В Text", icon="WINDOW")
+            col = box.column(align=True)
+            col.prop(s, "wrap")
+            col.prop(s, "show_info")
+            order = {"ERROR": 0, "WARN": 1, "INFO": 2, "SUMMARY": 3}
+            for lv, tx in sorted(LAST["lines"], key=lambda x: order[x[0]]):
+                if lv == "INFO" and not s.show_info:
+                    continue
+                draw_wrapped(box, lv, tx, s.wrap)
 
 
-CLASSES = (ECSettings, EC_OT_check, EC_OT_set_role, EC_OT_prepare, EC_OT_refs, EC_OT_mech_key, EC_OT_export, EC_PT_panel)
+CLASSES = (ECSettings, EC_OT_check, EC_OT_show_report, EC_OT_copy_report, EC_OT_open_report, EC_OT_set_role, EC_OT_prepare, EC_OT_refs,
+           EC_OT_mech_key, EC_OT_export, EC_PT_panel)
 
 
 def register():
@@ -776,9 +913,9 @@ def _cli(argv):
     ap.add_argument("--out", default="", help="путь .glb (по умолчанию <репозиторий>/data/models/<id>/<id>.glb)")
     a = ap.parse_args(argv)
     scene = bpy.context.scene
-    items = check_model(scene, a.buffer_h, a.kind, a.brush)
-    print(format_report(items))
     if a.cmd == "check":
+        items = check_model(scene, a.buffer_h, a.kind, a.brush)
+        print(format_report(items))
         return 1 if any(lv == "ERROR" for lv, _, _ in items) else 0
     path = a.out
     if not path:
