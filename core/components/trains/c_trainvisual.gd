@@ -17,7 +17,7 @@ var collision_nodes: Array[CollisionObject3D]
 ## Паспортные значения задает TrainVisualSettings до add_component, компонент паспорт не читает
 var bogie_configs: Array[BogieConfig] = []
 ## Смещение меша от пола (меньше диаметра колеса на ~0.2)
-var offset_mesh_y := 1.2
+var offset_mesh_y := 1.061
 
 var bogie_nodes: Array[Node3D] = []
 

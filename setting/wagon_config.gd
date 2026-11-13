@@ -60,7 +60,7 @@ class_name WagonConfig extends ObjectConfig
 const BUFFER_HEIGHT := 1.061
 ## Высота начала меша кузова над головкой рельса, абсолютная (колёса от неё не зависят). Старые паспорта подобраны под свои модели;
 ## новые: BUFFER_HEIGHT
-@export var offset_mesh_y: float = 1.2 # Смещение меша от пола (меньше диаметра колеса на ~0.2)
+@export var offset_mesh_y: float = 1.061 # Смещение меша от пола (меньше диаметра колеса на ~0.2)
 @export var bogie_configs: Array[BogieConfig] = []
 
 

@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cu8c4sg6im1fc"]
 
-[ext_resource type="Theme" uid="uid://eevw614dwo7r" path="res://ui/themes/theme_hud_light.tres" id="1_klsv0"]
+[ext_resource type="Theme" uid="uid://t2vamkehlekl" path="res://ui/themes/theme_hud_dark.tres" id="1_klsv0"]
 [ext_resource type="PackedScene" path="res://ui/templates/dc_indicators_template.tscn" id="2_dci"]
 
 [node name="HudLayoutTemplateB" type="Control" unique_id=1508504112]
@@ -544,9 +544,9 @@ theme_override_constants/separation = 0
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
 theme_type_variation = &"TagButton"
-text = "Т1"
 toggle_mode = true
 button_pressed = true
+text = "Т1"
 
 [node name="HeadTagSep1" type="VSeparator" parent="HUD/DockRow/DockColumn/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=1817980376]
 layout_mode = 2
@@ -556,8 +556,8 @@ theme_override_constants/separation = 1
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
 theme_type_variation = &"TagButton"
-text = "Т2"
 toggle_mode = true
+text = "Т2"
 
 [node name="HeadTagSep2" type="VSeparator" parent="HUD/DockRow/DockColumn/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=272113091]
 layout_mode = 2
@@ -567,8 +567,8 @@ theme_override_constants/separation = 1
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
 theme_type_variation = &"TagButton"
-text = "Т3"
 toggle_mode = true
+text = "Т3"
 
 [node name="HeadTagSep3" type="VSeparator" parent="HUD/DockRow/DockColumn/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=523465546]
 layout_mode = 2
@@ -578,8 +578,8 @@ theme_override_constants/separation = 1
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
 theme_type_variation = &"TagButton"
-text = "Т4"
 toggle_mode = true
+text = "Т4"
 
 [node name="HeadTagSep4" type="VSeparator" parent="HUD/DockRow/DockColumn/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=162134694]
 layout_mode = 2
@@ -589,8 +589,8 @@ theme_override_constants/separation = 1
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
 theme_type_variation = &"TagButton"
-text = "Т5"
 toggle_mode = true
+text = "Т5"
 
 [node name="HeadTagSep5" type="VSeparator" parent="HUD/DockRow/DockColumn/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=714350953]
 layout_mode = 2
@@ -600,8 +600,8 @@ theme_override_constants/separation = 1
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
 theme_type_variation = &"TagButton"
-text = "Т6"
 toggle_mode = true
+text = "Т6"
 
 [node name="HeadSpacer" type="Control" parent="HUD/DockRow/DockColumn/ToolDock/DockBox/HeadBar/HeadRow" unique_id=13008576]
 layout_mode = 2

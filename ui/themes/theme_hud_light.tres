@@ -80,6 +80,15 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
+[sub_resource type="StyleBoxFlat" id="dock_head"]
+content_margin_left = 8.0
+content_margin_right = 8.0
+bg_color = Color(0.9373, 0.9098, 0.8627, 1)
+border_width_bottom = 1
+border_color = Color(0.4353, 0.5608, 0.6196, 0.5)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+
 [sub_resource type="StyleBoxFlat" id="grab"]
 content_margin_left = 4.0
 content_margin_top = 4.0
@@ -296,6 +305,21 @@ content_margin_right = 10.0
 content_margin_bottom = 2.0
 bg_color = Color(1, 1, 1, 0)
 
+[sub_resource type="StyleBoxFlat" id="tag_normal"]
+content_margin_left = 10.0
+content_margin_right = 10.0
+bg_color = Color(0, 0, 0, 0)
+
+[sub_resource type="StyleBoxFlat" id="tag_hover"]
+content_margin_left = 10.0
+content_margin_right = 10.0
+bg_color = Color(0, 0, 0, 0.08)
+
+[sub_resource type="StyleBoxFlat" id="tag_pressed"]
+content_margin_left = 10.0
+content_margin_right = 10.0
+bg_color = Color(0.051, 0.3333, 0.4157, 1)
+
 [sub_resource type="StyleBoxFlat" id="tip_panel"]
 content_margin_left = 8.0
 content_margin_top = 4.0
@@ -311,30 +335,6 @@ corner_radius_bottom_left = 4
 content_margin_left = 0.0
 color = Color(0.4353, 0.5608, 0.6196, 0.5)
 vertical = true
-
-[sub_resource type="StyleBoxFlat" id="dock_head"]
-content_margin_left = 8.0
-content_margin_right = 8.0
-bg_color = Color(0.9373, 0.9098, 0.8627, 1)
-border_width_bottom = 1
-border_color = Color(0.4353, 0.5608, 0.6196, 0.5)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-
-[sub_resource type="StyleBoxFlat" id="tag_normal"]
-content_margin_left = 10.0
-content_margin_right = 10.0
-bg_color = Color(0, 0, 0, 0)
-
-[sub_resource type="StyleBoxFlat" id="tag_hover"]
-content_margin_left = 10.0
-content_margin_right = 10.0
-bg_color = Color(0, 0, 0, 0.08)
-
-[sub_resource type="StyleBoxFlat" id="tag_pressed"]
-content_margin_left = 10.0
-content_margin_right = 10.0
-bg_color = Color(0.051, 0.3333, 0.4157, 1)
 
 [resource]
 default_font_size = 16

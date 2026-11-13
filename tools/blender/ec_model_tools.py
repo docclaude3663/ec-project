@@ -67,6 +67,7 @@ ROLE_PRESETS = [
     ("buffer_3", "buffer_3: ось буфера", ""),
     ("buffer_4", "buffer_4: ось буфера", ""),
     ("light_head_front", "light_head_front: якорь фары", ""),
+    ("light_head_rear", "light_head_rear: якорь заднего света", ""),
     ("light_cab", "light_cab: якорь света кабины", ""),
 ]
 

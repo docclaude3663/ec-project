@@ -82,6 +82,15 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
+[sub_resource type="StyleBoxFlat" id="dock_head"]
+content_margin_left = 8.0
+content_margin_right = 8.0
+bg_color = Color(1, 1, 1, 0.06)
+border_width_bottom = 1
+border_color = Color(0.5412, 0.5412, 0.5412, 0.6)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+
 [sub_resource type="StyleBoxFlat" id="grab"]
 content_margin_left = 4.0
 content_margin_top = 4.0
@@ -286,6 +295,21 @@ content_margin_right = 10.0
 content_margin_bottom = 2.0
 bg_color = Color(1, 1, 1, 0)
 
+[sub_resource type="StyleBoxFlat" id="tag_normal"]
+content_margin_left = 10.0
+content_margin_right = 10.0
+bg_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="tag_hover"]
+content_margin_left = 10.0
+content_margin_right = 10.0
+bg_color = Color(1, 1, 1, 0.12)
+
+[sub_resource type="StyleBoxFlat" id="tag_pressed"]
+content_margin_left = 10.0
+content_margin_right = 10.0
+bg_color = Color(0.1882, 0.302, 0.4471, 1)
+
 [sub_resource type="StyleBoxFlat" id="tip_panel"]
 content_margin_left = 8.0
 content_margin_top = 4.0
@@ -306,30 +330,6 @@ corner_radius_bottom_left = 4
 content_margin_left = 0.0
 color = Color(0.5412, 0.5412, 0.5412, 0.6)
 vertical = true
-
-[sub_resource type="StyleBoxFlat" id="dock_head"]
-content_margin_left = 8.0
-content_margin_right = 8.0
-bg_color = Color(1, 1, 1, 0.06)
-border_width_bottom = 1
-border_color = Color(0.5412, 0.5412, 0.5412, 0.6)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-
-[sub_resource type="StyleBoxFlat" id="tag_normal"]
-content_margin_left = 10.0
-content_margin_right = 10.0
-bg_color = Color(1, 1, 1, 0)
-
-[sub_resource type="StyleBoxFlat" id="tag_hover"]
-content_margin_left = 10.0
-content_margin_right = 10.0
-bg_color = Color(1, 1, 1, 0.12)
-
-[sub_resource type="StyleBoxFlat" id="tag_pressed"]
-content_margin_left = 10.0
-content_margin_right = 10.0
-bg_color = Color(0.1882, 0.302, 0.4471, 1)
 
 [resource]
 default_font = ExtResource("1_font")

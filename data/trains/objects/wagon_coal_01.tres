@@ -39,6 +39,21 @@ wheel_pair_scene = ExtResource("4_68dxn")
 wheel_pair_position = Vector3(0, 0.535, 0.8)
 metadata/_custom_type_script = "uid://7vuxuiiysiji"
 
+[sub_resource type="Resource" id="Resource_ag4h2"]
+script = ExtResource("6_8nbd5")
+actuator = 6
+part_role = &"door_l"
+anim_name = &"mech_door_left"
+metadata/_custom_type_script = "uid://gv2lrhu17dtf"
+
+[sub_resource type="Resource" id="Resource_od62w"]
+script = ExtResource("6_8nbd5")
+id = &"door_right"
+actuator = 6
+part_role = &"door_r"
+anim_name = &"mech_door_slide"
+metadata/_custom_type_script = "uid://gv2lrhu17dtf"
+
 [sub_resource type="Resource" id="Resource_yrtcf"]
 script = ExtResource("9_f83ox")
 metadata/_custom_type_script = "uid://bwaluvayi2o8k"
@@ -48,10 +63,10 @@ script = ExtResource("8_8qork")
 min_curve_radius = 10.0
 suspension = SubResource("Resource_yrtcf")
 scene = ExtResource("7_od62w")
-offset_mesh_y = 1.305
 bogie_configs = Array[ExtResource("2_o43rn")]([SubResource("Resource_u60jt"), SubResource("Resource_6ly6f")])
 coupler_offset = 8.0
 coupler_rear = &"fixed"
+mechanisms = Array[ExtResource("6_8nbd5")]([SubResource("Resource_ag4h2"), SubResource("Resource_od62w")])
 metadata/_custom_type_script = "uid://bicjny5dv1h3s"
 
 [sub_resource type="Resource" id="Resource_lvfb0"]
