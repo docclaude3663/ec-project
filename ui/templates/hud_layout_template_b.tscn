@@ -185,6 +185,171 @@ theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 6
 
+[node name="HintList" type="VBoxContainer" parent="HUD/HintBarTopRight/HintMarginR" unique_id=502021230]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="HintRow1" type="HBoxContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList" unique_id=1523796646]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="KeyChip1" type="PanelContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow1" unique_id=37660154]
+custom_minimum_size = Vector2(88, 0)
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"KeyChip"
+
+[node name="KeyText1" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow1/KeyChip1" unique_id=1039882211]
+layout_mode = 2
+theme_type_variation = &"LabelSmall"
+text = "ЛКМ"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HintAction1" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow1" unique_id=624739408]
+layout_mode = 2
+theme_type_variation = &"LabelSmall"
+text = "угол, второй клик режет"
+vertical_alignment = 1
+
+[node name="HintRow2" type="HBoxContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList" unique_id=736759204]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="KeyChip2" type="PanelContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow2" unique_id=1450733830]
+custom_minimum_size = Vector2(88, 0)
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"KeyChip"
+
+[node name="KeyText2" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow2/KeyChip2" unique_id=636852056]
+layout_mode = 2
+theme_type_variation = &"LabelSmall"
+text = "Backspace"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HintAction2" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow2" unique_id=1441055730]
+layout_mode = 2
+theme_type_variation = &"LabelSmall"
+text = "отменить рисунок"
+vertical_alignment = 1
+
+[node name="HintRow3" type="HBoxContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList" unique_id=205955497]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="KeyChip3" type="PanelContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow3" unique_id=2034217288]
+custom_minimum_size = Vector2(88, 0)
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"KeyChip"
+
+[node name="KeyText3" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow3/KeyChip3" unique_id=987104725]
+layout_mode = 2
+theme_type_variation = &"LabelSmall"
+text = "ПКМ"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HintAction3" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow3" unique_id=1665366211]
+layout_mode = 2
+theme_type_variation = &"LabelSmall"
+text = "сбросить / выйти"
+vertical_alignment = 1
+
+[node name="HintRow4" type="HBoxContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList" unique_id=1834208643]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="KeyChip4" type="PanelContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow4" unique_id=1860937449]
+custom_minimum_size = Vector2(88, 0)
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"KeyChip"
+
+[node name="KeyText4" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow4/KeyChip4" unique_id=152187981]
+layout_mode = 2
+theme_type_variation = &"LabelSmall"
+text = "R/F"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HintAction4" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow4" unique_id=906195752]
+layout_mode = 2
+theme_type_variation = &"LabelSmall"
+text = "плоскость (Shift ×5)"
+vertical_alignment = 1
+
+[node name="HintRow5" type="HBoxContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList" unique_id=1144284911]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="KeyChip5" type="PanelContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow5" unique_id=805789862]
+custom_minimum_size = Vector2(88, 0)
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"KeyChip"
+
+[node name="KeyText5" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow5/KeyChip5" unique_id=1507392577]
+layout_mode = 2
+theme_type_variation = &"LabelSmall"
+text = "Ctrl+R/F"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HintAction5" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow5" unique_id=1525889599]
+layout_mode = 2
+theme_type_variation = &"LabelSmall"
+text = "глубина (Shift ×5)"
+vertical_alignment = 1
+
+[node name="HintRow6" type="HBoxContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList" unique_id=811197669]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="KeyChip6" type="PanelContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow6" unique_id=1213807710]
+custom_minimum_size = Vector2(88, 0)
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"KeyChip"
+
+[node name="KeyText6" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow6/KeyChip6" unique_id=654469438]
+layout_mode = 2
+theme_type_variation = &"LabelSmall"
+text = "End"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HintAction6" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow6" unique_id=2021008147]
+layout_mode = 2
+theme_type_variation = &"LabelSmall"
+text = "насквозь"
+vertical_alignment = 1
+
+[node name="HintRow7" type="HBoxContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList" unique_id=1805809490]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="KeyChip7" type="PanelContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow7" unique_id=398372301]
+custom_minimum_size = Vector2(88, 0)
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"KeyChip"
+
+[node name="KeyText7" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow7/KeyChip7" unique_id=842177171]
+layout_mode = 2
+theme_type_variation = &"LabelSmall"
+text = "Ctrl+Z"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HintAction7" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow7" unique_id=1314569209]
+layout_mode = 2
+theme_type_variation = &"LabelSmall"
+text = "отменить вырез"
+vertical_alignment = 1
+
 [node name="Toast" type="PanelContainer" parent="HUD" unique_id=1096585666]
 layout_mode = 1
 anchors_preset = 5
@@ -241,335 +406,359 @@ text = "Вкладки инспектора (размер открыт)"
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="EmptyInfo" type="Label" parent="HUD/RightColumn/InfoPanel/InfoBox" unique_id=1291442453]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"LabelSmall"
+text = "Ничего не выбрано
+ЛКМ по объекту"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="ToolDock" type="PanelContainer" parent="HUD" unique_id=704176666]
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -176.0
+offset_top = -138.0
 grow_horizontal = 2
 grow_vertical = 0
 
-[node name="DockBox" type="VBoxContainer" parent="HUD/ToolDock" unique_id=1086633904]
-layout_mode = 2
-theme_override_constants/separation = 0
-
-[node name="HeadBar" type="PanelContainer" parent="HUD/ToolDock/DockBox" unique_id=1803435502]
-layout_mode = 2
-theme_type_variation = &"PanelContainerHeader"
-
-[node name="HeadRow" type="HBoxContainer" parent="HUD/ToolDock/DockBox/HeadBar" unique_id=602982941]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="ModeLabel" type="Label" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow" unique_id=297004354]
-layout_mode = 2
-theme_type_variation = &"LabelOnAccent"
-text = "Build"
-vertical_alignment = 1
-
-[node name="Sep1" type="VSeparator" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow" unique_id=925896823]
+[node name="HBoxContainer" type="HBoxContainer" parent="HUD/ToolDock" unique_id=289341212]
 layout_mode = 2
 
-[node name="CategoryLabel" type="Label" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow" unique_id=1502178596]
+[node name="CategoriesBox" type="MarginContainer" parent="HUD/ToolDock/HBoxContainer" unique_id=1082850060]
 layout_mode = 2
-theme_type_variation = &"LabelOnAccent"
-text = "Траки"
-vertical_alignment = 1
-
-[node name="Sep2" type="VSeparator" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow" unique_id=878854983]
-layout_mode = 2
-
-[node name="TagLabel" type="Label" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow" unique_id=1358170153]
-layout_mode = 2
-theme_type_variation = &"LabelOnAccent"
-text = "Прямые"
-vertical_alignment = 1
-
-[node name="Sep4" type="VSeparator" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow" unique_id=1016634357]
-custom_minimum_size = Vector2(30, 0)
-layout_mode = 2
-
-[node name="HeaderTags" type="HBoxContainer" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow" unique_id=1852622406]
-layout_mode = 2
-theme_override_constants/separation = 4
-
-[node name="HeadTag1" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=1362868325]
-custom_minimum_size = Vector2(36, 24)
-layout_mode = 2
-theme_type_variation = &"ButtonSmall"
-text = "Т1"
-
-[node name="HeadTag2" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=888740276]
-custom_minimum_size = Vector2(36, 24)
-layout_mode = 2
-theme_type_variation = &"ButtonSmall"
-text = "Т2"
-
-[node name="HeadTag3" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=1631295298]
-custom_minimum_size = Vector2(36, 24)
-layout_mode = 2
-theme_type_variation = &"ButtonSmall"
-text = "Т3"
-
-[node name="HeadTag4" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=124039702]
-custom_minimum_size = Vector2(36, 24)
-layout_mode = 2
-theme_type_variation = &"ButtonSmall"
-text = "Т4"
-
-[node name="HeadTag5" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=1564302283]
-custom_minimum_size = Vector2(36, 24)
-layout_mode = 2
-theme_type_variation = &"ButtonSmall"
-text = "Т5"
-
-[node name="HeadTag6" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=2002620664]
-custom_minimum_size = Vector2(36, 24)
-layout_mode = 2
-theme_type_variation = &"ButtonSmall"
-text = "Т6"
-
-[node name="HeadSpacer" type="Control" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow" unique_id=13008576]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="CountLabel" type="Label" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow" unique_id=348109983]
-layout_mode = 2
-theme_type_variation = &"LabelOnAccentDim"
-text = "12 объектов"
-vertical_alignment = 1
-
-[node name="OtherActionsButton" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow" unique_id=530353126]
-custom_minimum_size = Vector2(36, 24)
-layout_mode = 2
-theme_type_variation = &"ButtonSmall"
-text = "…"
-
-[node name="ActionsStrip" type="HBoxContainer" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow" unique_id=1192570763]
-layout_mode = 2
-
-[node name="DuplicateButton" type="Button" parent="HUD/ToolDock/DockBox/HeadBar/HeadRow/ActionsStrip" unique_id=1383708415]
-custom_minimum_size = Vector2(36, 24)
-layout_mode = 2
-theme_type_variation = &"ButtonSmall"
-text = "V"
-
-[node name="Body" type="HBoxContainer" parent="HUD/ToolDock/DockBox" unique_id=293606182]
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_constants/separation = 0
-
-[node name="CategoriesBox" type="MarginContainer" parent="HUD/ToolDock/DockBox/Body" unique_id=1082850060]
-layout_mode = 2
-theme_override_constants/margin_left = 6
+size_flags_horizontal = 4
+size_flags_vertical = 8
+theme_override_constants/margin_left = 4
 theme_override_constants/margin_top = 4
-theme_override_constants/margin_right = 6
+theme_override_constants/margin_right = 4
 theme_override_constants/margin_bottom = 4
 
-[node name="CatGrid" type="GridContainer" parent="HUD/ToolDock/DockBox/Body/CategoriesBox" unique_id=312490331]
+[node name="CatGrid" type="GridContainer" parent="HUD/ToolDock/HBoxContainer/CategoriesBox" unique_id=312490331]
 layout_mode = 2
 theme_override_constants/h_separation = 4
 theme_override_constants/v_separation = 4
 columns = 2
 
-[node name="Category1" type="Button" parent="HUD/ToolDock/DockBox/Body/CategoriesBox/CatGrid" unique_id=291636376]
+[node name="Category1" type="Button" parent="HUD/ToolDock/HBoxContainer/CategoriesBox/CatGrid" unique_id=291636376]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 tooltip_text = "Категория 1"
 text = "К1"
 
-[node name="Category2" type="Button" parent="HUD/ToolDock/DockBox/Body/CategoriesBox/CatGrid" unique_id=1626780878]
+[node name="Category2" type="Button" parent="HUD/ToolDock/HBoxContainer/CategoriesBox/CatGrid" unique_id=1626780878]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 tooltip_text = "Категория 2"
 text = "К2"
 
-[node name="Category3" type="Button" parent="HUD/ToolDock/DockBox/Body/CategoriesBox/CatGrid" unique_id=1113527377]
+[node name="Category3" type="Button" parent="HUD/ToolDock/HBoxContainer/CategoriesBox/CatGrid" unique_id=1113527377]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 tooltip_text = "Категория 3"
 text = "К3"
 
-[node name="Category4" type="Button" parent="HUD/ToolDock/DockBox/Body/CategoriesBox/CatGrid" unique_id=682126633]
+[node name="Category4" type="Button" parent="HUD/ToolDock/HBoxContainer/CategoriesBox/CatGrid" unique_id=682126633]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 tooltip_text = "Категория 4"
 text = "К4"
 
-[node name="Category5" type="Button" parent="HUD/ToolDock/DockBox/Body/CategoriesBox/CatGrid" unique_id=2043127083]
+[node name="Category5" type="Button" parent="HUD/ToolDock/HBoxContainer/CategoriesBox/CatGrid" unique_id=2043127083]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 tooltip_text = "Категория 5"
 text = "К5"
 
-[node name="Category6" type="Button" parent="HUD/ToolDock/DockBox/Body/CategoriesBox/CatGrid" unique_id=1140604047]
+[node name="Category6" type="Button" parent="HUD/ToolDock/HBoxContainer/CategoriesBox/CatGrid" unique_id=1140604047]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 tooltip_text = "Категория 6"
 text = "К6"
 
-[node name="SepCat" type="VSeparator" parent="HUD/ToolDock/DockBox/Body" unique_id=1528974779]
+[node name="SepCat" type="VSeparator" parent="HUD/ToolDock/HBoxContainer" unique_id=2127097789]
 layout_mode = 2
 
-[node name="ObjectsArea" type="MarginContainer" parent="HUD/ToolDock/DockBox/Body" unique_id=507686567]
+[node name="DockBox" type="VBoxContainer" parent="HUD/ToolDock/HBoxContainer" unique_id=1086633904]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/margin_left = 8
+theme_override_constants/separation = 0
+
+[node name="HeadBar" type="PanelContainer" parent="HUD/ToolDock/HBoxContainer/DockBox" unique_id=1803435502]
+layout_mode = 2
+theme_type_variation = &"PanelContainerHeader"
+
+[node name="HeadRow" type="HBoxContainer" parent="HUD/ToolDock/HBoxContainer/DockBox/HeadBar" unique_id=602982941]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ModeLabel" type="Label" parent="HUD/ToolDock/HBoxContainer/DockBox/HeadBar/HeadRow" unique_id=297004354]
+layout_mode = 2
+theme_type_variation = &"LabelOnAccent"
+text = "Build"
+vertical_alignment = 1
+
+[node name="Sep1" type="VSeparator" parent="HUD/ToolDock/HBoxContainer/DockBox/HeadBar/HeadRow" unique_id=925896823]
+layout_mode = 2
+
+[node name="CategoryLabel" type="Label" parent="HUD/ToolDock/HBoxContainer/DockBox/HeadBar/HeadRow" unique_id=1502178596]
+layout_mode = 2
+theme_type_variation = &"LabelOnAccent"
+text = "Траки"
+vertical_alignment = 1
+
+[node name="Sep2" type="VSeparator" parent="HUD/ToolDock/HBoxContainer/DockBox/HeadBar/HeadRow" unique_id=878854983]
+layout_mode = 2
+
+[node name="TagLabel" type="Label" parent="HUD/ToolDock/HBoxContainer/DockBox/HeadBar/HeadRow" unique_id=1358170153]
+layout_mode = 2
+theme_type_variation = &"LabelOnAccent"
+text = "Прямые"
+vertical_alignment = 1
+
+[node name="Sep4" type="VSeparator" parent="HUD/ToolDock/HBoxContainer/DockBox/HeadBar/HeadRow" unique_id=1016634357]
+custom_minimum_size = Vector2(30, 0)
+layout_mode = 2
+
+[node name="HeaderTags" type="HBoxContainer" parent="HUD/ToolDock/HBoxContainer/DockBox/HeadBar/HeadRow" unique_id=1852622406]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HeadTag1" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=1362868325]
+custom_minimum_size = Vector2(36, 24)
+layout_mode = 2
+theme_type_variation = &"ButtonSmall"
+text = "Т1"
+
+[node name="HeadTag2" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=888740276]
+custom_minimum_size = Vector2(36, 24)
+layout_mode = 2
+theme_type_variation = &"ButtonSmall"
+text = "Т2"
+
+[node name="HeadTag3" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=1631295298]
+custom_minimum_size = Vector2(36, 24)
+layout_mode = 2
+theme_type_variation = &"ButtonSmall"
+text = "Т3"
+
+[node name="HeadTag4" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=124039702]
+custom_minimum_size = Vector2(36, 24)
+layout_mode = 2
+theme_type_variation = &"ButtonSmall"
+text = "Т4"
+
+[node name="HeadTag5" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=1564302283]
+custom_minimum_size = Vector2(36, 24)
+layout_mode = 2
+theme_type_variation = &"ButtonSmall"
+text = "Т5"
+
+[node name="HeadTag6" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/HeadBar/HeadRow/HeaderTags" unique_id=2002620664]
+custom_minimum_size = Vector2(36, 24)
+layout_mode = 2
+theme_type_variation = &"ButtonSmall"
+text = "Т6"
+
+[node name="HeadSpacer" type="Control" parent="HUD/ToolDock/HBoxContainer/DockBox/HeadBar/HeadRow" unique_id=13008576]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CountLabel" type="Label" parent="HUD/ToolDock/HBoxContainer/DockBox/HeadBar/HeadRow" unique_id=348109983]
+layout_mode = 2
+theme_type_variation = &"LabelOnAccentDim"
+text = "12 объектов"
+vertical_alignment = 1
+
+[node name="OtherActionsButton" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/HeadBar/HeadRow" unique_id=530353126]
+custom_minimum_size = Vector2(36, 24)
+layout_mode = 2
+theme_type_variation = &"ButtonSmall"
+text = "…"
+
+[node name="ActionsStrip" type="HBoxContainer" parent="HUD/ToolDock/HBoxContainer/DockBox/HeadBar/HeadRow" unique_id=1192570763]
+layout_mode = 2
+
+[node name="DuplicateButton" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/HeadBar/HeadRow/ActionsStrip" unique_id=1383708415]
+custom_minimum_size = Vector2(36, 24)
+layout_mode = 2
+theme_type_variation = &"ButtonSmall"
+text = "V"
+
+[node name="Body" type="HBoxContainer" parent="HUD/ToolDock/HBoxContainer/DockBox" unique_id=293606182]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 0
+
+[node name="ObjectsArea" type="MarginContainer" parent="HUD/ToolDock/HBoxContainer/DockBox/Body" unique_id=507686567]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 0
 theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 8
 theme_override_constants/margin_bottom = 4
 
-[node name="ObjectsScrollFlow" type="ScrollContainer" parent="HUD/ToolDock/DockBox/Body/ObjectsArea" unique_id=220216987]
+[node name="ObjectsScrollFlow" type="ScrollContainer" parent="HUD/ToolDock/HBoxContainer/DockBox/Body/ObjectsArea" unique_id=220216987]
 layout_mode = 2
 horizontal_scroll_mode = 0
 
-[node name="ObjectsFlow" type="HFlowContainer" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow" unique_id=1601229991]
+[node name="ObjectsFlow" type="HFlowContainer" parent="HUD/ToolDock/HBoxContainer/DockBox/Body/ObjectsArea/ObjectsScrollFlow" unique_id=1601229991]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/h_separation = 4
 theme_override_constants/v_separation = 4
 
-[node name="FlowObject1" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=589540891]
-custom_minimum_size = Vector2(120, 112)
+[node name="FlowObject1" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=589540891]
+custom_minimum_size = Vector2(125, 83)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 1
 сводка"
 
-[node name="FlowObject2" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=157907477]
-custom_minimum_size = Vector2(120, 112)
+[node name="FlowObject2" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=157907477]
+custom_minimum_size = Vector2(125, 83)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 2
 сводка"
 
-[node name="FlowObject3" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=123076951]
-custom_minimum_size = Vector2(120, 112)
+[node name="FlowObject3" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=123076951]
+custom_minimum_size = Vector2(125, 83)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 3
 сводка"
 
-[node name="FlowObject4" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=1416844491]
-custom_minimum_size = Vector2(120, 112)
+[node name="FlowObject4" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=1416844491]
+custom_minimum_size = Vector2(125, 83)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 4
 сводка"
 
-[node name="FlowObject5" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=953065178]
-custom_minimum_size = Vector2(120, 112)
+[node name="FlowObject5" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=953065178]
+custom_minimum_size = Vector2(125, 83)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 5
 сводка"
 
-[node name="FlowObject6" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=758591464]
-custom_minimum_size = Vector2(120, 112)
+[node name="FlowObject6" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=758591464]
+custom_minimum_size = Vector2(125, 83)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 6
 сводка"
 
-[node name="FlowObject7" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=751297990]
-custom_minimum_size = Vector2(120, 112)
+[node name="FlowObject7" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=751297990]
+custom_minimum_size = Vector2(125, 83)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 7
 сводка"
 
-[node name="FlowObject8" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=389270930]
-custom_minimum_size = Vector2(120, 112)
+[node name="FlowObject8" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=389270930]
+custom_minimum_size = Vector2(125, 83)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 8
 сводка"
 
-[node name="FlowObject9" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=1608503087]
-custom_minimum_size = Vector2(120, 112)
+[node name="FlowObject9" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=1608503087]
+custom_minimum_size = Vector2(125, 83)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 9
 сводка"
 
-[node name="FlowObject10" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=312453684]
-custom_minimum_size = Vector2(120, 112)
+[node name="FlowObject10" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=312453684]
+custom_minimum_size = Vector2(125, 83)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 10
 сводка"
 
-[node name="FlowObject11" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=768594480]
-custom_minimum_size = Vector2(120, 112)
+[node name="FlowObject11" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=768594480]
+custom_minimum_size = Vector2(125, 83)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 11
 сводка"
 
-[node name="FlowObject12" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=63010386]
-custom_minimum_size = Vector2(120, 112)
+[node name="FlowObject12" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=63010386]
+custom_minimum_size = Vector2(125, 83)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 12
 сводка"
 
-[node name="FlowObject13" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=998399243]
-custom_minimum_size = Vector2(120, 112)
+[node name="FlowObject13" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=998399243]
+custom_minimum_size = Vector2(125, 83)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 13
 сводка"
 
-[node name="FlowObject14" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=565053313]
-custom_minimum_size = Vector2(120, 112)
+[node name="FlowObject14" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=565053313]
+custom_minimum_size = Vector2(125, 83)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 14
 сводка"
 
-[node name="FlowObject15" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=829738464]
-custom_minimum_size = Vector2(120, 112)
+[node name="FlowObject15" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=829738464]
+custom_minimum_size = Vector2(125, 83)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 15
 сводка"
 
-[node name="FlowObject16" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=1108502878]
-custom_minimum_size = Vector2(120, 112)
+[node name="FlowObject16" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=1108502878]
+custom_minimum_size = Vector2(125, 83)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 16
 сводка"
 
-[node name="FlowObject17" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=498565728]
-custom_minimum_size = Vector2(120, 112)
+[node name="FlowObject17" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=498565728]
+custom_minimum_size = Vector2(125, 83)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 17
 сводка"
 
-[node name="FlowObject18" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=847481553]
-custom_minimum_size = Vector2(120, 112)
+[node name="FlowObject18" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=847481553]
+custom_minimum_size = Vector2(125, 83)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 18
 сводка"
 
-[node name="FlowObject19" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=1385989091]
-custom_minimum_size = Vector2(120, 112)
+[node name="FlowObject19" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=1385989091]
+custom_minimum_size = Vector2(125, 83)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 19
 сводка"
 
-[node name="FlowObject20" type="Button" parent="HUD/ToolDock/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=1761578064]
-custom_minimum_size = Vector2(120, 112)
+[node name="FlowObject20" type="Button" parent="HUD/ToolDock/HBoxContainer/DockBox/Body/ObjectsArea/ObjectsScrollFlow/ObjectsFlow" unique_id=1761578064]
+custom_minimum_size = Vector2(125, 83)
 layout_mode = 2
 theme_type_variation = &"ObjectButton"
 text = "Объект 20
 сводка"
+
+[node name="EmptyObjects" type="Label" parent="HUD/ToolDock/HBoxContainer/DockBox/Body/ObjectsArea" unique_id=1345239132]
+visible = false
+layout_mode = 2
+theme_type_variation = &"LabelSmall"
+text = "В этой категории пока ничего нет"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="ResizeBorderTop" type="ColorRect" parent="HUD" unique_id=1686926036]
 layout_mode = 1
@@ -577,8 +766,8 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -178.0
-offset_bottom = -174.0
+offset_top = -163.0
+offset_bottom = -159.0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
@@ -680,261 +869,148 @@ text = "Вагон · 12 м
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="HintList" type="VBoxContainer" parent="HUD/HintBarTopRight/HintMarginR"]
-layout_mode = 2
-theme_override_constants/separation = 2
-[node name="HintRow1" type="HBoxContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList"]
-layout_mode = 2
-theme_override_constants/separation = 8
-[node name="KeyChip1" type="PanelContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow1"]
-layout_mode = 2
-custom_minimum_size = Vector2(88, 0)
-size_flags_vertical = 4
-theme_type_variation = &"KeyChip"
-[node name="KeyText1" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow1/KeyChip1"]
-layout_mode = 2
-theme_type_variation = &"LabelSmall"
-text = "ЛКМ"
-vertical_alignment = 1
-horizontal_alignment = 1
-[node name="HintAction1" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow1"]
-layout_mode = 2
-theme_type_variation = &"LabelSmall"
-text = "угол, второй клик режет"
-vertical_alignment = 1
-[node name="HintRow2" type="HBoxContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList"]
-layout_mode = 2
-theme_override_constants/separation = 8
-[node name="KeyChip2" type="PanelContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow2"]
-layout_mode = 2
-custom_minimum_size = Vector2(88, 0)
-size_flags_vertical = 4
-theme_type_variation = &"KeyChip"
-[node name="KeyText2" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow2/KeyChip2"]
-layout_mode = 2
-theme_type_variation = &"LabelSmall"
-text = "Backspace"
-vertical_alignment = 1
-horizontal_alignment = 1
-[node name="HintAction2" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow2"]
-layout_mode = 2
-theme_type_variation = &"LabelSmall"
-text = "отменить рисунок"
-vertical_alignment = 1
-[node name="HintRow3" type="HBoxContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList"]
-layout_mode = 2
-theme_override_constants/separation = 8
-[node name="KeyChip3" type="PanelContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow3"]
-layout_mode = 2
-custom_minimum_size = Vector2(88, 0)
-size_flags_vertical = 4
-theme_type_variation = &"KeyChip"
-[node name="KeyText3" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow3/KeyChip3"]
-layout_mode = 2
-theme_type_variation = &"LabelSmall"
-text = "ПКМ"
-vertical_alignment = 1
-horizontal_alignment = 1
-[node name="HintAction3" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow3"]
-layout_mode = 2
-theme_type_variation = &"LabelSmall"
-text = "сбросить / выйти"
-vertical_alignment = 1
-[node name="HintRow4" type="HBoxContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList"]
-layout_mode = 2
-theme_override_constants/separation = 8
-[node name="KeyChip4" type="PanelContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow4"]
-layout_mode = 2
-custom_minimum_size = Vector2(88, 0)
-size_flags_vertical = 4
-theme_type_variation = &"KeyChip"
-[node name="KeyText4" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow4/KeyChip4"]
-layout_mode = 2
-theme_type_variation = &"LabelSmall"
-text = "R/F"
-vertical_alignment = 1
-horizontal_alignment = 1
-[node name="HintAction4" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow4"]
-layout_mode = 2
-theme_type_variation = &"LabelSmall"
-text = "плоскость (Shift ×5)"
-vertical_alignment = 1
-[node name="HintRow5" type="HBoxContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList"]
-layout_mode = 2
-theme_override_constants/separation = 8
-[node name="KeyChip5" type="PanelContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow5"]
-layout_mode = 2
-custom_minimum_size = Vector2(88, 0)
-size_flags_vertical = 4
-theme_type_variation = &"KeyChip"
-[node name="KeyText5" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow5/KeyChip5"]
-layout_mode = 2
-theme_type_variation = &"LabelSmall"
-text = "Ctrl+R/F"
-vertical_alignment = 1
-horizontal_alignment = 1
-[node name="HintAction5" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow5"]
-layout_mode = 2
-theme_type_variation = &"LabelSmall"
-text = "глубина (Shift ×5)"
-vertical_alignment = 1
-[node name="HintRow6" type="HBoxContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList"]
-layout_mode = 2
-theme_override_constants/separation = 8
-[node name="KeyChip6" type="PanelContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow6"]
-layout_mode = 2
-custom_minimum_size = Vector2(88, 0)
-size_flags_vertical = 4
-theme_type_variation = &"KeyChip"
-[node name="KeyText6" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow6/KeyChip6"]
-layout_mode = 2
-theme_type_variation = &"LabelSmall"
-text = "End"
-vertical_alignment = 1
-horizontal_alignment = 1
-[node name="HintAction6" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow6"]
-layout_mode = 2
-theme_type_variation = &"LabelSmall"
-text = "насквозь"
-vertical_alignment = 1
-[node name="HintRow7" type="HBoxContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList"]
-layout_mode = 2
-theme_override_constants/separation = 8
-[node name="KeyChip7" type="PanelContainer" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow7"]
-layout_mode = 2
-custom_minimum_size = Vector2(88, 0)
-size_flags_vertical = 4
-theme_type_variation = &"KeyChip"
-[node name="KeyText7" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow7/KeyChip7"]
-layout_mode = 2
-theme_type_variation = &"LabelSmall"
-text = "Ctrl+Z"
-vertical_alignment = 1
-horizontal_alignment = 1
-[node name="HintAction7" type="Label" parent="HUD/HintBarTopRight/HintMarginR/HintList/HintRow7"]
-layout_mode = 2
-theme_type_variation = &"LabelSmall"
-text = "отменить вырез"
-vertical_alignment = 1
-[node name="InfoToolTipTool" type="PanelContainer" parent="HUD"]
+[node name="InfoToolTipTool" type="PanelContainer" parent="HUD" unique_id=536069087]
+custom_minimum_size = Vector2(260, 0)
 layout_mode = 0
 offset_left = 1000.0
 offset_top = 520.0
 offset_right = 1260.0
 offset_bottom = 600.0
-custom_minimum_size = Vector2(260, 0)
-[node name="TipMargin" type="MarginContainer" parent="HUD/InfoToolTipTool"]
+
+[node name="TipMargin" type="MarginContainer" parent="HUD/InfoToolTipTool" unique_id=1888581092]
 layout_mode = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 8
-[node name="TipBox" type="VBoxContainer" parent="HUD/InfoToolTipTool/TipMargin"]
+
+[node name="TipBox" type="VBoxContainer" parent="HUD/InfoToolTipTool/TipMargin" unique_id=119022533]
 layout_mode = 2
 theme_override_constants/separation = 2
-[node name="ToolTitle" type="Label" parent="HUD/InfoToolTipTool/TipMargin/TipBox"]
+
+[node name="ToolTitle" type="Label" parent="HUD/InfoToolTipTool/TipMargin/TipBox" unique_id=359054421]
 layout_mode = 2
 text = "Терморезак · прямоугольник"
 vertical_alignment = 1
-[node name="ToolParams" type="Label" parent="HUD/InfoToolTipTool/TipMargin/TipBox"]
+
+[node name="ToolParams" type="Label" parent="HUD/InfoToolTipTool/TipMargin/TipBox" unique_id=1599460618]
 layout_mode = 2
 theme_type_variation = &"LabelSmall"
 text = "Плоскость: ур. 3 · глубина 1"
 vertical_alignment = 1
-[node name="StatusRow" type="HBoxContainer" parent="HUD/InfoToolTipTool/TipMargin/TipBox"]
+
+[node name="StatusRow" type="HBoxContainer" parent="HUD/InfoToolTipTool/TipMargin/TipBox" unique_id=18358248]
 layout_mode = 2
 theme_override_constants/separation = 6
-[node name="StatusSign" type="Label" parent="HUD/InfoToolTipTool/TipMargin/TipBox/StatusRow"]
+
+[node name="StatusSign" type="Label" parent="HUD/InfoToolTipTool/TipMargin/TipBox/StatusRow" unique_id=10021880]
 layout_mode = 2
 theme_type_variation = &"LampOn"
 text = "●"
 vertical_alignment = 1
-[node name="StatusText" type="Label" parent="HUD/InfoToolTipTool/TipMargin/TipBox/StatusRow"]
+
+[node name="StatusText" type="Label" parent="HUD/InfoToolTipTool/TipMargin/TipBox/StatusRow" unique_id=992355159]
 layout_mode = 2
 theme_type_variation = &"LampOn"
 text = "Заденет листов: 3"
 vertical_alignment = 1
-[node name="InfoToolTipToolWarn" type="PanelContainer" parent="HUD"]
+
+[node name="InfoToolTipToolWarn" type="PanelContainer" parent="HUD" unique_id=827976230]
+visible = false
+custom_minimum_size = Vector2(260, 0)
 layout_mode = 0
 offset_left = 1000.0
 offset_top = 620.0
 offset_right = 1260.0
 offset_bottom = 700.0
-custom_minimum_size = Vector2(260, 0)
-visible = false
-[node name="TipMargin" type="MarginContainer" parent="HUD/InfoToolTipToolWarn"]
+
+[node name="TipMargin" type="MarginContainer" parent="HUD/InfoToolTipToolWarn" unique_id=1868754935]
 layout_mode = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 8
-[node name="TipBox" type="VBoxContainer" parent="HUD/InfoToolTipToolWarn/TipMargin"]
+
+[node name="TipBox" type="VBoxContainer" parent="HUD/InfoToolTipToolWarn/TipMargin" unique_id=1447269960]
 layout_mode = 2
 theme_override_constants/separation = 2
-[node name="ToolTitle" type="Label" parent="HUD/InfoToolTipToolWarn/TipMargin/TipBox"]
+
+[node name="ToolTitle" type="Label" parent="HUD/InfoToolTipToolWarn/TipMargin/TipBox" unique_id=1595744794]
 layout_mode = 2
 text = "Терморезак · прямоугольник"
 vertical_alignment = 1
-[node name="ToolParams" type="Label" parent="HUD/InfoToolTipToolWarn/TipMargin/TipBox"]
+
+[node name="ToolParams" type="Label" parent="HUD/InfoToolTipToolWarn/TipMargin/TipBox" unique_id=1655580902]
 layout_mode = 2
 theme_type_variation = &"LabelSmall"
 text = "Плоскость: ур. 3 · глубина 1"
 vertical_alignment = 1
-[node name="StatusRow" type="HBoxContainer" parent="HUD/InfoToolTipToolWarn/TipMargin/TipBox"]
+
+[node name="StatusRow" type="HBoxContainer" parent="HUD/InfoToolTipToolWarn/TipMargin/TipBox" unique_id=915378858]
 layout_mode = 2
 theme_override_constants/separation = 6
-[node name="StatusSign" type="Label" parent="HUD/InfoToolTipToolWarn/TipMargin/TipBox/StatusRow"]
+
+[node name="StatusSign" type="Label" parent="HUD/InfoToolTipToolWarn/TipMargin/TipBox/StatusRow" unique_id=1798407134]
 layout_mode = 2
 theme_type_variation = &"LampWarn"
 text = "!"
 vertical_alignment = 1
-[node name="StatusText" type="Label" parent="HUD/InfoToolTipToolWarn/TipMargin/TipBox/StatusRow"]
+
+[node name="StatusText" type="Label" parent="HUD/InfoToolTipToolWarn/TipMargin/TipBox/StatusRow" unique_id=483297244]
 layout_mode = 2
 theme_type_variation = &"LampWarn"
 text = "Здесь нет пенопласта"
 vertical_alignment = 1
-[node name="InfoToolTipToolBad" type="PanelContainer" parent="HUD"]
+
+[node name="InfoToolTipToolBad" type="PanelContainer" parent="HUD" unique_id=919955048]
+visible = false
+custom_minimum_size = Vector2(260, 0)
 layout_mode = 0
 offset_left = 1000.0
 offset_top = 720.0
 offset_right = 1260.0
 offset_bottom = 800.0
-custom_minimum_size = Vector2(260, 0)
-visible = false
-[node name="TipMargin" type="MarginContainer" parent="HUD/InfoToolTipToolBad"]
+
+[node name="TipMargin" type="MarginContainer" parent="HUD/InfoToolTipToolBad" unique_id=1915394860]
 layout_mode = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 8
-[node name="TipBox" type="VBoxContainer" parent="HUD/InfoToolTipToolBad/TipMargin"]
+
+[node name="TipBox" type="VBoxContainer" parent="HUD/InfoToolTipToolBad/TipMargin" unique_id=587082646]
 layout_mode = 2
 theme_override_constants/separation = 2
-[node name="ToolTitle" type="Label" parent="HUD/InfoToolTipToolBad/TipMargin/TipBox"]
+
+[node name="ToolTitle" type="Label" parent="HUD/InfoToolTipToolBad/TipMargin/TipBox" unique_id=1244060985]
 layout_mode = 2
 text = "Терморезак · прямоугольник"
 vertical_alignment = 1
-[node name="ToolParams" type="Label" parent="HUD/InfoToolTipToolBad/TipMargin/TipBox"]
+
+[node name="ToolParams" type="Label" parent="HUD/InfoToolTipToolBad/TipMargin/TipBox" unique_id=780577068]
 layout_mode = 2
 theme_type_variation = &"LabelSmall"
 text = "Плоскость: ур. 3 · глубина 1"
 vertical_alignment = 1
-[node name="StatusRow" type="HBoxContainer" parent="HUD/InfoToolTipToolBad/TipMargin/TipBox"]
+
+[node name="StatusRow" type="HBoxContainer" parent="HUD/InfoToolTipToolBad/TipMargin/TipBox" unique_id=1456280417]
 layout_mode = 2
 theme_override_constants/separation = 6
-[node name="StatusSign" type="Label" parent="HUD/InfoToolTipToolBad/TipMargin/TipBox/StatusRow"]
+
+[node name="StatusSign" type="Label" parent="HUD/InfoToolTipToolBad/TipMargin/TipBox/StatusRow" unique_id=998876270]
 layout_mode = 2
 theme_type_variation = &"LampBad"
 text = "×"
 vertical_alignment = 1
-[node name="StatusText" type="Label" parent="HUD/InfoToolTipToolBad/TipMargin/TipBox/StatusRow"]
+
+[node name="StatusText" type="Label" parent="HUD/InfoToolTipToolBad/TipMargin/TipBox/StatusRow" unique_id=1847177600]
 layout_mode = 2
 theme_type_variation = &"LampBad"
 text = "Самопересечение контура"
 vertical_alignment = 1
-[node name="ToastWarn" type="PanelContainer" parent="HUD"]
+
+[node name="ToastWarn" type="PanelContainer" parent="HUD" unique_id=619163597]
 visible = false
-theme_type_variation = &"PanelWarn"
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -944,21 +1020,25 @@ offset_top = 108.0
 offset_right = 240.0
 offset_bottom = 152.0
 grow_horizontal = 2
-[node name="ToastWarnRow" type="HBoxContainer" parent="HUD/ToastWarn"]
+theme_type_variation = &"PanelWarn"
+
+[node name="ToastWarnRow" type="HBoxContainer" parent="HUD/ToastWarn" unique_id=2105388953]
 layout_mode = 2
 theme_override_constants/separation = 8
-[node name="ToastWarnSign" type="Label" parent="HUD/ToastWarn/ToastWarnRow"]
+
+[node name="ToastWarnSign" type="Label" parent="HUD/ToastWarn/ToastWarnRow" unique_id=952807271]
 layout_mode = 2
 theme_type_variation = &"LampWarn"
 text = "!"
 vertical_alignment = 1
-[node name="ToastWarnText" type="Label" parent="HUD/ToastWarn/ToastWarnRow"]
+
+[node name="ToastWarnText" type="Label" parent="HUD/ToastWarn/ToastWarnRow" unique_id=1715529514]
 layout_mode = 2
 text = "Нет ни одной секции: стройка недоступна"
 vertical_alignment = 1
-[node name="TableWarnBar" type="PanelContainer" parent="HUD"]
+
+[node name="TableWarnBar" type="PanelContainer" parent="HUD" unique_id=2105243701]
 visible = false
-theme_type_variation = &"PanelWarn"
 layout_mode = 1
 anchors_preset = 2
 anchor_top = 1.0
@@ -968,39 +1048,30 @@ offset_top = -236.0
 offset_right = 612.0
 offset_bottom = -184.0
 grow_vertical = 0
-[node name="TableWarnRow" type="HBoxContainer" parent="HUD/TableWarnBar"]
+theme_type_variation = &"PanelWarn"
+
+[node name="TableWarnRow" type="HBoxContainer" parent="HUD/TableWarnBar" unique_id=669102636]
 layout_mode = 2
 theme_override_constants/separation = 12
-[node name="TableWarnSign" type="Label" parent="HUD/TableWarnBar/TableWarnRow"]
+
+[node name="TableWarnSign" type="Label" parent="HUD/TableWarnBar/TableWarnRow" unique_id=1738693493]
 layout_mode = 2
 theme_type_variation = &"LampWarn"
 text = "!"
 vertical_alignment = 1
-[node name="TableWarnText" type="Label" parent="HUD/TableWarnBar/TableWarnRow"]
+
+[node name="TableWarnText" type="Label" parent="HUD/TableWarnBar/TableWarnRow" unique_id=690521401]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "Стола нет: добавьте секцию, чтобы строить"
 vertical_alignment = 1
-size_flags_horizontal = 3
-[node name="TableWarnButton" type="Button" parent="HUD/TableWarnBar/TableWarnRow"]
-layout_mode = 2
+
+[node name="TableWarnButton" type="Button" parent="HUD/TableWarnBar/TableWarnRow" unique_id=197392826]
 custom_minimum_size = Vector2(96, 28)
+layout_mode = 2
 theme_type_variation = &"ButtonSmall"
 text = "К секциям"
-[node name="EmptyObjects" type="Label" parent="HUD/ToolDock/DockBox/Body/ObjectsArea"]
-visible = false
-layout_mode = 2
-theme_type_variation = &"LabelSmall"
-text = "В этой категории пока ничего нет"
-horizontal_alignment = 1
-vertical_alignment = 1
-[node name="EmptyInfo" type="Label" parent="HUD/RightColumn/InfoPanel/InfoBox"]
-visible = false
-layout_mode = 2
-size_flags_vertical = 3
-theme_type_variation = &"LabelSmall"
-text = "Ничего не выбрано\nЛКМ по объекту"
-horizontal_alignment = 1
-vertical_alignment = 1
+
 [node name="SideDock" type="PanelContainer" parent="HUD" unique_id=1419569785]
 layout_mode = 0
 offset_top = 52.0
@@ -1073,6 +1144,79 @@ custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Тема: тёмная"
 
+[node name="ToolParams" type="VBoxContainer" parent="HUD/SideDock/SideBox/SideMargin/SideItems" unique_id=1638074255]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ToolParamsTitle" type="Label" parent="HUD/SideDock/SideBox/SideMargin/SideItems/ToolParams" unique_id=2558917]
+layout_mode = 2
+theme_type_variation = &"LabelSmall"
+text = "Параметры инструмента"
+vertical_alignment = 1
+
+[node name="DepthRow" type="HBoxContainer" parent="HUD/SideDock/SideBox/SideMargin/SideItems/ToolParams" unique_id=685397623]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="DepthRowName" type="Label" parent="HUD/SideDock/SideBox/SideMargin/SideItems/ToolParams/DepthRow" unique_id=445771878]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Глубина"
+vertical_alignment = 1
+
+[node name="DepthRowMinus" type="Button" parent="HUD/SideDock/SideBox/SideMargin/SideItems/ToolParams/DepthRow" unique_id=1363103375]
+custom_minimum_size = Vector2(32, 28)
+layout_mode = 2
+theme_type_variation = &"ButtonSmall"
+text = "-"
+
+[node name="DepthRowValue" type="Label" parent="HUD/SideDock/SideBox/SideMargin/SideItems/ToolParams/DepthRow" unique_id=1744047319]
+custom_minimum_size = Vector2(32, 0)
+layout_mode = 2
+text = "3"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DepthRowPlus" type="Button" parent="HUD/SideDock/SideBox/SideMargin/SideItems/ToolParams/DepthRow" unique_id=576148202]
+custom_minimum_size = Vector2(32, 28)
+layout_mode = 2
+theme_type_variation = &"ButtonSmall"
+text = "+"
+
+[node name="WidthRow" type="HBoxContainer" parent="HUD/SideDock/SideBox/SideMargin/SideItems/ToolParams" unique_id=384371310]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="WidthRowName" type="Label" parent="HUD/SideDock/SideBox/SideMargin/SideItems/ToolParams/WidthRow" unique_id=116190866]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Ширина"
+vertical_alignment = 1
+
+[node name="WidthRowMinus" type="Button" parent="HUD/SideDock/SideBox/SideMargin/SideItems/ToolParams/WidthRow" unique_id=2048968192]
+custom_minimum_size = Vector2(32, 28)
+layout_mode = 2
+theme_type_variation = &"ButtonSmall"
+text = "-"
+
+[node name="WidthRowValue" type="Label" parent="HUD/SideDock/SideBox/SideMargin/SideItems/ToolParams/WidthRow" unique_id=17274382]
+custom_minimum_size = Vector2(32, 0)
+layout_mode = 2
+text = "4"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="WidthRowPlus" type="Button" parent="HUD/SideDock/SideBox/SideMargin/SideItems/ToolParams/WidthRow" unique_id=574216069]
+custom_minimum_size = Vector2(32, 28)
+layout_mode = 2
+theme_type_variation = &"ButtonSmall"
+text = "+"
+
+[node name="ThroughCheck" type="CheckBox" parent="HUD/SideDock/SideBox/SideMargin/SideItems/ToolParams" unique_id=1198896934]
+layout_mode = 2
+text = "Насквозь"
+
 [node name="SideDockTab" type="Button" parent="HUD" unique_id=1691826928]
 layout_mode = 0
 offset_left = 280.0
@@ -1080,64 +1224,3 @@ offset_top = 52.0
 offset_right = 304.0
 offset_bottom = 132.0
 text = ">"
-
-[node name="ToolParams" type="VBoxContainer" parent="HUD/SideDock/SideBox/SideMargin/SideItems"]
-visible = false
-layout_mode = 2
-theme_override_constants/separation = 6
-[node name="ToolParamsTitle" type="Label" parent="HUD/SideDock/SideBox/SideMargin/SideItems/ToolParams"]
-layout_mode = 2
-theme_type_variation = &"LabelSmall"
-text = "Параметры инструмента"
-vertical_alignment = 1
-[node name="DepthRow" type="HBoxContainer" parent="HUD/SideDock/SideBox/SideMargin/SideItems/ToolParams"]
-layout_mode = 2
-theme_override_constants/separation = 4
-[node name="DepthRowName" type="Label" parent="HUD/SideDock/SideBox/SideMargin/SideItems/ToolParams/DepthRow"]
-layout_mode = 2
-text = "Глубина"
-vertical_alignment = 1
-size_flags_horizontal = 3
-[node name="DepthRowMinus" type="Button" parent="HUD/SideDock/SideBox/SideMargin/SideItems/ToolParams/DepthRow"]
-layout_mode = 2
-custom_minimum_size = Vector2(32, 28)
-theme_type_variation = &"ButtonSmall"
-text = "-"
-[node name="DepthRowValue" type="Label" parent="HUD/SideDock/SideBox/SideMargin/SideItems/ToolParams/DepthRow"]
-layout_mode = 2
-text = "3"
-vertical_alignment = 1
-custom_minimum_size = Vector2(32, 0)
-horizontal_alignment = 1
-[node name="DepthRowPlus" type="Button" parent="HUD/SideDock/SideBox/SideMargin/SideItems/ToolParams/DepthRow"]
-layout_mode = 2
-custom_minimum_size = Vector2(32, 28)
-theme_type_variation = &"ButtonSmall"
-text = "+"
-[node name="WidthRow" type="HBoxContainer" parent="HUD/SideDock/SideBox/SideMargin/SideItems/ToolParams"]
-layout_mode = 2
-theme_override_constants/separation = 4
-[node name="WidthRowName" type="Label" parent="HUD/SideDock/SideBox/SideMargin/SideItems/ToolParams/WidthRow"]
-layout_mode = 2
-text = "Ширина"
-vertical_alignment = 1
-size_flags_horizontal = 3
-[node name="WidthRowMinus" type="Button" parent="HUD/SideDock/SideBox/SideMargin/SideItems/ToolParams/WidthRow"]
-layout_mode = 2
-custom_minimum_size = Vector2(32, 28)
-theme_type_variation = &"ButtonSmall"
-text = "-"
-[node name="WidthRowValue" type="Label" parent="HUD/SideDock/SideBox/SideMargin/SideItems/ToolParams/WidthRow"]
-layout_mode = 2
-text = "4"
-vertical_alignment = 1
-custom_minimum_size = Vector2(32, 0)
-horizontal_alignment = 1
-[node name="WidthRowPlus" type="Button" parent="HUD/SideDock/SideBox/SideMargin/SideItems/ToolParams/WidthRow"]
-layout_mode = 2
-custom_minimum_size = Vector2(32, 28)
-theme_type_variation = &"ButtonSmall"
-text = "+"
-[node name="ThroughCheck" type="CheckBox" parent="HUD/SideDock/SideBox/SideMargin/SideItems/ToolParams"]
-layout_mode = 2
-text = "Насквозь"
