@@ -76,7 +76,7 @@ Challenge задаёт **что должно быть достигнуто**, н
 *В чем фан:* момент "оживления" дороги — от тишины к движению; ощущение владения сложной системой.
 
 ### Observe
-Наблюдение за поведением дороги; настройка внешних параметров — свет, погода, камеры, экстерьер макета.
+Наблюдение за поведением дороги; настройка внешних параметров — свет, погода, камеры, экстерьер макета. Комнату, в которой стоит макет, игрок в Observe не меняет: её выбирает игрок или сценарий в начале игры (подробности: [ATTN_25_rooms.md](ATTN_25_rooms.md)); в Observe доступен только свет комнаты (лампы, жалюзи).
 *В чём интерес для игрока:* созерцательная награда за проделанную работу в Build/Operate; фотогеничность и возможность поделиться результатом.
 
 ### Library
@@ -162,7 +162,7 @@ Build UI, Operate UI, InfoPanel, Power Layer, диагностические п�
 - [ATTN_TDD.md](ATTN_TDD.md) — техническая архитектура и реализация.
 - [ATTN_10_dc_power_system.md](docs/ATTN_10_dc_power_system.md) — DCS: электропитание, правила режимов
 - [ATTN_12_switches.md](docs/ATTN_12_switches.md) — Стрелки, кроссы и другие объекты
-- [ATTN_13_TerrainTools.md](docs/ATTN_13_TerrainTools.md) — Конструктор рельефа (Terrain Tools)
+- [ATTN_13_TerrainTools.md](ATTN_13_TerrainTools.md) — Конструктор рельефа (Terrain Tools)
 - [ATTN_14_observe_room.md](ATTN_14_observe_room.md) — Observe: атмосфера, свет и комната
 - [ATTN_15_track_styles.md](docs/ATTN_15_track_styles.md) — Track Styles:  Стили траков
 - [ATTN_16_mechanisms.md](ATTN_16_mechanisms.md) - Механизмы и свет
@@ -171,4 +171,5 @@ Build UI, Operate UI, InfoPanel, Power Layer, диагностические п�
 - [ATTN_19_game_flow.md](ATTN_19_game_flow.md) — Цикл игры и экраны
 - [ATTN_20_track_studio.md](docs/ATTN_20_track_studio.md) — Track Studio
 - [ATTN_22_library.md](ATTN_22_library.md) — Library (Model Studio): коллекция, кастомизация, сборка и генерация зданий
-- [ATTN_23_layout_table.md](ATTN_23_layout_table.md) — Подмакетник (Layout Table): кастомизация, модули, задник, подстольный слой
+- [ATTN_23_layout_table.md](docs/ATTN_23_layout_table.md) — Подмакетник (Layout Table): кастомизация, модули, задник, подстольный слой
+- [ATTN_25_rooms.md](ATTN_25_rooms.md) — Комнаты: активная комната, Room Studio, Observe без комнаты, пайплайн Blender для комнат, план RM0–RM9.

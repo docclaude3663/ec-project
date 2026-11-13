@@ -1,7 +1,7 @@
 # ATTN 23. Подмакетник (Layout Table) **[работает: секции, опоры, высота, крепление к стене]**
 
-Продолжение [TDD.md](ATTN_TDD.md) §13d. Структура как у [ATTN_12](docs/ATTN_12_switches.md).
-Связанные разделы: [ATTN_13](docs/ATTN_13_TerrainTools.md) (листы пенопласта лежат на столе), [ATTN_14](ATTN_14_observe_room.md) (комната, §14.4.1, §14.12), [ATTN_10](docs/ATTN_10_dc_power_system.md) (пульты и провода), [ATTN_22](ATTN_22_library.md) (Customization, покраска), [ATTN_19](ATTN_19_game_flow.md) (`sandbox_setup`), [ATTN_17](ATTN_17_ui.md) (интерфейс).
+Продолжение [TDD.md](../ATTN_TDD.md) §13d. Структура как у [ATTN_12](ATTN_12_switches.md).
+Связанные разделы: [ATTN_13](../ATTN_13_TerrainTools.md) (листы пенопласта лежат на столе), [ATTN_14](../ATTN_14_observe_room.md) (Observe, комната в сцене: §14.4.1; устройство комнат: [ATTN_25](../ATTN_25_rooms.md)), [ATTN_10](ATTN_10_dc_power_system.md) (пульты и провода), [ATTN_22](../ATTN_22_library.md) (Customization, покраска), [ATTN_19](../ATTN_19_game_flow.md) (`sandbox_setup`), [ATTN_17](../ATTN_17_ui.md) (интерфейс).
 
 ## Оглавление
 

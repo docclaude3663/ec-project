@@ -3,7 +3,7 @@
 Продолжение [TDD.md](../ATTN_TDD.md), раздел 12 (Switch, Crossing, Buffer Stop).
 Раздел также ведет **составы на вечной сцепке** (паровоз с тендером, сдвоенный электровоз, скоростной поезд): подразделы «Составы» в 12.1, 12.2, 12.7 - 12.12. Они опираются на ту же физику сцепок `C_Coupler`, что и упор (12.5).
 
-Связанные разделы: [ATTN_15_track_styles.md](ATTN_15_track_styles.md) (стили траков), [ATTN_13_TerrainTools.md](ATTN_13_TerrainTools.md) (рельеф), [ATTN_16_mechanisms.md](../ATTN_16_mechanisms.md) (механизмы и свет, сигналы стрелок), [ATTN_10_dc_power_system.md](ATTN_10_dc_power_system.md) (DC-питание, контуры), [ATTN_17_ui.md](../ATTN_17_ui.md) (инфопанель), [ATTN_20_track_studio.md](ATTN_20_track_studio.md) (редактор стилей).
+Связанные разделы: [ATTN_15_track_styles.md](ATTN_15_track_styles.md) (стили траков), [ATTN_13_TerrainTools.md](../ATTN_13_TerrainTools.md) (рельеф), [ATTN_16_mechanisms.md](../ATTN_16_mechanisms.md) (механизмы и свет, сигналы стрелок), [ATTN_10_dc_power_system.md](ATTN_10_dc_power_system.md) (DC-питание, контуры), [ATTN_17_ui.md](../ATTN_17_ui.md) (инфопанель), [ATTN_20_track_studio.md](ATTN_20_track_studio.md) (редактор стилей).
 
 ## Оглавление
 
