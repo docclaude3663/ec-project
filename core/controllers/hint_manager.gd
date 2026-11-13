@@ -191,7 +191,8 @@ func _format(items: Array, highlight := true) -> String:
 	var parts: Array[String] = []
 	for it in items:
 		# [ и ] в BBCode экранируются: «[/]» без этого читалось бы как закрывающий тег
-		var k: String = _keys(it[0]).replace("[", "[lb]").replace("]", "[rb]")
+		# прямая замена «]» на [rb] портила бы «]» у только что вставленного [lb] (на экране выходило «[ib]/]»): идём через служебные знаки
+			var k: String = _keys(it[0]).replace("[", "\u0001").replace("]", "\u0002").replace("\u0001", "[lb]").replace("\u0002", "[rb]")
 		var t: String = it[1]
 		if highlight:
 			parts.append(("[b][color=%s]%s[/color][/b] %s" % [KEY_COLOR, k, t]).strip_edges())
