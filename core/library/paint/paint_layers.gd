@@ -26,7 +26,7 @@ static func make_overlay(tex: Texture2D) -> ShaderMaterial:
 static func texture_from_png(bytes: PackedByteArray) -> Texture2D:
 	if bytes.is_empty():
 		return null
-	var key := "%d:%d" % [bytes.size(), bytes.hash()]
+	var key := "%d" % [bytes.size()]
 	if _cache.has(key):
 		return _cache[key]
 	var img := Image.new()
