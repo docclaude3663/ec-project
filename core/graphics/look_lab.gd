@@ -128,7 +128,10 @@ func run(only: Array = [], quality: StringName = &"high") -> void:
 	var time0: TimeOfDayPreset = GFX.times[BASE_TIME]
 	var view0 := gimbal.get_view()
 	var ui_was := true
-	if ui and "visible" in ui:
+	if ui and ui.has_method("is_hud_visible"):
+		ui_was = ui.is_hud_visible()
+		ui.set_hud_visible(false)
+	elif ui and "visible" in ui:
 		ui_was = ui.visible
 		ui.visible = false
 	Hints.suspend(true)
@@ -210,7 +213,9 @@ func run(only: Array = [], quality: StringName = &"high") -> void:
 	GFX.apply_time(prev.time, 0.0)
 	GFX.apply_quality(prev.quality, 0.0, false)
 	gimbal.set_view(view0.pivot, view0.yaw, view0.pitch, view0.dist, true)
-	if ui and "visible" in ui:
+	if ui and ui.has_method("set_hud_visible"):
+		ui.set_hud_visible(ui_was)
+	elif ui and "visible" in ui:
 		ui.visible = ui_was
 	Hints.suspend(false)
 
@@ -236,7 +241,10 @@ func run_matrix(quality: StringName = &"high") -> void:
 	var prev := {"look": GFX.state.look, "time": GFX.state.time, "quality": GFX.state.quality}
 	var view0 := gimbal.get_view()
 	var ui_was := true
-	if ui and "visible" in ui:
+	if ui and ui.has_method("is_hud_visible"):
+		ui_was = ui.is_hud_visible()
+		ui.set_hud_visible(false)
+	elif ui and "visible" in ui:
 		ui_was = ui.visible
 		ui.visible = false
 	Hints.suspend(true)
@@ -284,7 +292,9 @@ func run_matrix(quality: StringName = &"high") -> void:
 	GFX.apply_time(prev.time, 0.0)
 	GFX.apply_quality(prev.quality, 0.0, false)
 	gimbal.set_view(view0.pivot, view0.yaw, view0.pitch, view0.dist, true)
-	if ui and "visible" in ui:
+	if ui and ui.has_method("set_hud_visible"):
+		ui.set_hud_visible(ui_was)
+	elif ui and "visible" in ui:
 		ui.visible = ui_was
 	Hints.suspend(false)
 	_write(dir + "metrics.csv", "\n".join(rows) + "\n")

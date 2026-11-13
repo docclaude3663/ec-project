@@ -362,10 +362,10 @@ func _on_show_controller_button_pressed() -> void:
 
 
 	if %ShowControllerButton.button_pressed:
-		$".".position = Vector2(5, get_viewport().size.y - contr_size.y - y_offset)
+		$".".position = Vector2(5, get_viewport().get_visible_rect().size.y - contr_size.y - y_offset)
 		%ShowControllerButton.text = '<'
 	else :
-		$".".position = Vector2( -contr_size.x , get_viewport().size.y - contr_size.y - y_offset)
+		$".".position = Vector2( -contr_size.x , get_viewport().get_visible_rect().size.y - contr_size.y - y_offset)
 		%ShowControllerButton.text = '>'
 
 

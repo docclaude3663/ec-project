@@ -20,6 +20,9 @@ signal enabled_changed(on: bool)
 const KEY_COLOR := "#ffd54a"
 const DIM_COLOR := "#9aa4b2"
 const BOTTOM_MARGIN := 14.0
+const MAX_WIDTH := 960.0
+## По бокам нижней подсказки не заходим на DC (417) и правую колонку: ширина DC + отступ с каждой стороны.
+const SIDE_RESERVE := 429.0
 const SEPARATOR := "   ·   "
 
 ## Пары [клавиша, действие]
@@ -257,7 +260,7 @@ func _build_ui() -> void:
 	_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.05, 0.07, 0.10, 0.78)
-	sb.set_corner_radius_all(8)
+	sb.set_corner_radius_all(4)
 	sb.content_margin_left = 16.0
 	sb.content_margin_right = 16.0
 	sb.content_margin_top = 8.0
@@ -275,10 +278,23 @@ func _build_ui() -> void:
 	_label.scroll_active = false
 	_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_label.custom_minimum_size = Vector2(960.0, 0.0)
+	_label.custom_minimum_size = Vector2(_label_width(), 0.0)
 	_label.add_theme_font_size_override("normal_font_size", 15)
 	_label.add_theme_font_size_override("bold_font_size", 15)
 	_panel.add_child(_label)
+	get_viewport().size_changed.connect(_on_viewport_resized)
+
+
+func _label_width() -> float:
+	var w: float = get_viewport().get_visible_rect().size.x
+	return clampf(w - 2.0 * SIDE_RESERVE - 32.0, 320.0, MAX_WIDTH)
+
+
+func _on_viewport_resized() -> void:
+	if _label == null:
+		return
+	_label.custom_minimum_size.x = _label_width()
+	_panel.reset_size()
 
 
 func _refresh() -> void:

@@ -256,7 +256,9 @@ func set_ui_hidden(on: bool) -> void:
 	_ui_hidden = on
 	Hints.set_context(&"photo", on)
 	var ui := get_node_or_null("/root/GameRoot/UI")
-	if ui and "visible" in ui:
+	if ui and ui.has_method("set_hud_visible"):
+		ui.set_hud_visible(not on)   # только HUD: окна и тосты остаются
+	elif ui and "visible" in ui:
 		ui.visible = not on
 	_sync_cards()
 

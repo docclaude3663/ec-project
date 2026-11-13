@@ -13,10 +13,12 @@
 [ext_resource type="Texture2D" path="res://ui/icons/resize.svg" id="99_sections"]
 [ext_resource type="PackedScene" uid="uid://boj0kanwn0n0e" path="res://ui/panels/info_panel.tscn" id="10_ay4pc"]
 [ext_resource type="PackedScene" uid="uid://d8t1asbj2c3s" path="res://ui/panels/top_panel.tscn" id="12_hrmpd"]
+[ext_resource type="Script" path="res://ui/ui.gd" id="99_uigd"]
 
 [sub_resource type="ButtonGroup" id="ButtonGroup_adgqd"]
 
 [node name="UI" type="CanvasLayer" unique_id=1965858759]
+script = ExtResource("99_uigd")
 
 [node name="ModeController" type="Node" parent="." unique_id=680826493]
 unique_name_in_owner = true
@@ -34,7 +36,18 @@ script = ExtResource("4_mf2ns")
 unique_name_in_owner = true
 script = ExtResource("4_ju45i")
 
-[node name="ModePanel" type="MarginContainer" parent="." unique_id=937983992]
+[node name="HUD" type="Control" parent="." unique_id=1311200801]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ModePanel" type="MarginContainer" parent="HUD" unique_id=937983992]
+layout_mode = 1
 unique_name_in_owner = true
 editor_description = "панель режимов вверху справа"
 anchors_preset = 1
@@ -50,18 +63,18 @@ theme_override_constants/margin_right = 4
 theme_override_constants/margin_bottom = 4
 script = ExtResource("1_tf0e0")
 
-[node name="VBoxContainer" type="HBoxContainer" parent="ModePanel" unique_id=1794177629]
+[node name="VBoxContainer" type="HBoxContainer" parent="HUD/ModePanel" unique_id=1794177629]
 layout_mode = 2
 theme_override_constants/separation = 3
 
-[node name="LibraryButton" type="Button" parent="ModePanel/VBoxContainer" unique_id=1990475818]
+[node name="LibraryButton" type="Button" parent="HUD/ModePanel/VBoxContainer" unique_id=1990475818]
 layout_mode = 2
 theme_type_variation = &"ModeButton"
 toggle_mode = true
 button_group = SubResource("ButtonGroup_adgqd")
 icon = ExtResource("2_obcwv")
 
-[node name="SectionsButton" type="Button" parent="ModePanel/VBoxContainer"]
+[node name="SectionsButton" type="Button" parent="HUD/ModePanel/VBoxContainer"]
 layout_mode = 2
 tooltip_text = "Секции: выбор и правка ящиков подмакетника"
 theme_type_variation = &"ModeButton"
@@ -69,38 +82,38 @@ toggle_mode = true
 button_group = SubResource("ButtonGroup_adgqd")
 icon = ExtResource("99_sections")
 
-[node name="ObserveButton" type="Button" parent="ModePanel/VBoxContainer" unique_id=445960366]
+[node name="ObserveButton" type="Button" parent="HUD/ModePanel/VBoxContainer" unique_id=445960366]
 layout_mode = 2
 theme_type_variation = &"ModeButton"
 toggle_mode = true
 button_group = SubResource("ButtonGroup_adgqd")
 icon = ExtResource("3_bo1jx")
 
-[node name="OperateButton" type="Button" parent="ModePanel/VBoxContainer" unique_id=1540514264]
+[node name="OperateButton" type="Button" parent="HUD/ModePanel/VBoxContainer" unique_id=1540514264]
 layout_mode = 2
 theme_type_variation = &"ModeButton"
 toggle_mode = true
 button_group = SubResource("ButtonGroup_adgqd")
 icon = ExtResource("4_gycre")
 
-[node name="BuildButton" type="Button" parent="ModePanel/VBoxContainer" unique_id=1106613651]
+[node name="BuildButton" type="Button" parent="HUD/ModePanel/VBoxContainer" unique_id=1106613651]
 layout_mode = 2
 theme_type_variation = &"ModeButton"
 toggle_mode = true
 button_group = SubResource("ButtonGroup_adgqd")
 icon = ExtResource("5_pa1oa")
 
-[node name="MainControl" type="Control" parent="." unique_id=1246810602]
+[node name="MainControl" type="Control" parent="HUD" unique_id=1246810602]
 unique_name_in_owner = true
 editor_description = "все панели-инструменты тут"
-layout_mode = 3
+layout_mode = 1
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 grow_vertical = 0
 theme_type_variation = &"ToolPanelContainer"
 
-[node name="DockObjects" type="MarginContainer" parent="MainControl" unique_id=138862998]
+[node name="DockObjects" type="MarginContainer" parent="HUD/MainControl" unique_id=138862998]
 unique_name_in_owner = true
 editor_description = "главный контейнер, хранит кнопки объектов в своем ObjContainer, задает отступы от краев и ездит при вызове"
 layout_mode = 1
@@ -115,51 +128,51 @@ mouse_filter = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_bottom = 55
 
-[node name="AnimatedWrapper" type="Control" parent="MainControl/DockObjects" unique_id=318673553]
+[node name="AnimatedWrapper" type="Control" parent="HUD/MainControl/DockObjects" unique_id=318673553]
 layout_mode = 2
 offset_transform_enabled = true
 mouse_filter = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MainControl/DockObjects/AnimatedWrapper" unique_id=1276423400]
+[node name="HBoxContainer" type="HBoxContainer" parent="HUD/MainControl/DockObjects/AnimatedWrapper" unique_id=1276423400]
 editor_description = "Контейнер со всеми кнопками траков и фильтров. Филтры переключают контейнеры с кнопками траков"
 layout_mode = 0
 offset_right = 326.0
 offset_bottom = 428.0
 mouse_filter = 2
 
-[node name="ScrollContainer" type="ScrollContainer" parent="MainControl/DockObjects/AnimatedWrapper/HBoxContainer" unique_id=1193114638]
+[node name="ScrollContainer" type="ScrollContainer" parent="HUD/MainControl/DockObjects/AnimatedWrapper/HBoxContainer" unique_id=1193114638]
 custom_minimum_size = Vector2(500, 0)
 custom_maximum_size = Vector2(-1, 235)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 19
 
-[node name="PanelContainer" type="PanelContainer" parent="MainControl/DockObjects/AnimatedWrapper/HBoxContainer/ScrollContainer" unique_id=872628203]
+[node name="PanelContainer" type="PanelContainer" parent="HUD/MainControl/DockObjects/AnimatedWrapper/HBoxContainer/ScrollContainer" unique_id=872628203]
 editor_description = "для фона"
 custom_minimum_size = Vector2(0, 235)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MainControl/DockObjects/AnimatedWrapper/HBoxContainer/ScrollContainer/PanelContainer" unique_id=1013616715]
+[node name="VBoxContainer" type="VBoxContainer" parent="HUD/MainControl/DockObjects/AnimatedWrapper/HBoxContainer/ScrollContainer/PanelContainer" unique_id=1013616715]
 layout_mode = 2
 mouse_filter = 2
 
-[node name="DockTitle" type="Label" parent="MainControl/DockObjects/AnimatedWrapper/HBoxContainer/ScrollContainer/PanelContainer/VBoxContainer" unique_id=1465564848]
+[node name="DockTitle" type="Label" parent="HUD/MainControl/DockObjects/AnimatedWrapper/HBoxContainer/ScrollContainer/PanelContainer/VBoxContainer" unique_id=1465564848]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 0
 theme_type_variation = &"HeaderSmall"
 text = "Track"
 
-[node name="DockGrid" type="GridContainer" parent="MainControl/DockObjects/AnimatedWrapper/HBoxContainer/ScrollContainer/PanelContainer/VBoxContainer" unique_id=1221843301]
+[node name="DockGrid" type="GridContainer" parent="HUD/MainControl/DockObjects/AnimatedWrapper/HBoxContainer/ScrollContainer/PanelContainer/VBoxContainer" unique_id=1221843301]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 columns = 4
 
-[node name="DockTags" type="GridContainer" parent="MainControl/DockObjects/AnimatedWrapper/HBoxContainer" unique_id=2092356052]
+[node name="DockTags" type="GridContainer" parent="HUD/MainControl/DockObjects/AnimatedWrapper/HBoxContainer" unique_id=2092356052]
 unique_name_in_owner = true
 editor_description = "Тут лежат кнопки фильтры,
 сигналы в build_panels.gd "
@@ -168,7 +181,7 @@ size_flags_vertical = 0
 mouse_filter = 2
 columns = 2
 
-[node name="DockCategories" type="MarginContainer" parent="MainControl" unique_id=1406194884]
+[node name="DockCategories" type="MarginContainer" parent="HUD/MainControl" unique_id=1406194884]
 unique_name_in_owner = true
 editor_description = "панель режима build с его кнопками. Которые выбирают тип - что строить. траки, поезда, дома, декор, терраформ"
 layout_mode = 1
@@ -185,12 +198,12 @@ theme_override_constants/margin_top = 4
 theme_override_constants/margin_right = 4
 theme_override_constants/margin_bottom = 10
 
-[node name="AnimatedWrapper" type="Control" parent="MainControl/DockCategories" unique_id=1838173788]
+[node name="AnimatedWrapper" type="Control" parent="HUD/MainControl/DockCategories" unique_id=1838173788]
 layout_mode = 2
 offset_transform_enabled = true
 mouse_filter = 2
 
-[node name="DockCategoryBar" type="HBoxContainer" parent="MainControl/DockCategories/AnimatedWrapper" unique_id=481295536]
+[node name="DockCategoryBar" type="HBoxContainer" parent="HUD/MainControl/DockCategories/AnimatedWrapper" unique_id=481295536]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 2
@@ -202,7 +215,7 @@ grow_vertical = 0
 mouse_filter = 2
 theme_override_constants/separation = 3
 
-[node name="LibraryPanel" type="PanelContainer" parent="MainControl" unique_id=638438499]
+[node name="LibraryPanel" type="PanelContainer" parent="HUD/MainControl" unique_id=638438499]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
@@ -213,13 +226,13 @@ offset_top = -41.0
 offset_right = 51.0
 grow_vertical = 0
 
-[node name="Label" type="Label" parent="MainControl/LibraryPanel" unique_id=907147367]
+[node name="Label" type="Label" parent="HUD/MainControl/LibraryPanel" unique_id=907147367]
 layout_mode = 2
 size_flags_vertical = 1
 text = "Library"
 vertical_alignment = 1
 
-[node name="ModeLabel" type="Label" parent="." unique_id=1060337780]
+[node name="ModeLabel" type="Label" parent="HUD" unique_id=1060337780]
 unique_name_in_owner = true
 offset_left = 324.0
 offset_top = 2.0
@@ -227,21 +240,27 @@ offset_right = 364.0
 offset_bottom = 21.0
 text = "mode"
 
-[node name="InfoPanel" parent="." unique_id=1788166654 instance=ExtResource("10_ay4pc")]
+[node name="InfoPanel" parent="HUD" unique_id=1788166654 instance=ExtResource("10_ay4pc")]
 
-[node name="DCControlPanel" parent="." unique_id=1088175003 instance=ExtResource("1_bi8hs")]
+[node name="DCControlPanel" parent="HUD" unique_id=1088175003 instance=ExtResource("1_bi8hs")]
 unique_name_in_owner = true
 offset_top = -610.0
 offset_bottom = -291.0
 
-[node name="TopPanel" parent="." unique_id=787446189 instance=ExtResource("12_hrmpd")]
+[node name="TopPanel" parent="HUD" unique_id=787446189 instance=ExtResource("12_hrmpd")]
 offset_left = 7.0
 offset_top = 41.0
 offset_right = 71.0
 offset_bottom = 74.0
 
-[connection signal="pressed" from="ModePanel/VBoxContainer/LibraryButton" to="ModePanel" method="_on_library_button_pressed"]
-[connection signal="pressed" from="ModePanel/VBoxContainer/SectionsButton" to="ModePanel" method="_on_sections_button_pressed"]
-[connection signal="pressed" from="ModePanel/VBoxContainer/ObserveButton" to="ModePanel" method="_on_observe_button_pressed"]
-[connection signal="pressed" from="ModePanel/VBoxContainer/OperateButton" to="ModePanel" method="_on_operate_button_pressed"]
-[connection signal="pressed" from="ModePanel/VBoxContainer/BuildButton" to="ModePanel" method="_on_build_button_pressed"]
+[node name="Windows" type="CanvasLayer" parent="." unique_id=1311200802]
+layer = 20
+
+[node name="Toasts" type="CanvasLayer" parent="." unique_id=1311200803]
+layer = 30
+
+[connection signal="pressed" from="HUD/ModePanel/VBoxContainer/LibraryButton" to="HUD/ModePanel" method="_on_library_button_pressed"]
+[connection signal="pressed" from="HUD/ModePanel/VBoxContainer/SectionsButton" to="HUD/ModePanel" method="_on_sections_button_pressed"]
+[connection signal="pressed" from="HUD/ModePanel/VBoxContainer/ObserveButton" to="HUD/ModePanel" method="_on_observe_button_pressed"]
+[connection signal="pressed" from="HUD/ModePanel/VBoxContainer/OperateButton" to="HUD/ModePanel" method="_on_operate_button_pressed"]
+[connection signal="pressed" from="HUD/ModePanel/VBoxContainer/BuildButton" to="HUD/ModePanel" method="_on_build_button_pressed"]
