@@ -147,6 +147,108 @@ func _ready() -> void:
 	check("K3 lift: исходный массив не изменён", lsk[0] == 2.0)
 	check("K3 lift: выше порога меша", lout[0] - lh[0] > PlasterField.MIN_RAISE)
 
+	# XX claude-terra 13.13 K4: рельеф класса краски
+	var kn := 6
+	var kT := 0.8
+	var kup := PackedFloat32Array()
+	kup.resize(kn * kn)
+	kup.fill(1.0)
+	var kh := filled(kn * kn, 0.0)
+	for kk in kn * kn:
+		if kk % kn >= 3:
+			kh[kk] = kT
+	var kf := filled(kn * kn, 1.0)
+	var krun := filled(kn * kn, 2.0)
+	var kold := PlasterField.smooth(kh, krun, kf, kn, kn, 0.5, kT, kT)
+	var knew := PlasterField.smooth(kh, krun, kf, kn, kn, 0.5, kT, kT, filled(kn * kn, kT))
+	check("K4 smooth: подъём по ячейкам = скалярному, если везде одинаков", _max_abs_diff(kold, knew) == 0.0)
+	var knone := PlasterField.smooth(kh, krun, kf, kn, kn, 0.5, kT, kT, filled(kn * kn, 0.0))
+	check("K4 smooth: подъём 0 даёт оболочку по ступеням (обрыв остаётся)", _max_abs_diff(knone, kh) == 0.0)
+	check("K4 smooth: при подъёме выше нуля пандус есть", _max_abs_diff(kold, kh) > 0.1)
+
+	var kwt := PackedByteArray()
+	kwt.resize(kn * kn * 4)
+	var krn := filled(kn * kn, 2.0)
+	krn[0] = 0.0
+	var cf0 := PlasterField.class_fields(kwt, krn, kT, 1.0)
+	check("K4 классы: без краски ничего не меняется", _max_abs_diff(cf0["run"], krn) == 0.0 and near(float(cf0["up"][5]), kT, 0.0001))
+	kwt[4 * 1] = 255   # ячейка 1: трава
+	kwt[4 * 2 + 1] = 255   # ячейка 2: скала
+	kwt[4 * 3 + 2] = 255   # ячейка 3: гравий
+	kwt[4 * 4] = 128   # ячейка 4: трава 50% + скала 50%
+	kwt[4 * 4 + 1] = 127
+	kwt[0 + 1] = 255   # ячейка 0: скала, но run = 0 (нет пандуса)
+	var cf := PlasterField.class_fields(kwt, krn, kT, 1.0)
+	var cup: PackedFloat32Array = cf["up"]
+	var crun: PackedFloat32Array = cf["run"]
+	check("K4 классы: трава как в настройке", near(cup[1], kT, 0.0001) and crun[1] == 2.0)
+	check("K4 классы: скала без подошвы", cup[2] == 0.0 and crun[2] == 2.0)
+	check("K4 классы: гравий 2 слоя под 35 градусов", near(cup[3], 2.0 * kT, 0.0001) and near(crun[3], kT / tan(deg_to_rad(35.0)), 0.0001))
+	check("K4 классы: смесь травы и скалы даёт середину", near(cup[4], 0.5 * kT, 0.01), str(cup[4]))
+	check("K4 классы: ячейка без пандуса не меняется", crun[0] == 0.0 and near(cup[0], kT, 0.0001))
+	check("K4 классы: пустая ячейка без краски как была", crun[5] == 2.0 and near(cup[5], kT, 0.0001))
+	var kmask := PlasterField.mask_of(kwt)
+	var kmask_ok := kmask.size() == kn * kn
+	for kk in kn * kn:
+		if kmask[kk] != (1 if kk <= 4 else 0):
+			kmask_ok = false
+	check("K4 маска по весам", kmask_ok)
+
+	# мелкий рельеф
+	var rw := 12
+	var rn := rw * rw
+	var rsk := filled(rn, 1.0)
+	var rown := PackedInt32Array()
+	rown.resize(rn)
+	rown.fill(0)
+	var rf := filled(rn, 1.0)
+	var rwt := PackedByteArray()
+	rwt.resize(rn * 4)
+	for kk in rn:
+		rwt[kk * 4 + 1] = 255   # везде скала
+	var r1 := PlasterField.add_relief(rsk, rown, rf, rwt, -5, 7, rw, kT, 1.0)
+	var r2 := PlasterField.add_relief(rsk, rown, rf, rwt, -5, 7, rw, kT, 1.0)
+	check("K4 рельеф: детерминирован", _max_abs_diff(r1, r2) == 0.0)
+	var only_up := true
+	var any_up := false
+	for kk in rn:
+		if r1[kk] < rsk[kk]:
+			only_up = false
+		if r1[kk] > rsk[kk] + 0.01:
+			any_up = true
+	check("K4 рельеф: только вверх и не пустой", only_up and any_up)
+	check("K4 рельеф: масштаб 0 выключает", _max_abs_diff(PlasterField.add_relief(rsk, rown, rf, rwt, -5, 7, rw, kT, 0.0), rsk) == 0.0)
+	var shift := PlasterField.add_relief(rsk, rown, rf, rwt, -4, 7, rw, kT, 1.0)   # поле сдвинуто на одну ячейку
+	check("K4 рельеф: сдвиг поля сдвигает рельеф вместе с миром", near(shift[3 * rw + 3], r1[3 * rw + 4], 0.0001))
+	var rf0 := filled(rn, 0.0)
+	check("K4 рельеф: под траком (f = 0) нет", _max_abs_diff(PlasterField.add_relief(rsk, rown, rf0, rwt, -5, 7, rw, kT, 1.0), rsk) == 0.0)
+	var rown_n := PackedInt32Array()
+	rown_n.resize(rn)
+	rown_n.fill(-1)
+	check("K4 рельеф: вне бинта нет", _max_abs_diff(PlasterField.add_relief(rsk, rown_n, rf, rwt, -5, 7, rw, kT, 1.0), rsk) == 0.0)
+	var rwt_g := PackedByteArray()
+	rwt_g.resize(rn * 4)
+	var rwt_r := PackedByteArray()
+	rwt_r.resize(rn * 4)
+	for kk in rn:
+		rwt_g[kk * 4] = 255
+		rwt_r[kk * 4 + 1] = 255
+	var sum_g := 0.0
+	var sum_r := 0.0
+	var rg := PlasterField.add_relief(rsk, rown, rf, rwt_g, 0, 0, rw, kT, 1.0)
+	var rr := PlasterField.add_relief(rsk, rown, rf, rwt_r, 0, 0, rw, kT, 1.0)
+	for kk in rn:
+		sum_g += rg[kk] - 1.0
+		sum_r += rr[kk] - 1.0
+	check("K4 рельеф: у скалы крупнее, чем у травы", sum_r > sum_g * 1.5, "%.2f против %.2f" % [sum_r, sum_g])
+	var nz_ok := true
+	for ci in 3:
+		for gi in range(-40, 40):
+			var nv := PlasterField.relief_noise(gi, -gi * 3, ci)
+			if nv < 0.0 or nv > 1.0:
+				nz_ok = false
+	check("K4 шум: 0..1 при отрицательных индексах", nz_ok)
+
 	print("ИТОГО: ", "всё PASS" if _fails == 0 else "FAIL: %d" % _fails)
 
 

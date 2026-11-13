@@ -256,12 +256,22 @@ func rebuild() -> void:
 
 	# 5. оболочка
 	var max_up: float = float(gs.plaster_max_up) * T
-	var sk := PlasterField.smooth(hh, run_arr, f, w, d, c, T, max_up)
-	_lap("оболочка")
-	# XX claude-terra 13.13 K3: на плоском верху оболочка есть только в крашеных ячейках
+	# XX claude-terra 13.13 K4: класс краски задаёт подошву и осыпь (ширина пандуса и подъём по ячейкам)
+	var wt := PackedByteArray()
+	var up_arr := PackedFloat32Array()
 	if paint != null and not paint.is_empty():
-		sk = PlasterField.lift_marked(sk, hh, own, f, paint.painted_mask(i0, j0, w, d), PAINT_LIFT, PlasterField.MIN_RAISE)
-		_lap("краска")
+		wt = paint.field_weights(i0, j0, w, d)
+		var cf := PlasterField.class_fields(wt, run_arr, T, float(gs.plaster_max_up))
+		run_arr = cf["run"]
+		up_arr = cf["up"]
+		_lap("классы краски")
+	var sk := PlasterField.smooth(hh, run_arr, f, w, d, c, T, max_up, up_arr)
+	_lap("оболочка")
+	if not wt.is_empty():
+		# K4: мелкий рельеф только вверх. K3: на плоском верху оболочка есть только в крашеных ячейках
+		sk = PlasterField.add_relief(sk, own, f, wt, i0, j0, w, T, float(gs.plaster_relief_scale))
+		sk = PlasterField.lift_marked(sk, hh, own, f, PlasterField.mask_of(wt), PAINT_LIFT, PlasterField.MIN_RAISE)
+		_lap("рельеф и краска")
 	_f_sk = sk
 	_f_own = own
 	_f_i0 = i0

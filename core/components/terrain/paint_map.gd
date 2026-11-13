@@ -85,6 +85,34 @@ func chunk_bytes(key: Vector2i) -> PackedByteArray:
 	return _chunks[key]
 
 
+## K4. Веса классов по полю w x d: 4 байта на ячейку (трава, скала, гравий, запас), строка за строкой. Ячейка (0, 0) поля
+## это ячейка (i0, j0) карты. Нет краски: нули
+func field_weights(i0: int, j0: int, w: int, d: int) -> PackedByteArray:
+	var out := PackedByteArray()
+	out.resize(w * d * CHANNELS)
+	for key: Vector2i in _chunks:
+		var gx0 := key.x * CHUNK
+		var gz0 := key.y * CHUNK
+		if gx0 + CHUNK <= i0 or gx0 >= i0 + w or gz0 + CHUNK <= j0 or gz0 >= j0 + d:
+			continue
+		var data: PackedByteArray = _chunks[key]
+		for cj in CHUNK:
+			var gj := gz0 + cj - j0
+			if gj < 0 or gj >= d:
+				continue
+			for ci in CHUNK:
+				var gi := gx0 + ci - i0
+				if gi < 0 or gi >= w:
+					continue
+				var s := (cj * CHUNK + ci) * CHANNELS
+				var o := (gj * w + gi) * CHANNELS
+				out[o] = data[s]
+				out[o + 1] = data[s + 1]
+				out[o + 2] = data[s + 2]
+				out[o + 3] = data[s + 3]
+	return out
+
+
 ## K3. Где есть краска: маска w x d (1 = в ячейке есть любой вес). Ячейка (0, 0) маски это ячейка (i0, j0) карты
 func painted_mask(i0: int, j0: int, w: int, d: int) -> PackedByteArray:
 	var mark := PackedByteArray()
