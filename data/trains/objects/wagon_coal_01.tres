@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://gwsdt87qd0o8" path="res://data/trains/wheel_pair_03.tscn" id="4_68dxn"]
 [ext_resource type="Script" uid="uid://daeylhso0elsx" path="res://setting/light_config.gd" id="5_g6rui"]
 [ext_resource type="Script" uid="uid://gv2lrhu17dtf" path="res://setting/mechanism_config.gd" id="6_8nbd5"]
+[ext_resource type="Script" uid="uid://cteud8ws67l53" path="res://setting/glow_rect.gd" id="6_o43rn"]
 [ext_resource type="PackedScene" uid="uid://c3830uoot3kae" path="res://data/models/wagon_coal_01/wagon_coal_01.tscn" id="7_od62w"]
 [ext_resource type="Script" uid="uid://bicjny5dv1h3s" path="res://setting/wagon_config.gd" id="8_8qork"]
 [ext_resource type="Script" uid="uid://bwaluvayi2o8k" path="res://setting/suspension_config.gd" id="9_f83ox"]
@@ -39,6 +40,15 @@ wheel_pair_scene = ExtResource("4_68dxn")
 wheel_pair_position = Vector3(0, 0.535, 0.8)
 metadata/_custom_type_script = "uid://7vuxuiiysiji"
 
+[sub_resource type="Resource" id="Resource_r5d8a"]
+script = ExtResource("5_g6rui")
+kind = 1
+rule = 6
+dir_end = 1
+anchor_role = &"light_head_rear"
+color = Color(1, 0.1882353, 0, 1)
+metadata/_custom_type_script = "uid://daeylhso0elsx"
+
 [sub_resource type="Resource" id="Resource_ag4h2"]
 script = ExtResource("6_8nbd5")
 actuator = 6
@@ -67,6 +77,7 @@ bogie_configs = Array[ExtResource("2_o43rn")]([SubResource("Resource_u60jt"), Su
 coupler_offset = 8.0
 coupler_rear = &"fixed"
 mechanisms = Array[ExtResource("6_8nbd5")]([SubResource("Resource_ag4h2"), SubResource("Resource_od62w")])
+lights = Array[ExtResource("5_g6rui")]([SubResource("Resource_r5d8a")])
 metadata/_custom_type_script = "uid://bicjny5dv1h3s"
 
 [sub_resource type="Resource" id="Resource_lvfb0"]
