@@ -32,13 +32,15 @@ class Mech extends RefCounted:
 	var target := 0.0
 	var enabled := true
 	var manual := false         # игрок взял управление (на будущее: AUTO-правила)
-	var player: AnimationPlayer # только ANIM: свой плеер механизма, анимация поставлена на паузу
-	var anim_len := 0.0         # только ANIM: длина анимации, с
+	var anim: Animation         # только ANIM: анимация модели (плеер модели не запускается, позы ставит сам механизм)
+	var anim_tracks: Array = [] # только ANIM: [{node: Node3D, idx: int, kind: Animation.TrackType}]
+	var anim_t0 := 0.0          # только ANIM: время первого ключа = состояние 0
+	var anim_t1 := 0.0          # только ANIM: время последнего ключа = состояние 1
 
-	## Часть найдена: узел (SLIDE, ROTATE) или плеер анимации (ANIM)
+	## Часть найдена: узел (SLIDE, ROTATE) или дорожки анимации (ANIM)
 	func found() -> bool:
 		if cfg.actuator == MechanismConfig.Actuator.ANIM:
-			return player != null
+			return anim != null and not anim_tracks.is_empty()
 		return node != null
 
 	func is_moving() -> bool:
@@ -54,9 +56,21 @@ class Mech extends RefCounted:
 	func apply() -> void:
 		var k := smoothstep(0.0, 1.0, t)
 		if cfg.actuator == MechanismConfig.Actuator.ANIM:
-			# Время анимации = состояние. Чуть меньше длины: у зацикленной анимации seek на конец вернул бы кадр 0
-			if player != null and is_instance_valid(player):
-				player.seek(minf(anim_len * k, maxf(anim_len - 0.0001, 0.0)), true)
+			# Состояние 0..1 это время между первым и последним ключом анимации (у экспорта из Blender первый ключ
+			# не обязан стоять в нуле). Позы ставим сами, без AnimationPlayer: нет автопроигрывания, нет конфликта плееров
+			if anim != null:
+				var time := lerpf(anim_t0, anim_t1, k)
+				for e in anim_tracks:
+					var n: Node3D = e.node
+					if not is_instance_valid(n):
+						continue
+					match e.kind:
+						Animation.TYPE_POSITION_3D:
+							n.position = anim.position_track_interpolate(e.idx, time)
+						Animation.TYPE_ROTATION_3D:
+							n.quaternion = anim.rotation_track_interpolate(e.idx, time)
+						Animation.TYPE_SCALE_3D:
+							n.scale = anim.scale_track_interpolate(e.idx, time)
 			return
 		if node == null or not is_instance_valid(node):
 			return
@@ -195,31 +209,52 @@ func on_entity_ready() -> void:
 		GFX.light_budget.register(self)
 
 
-## ANIM: находит в модели AnimationPlayer с нужной анимацией и заводит для механизма СВОЙ плеер (тот же родитель и root_node,
-## общий ресурс Animation). Свой плеер нужен, потому что один плеер показывает одну анимацию, а механизмов в модели несколько.
-## Плеер модели не трогаем. Анимацию ведёт seek по состоянию, сам плеер стоит на паузе (Mech.apply)
+## ANIM: находит в модели AnimationPlayer с нужной анимацией, берёт её Animation и дорожки позиции, поворота и масштаба узлов.
+## Плеер модели не трогаем и свои плееры не заводим: позы по состоянию ставит Mech.apply (одна анимация на механизм,
+## в ней может быть сколько угодно узлов). Дорожки костей и неизвестные узлы пропускаются с предупреждением
 func _setup_anim(m: Mech, vis: C_Visual) -> void:
 	var aname: StringName = m.cfg.anim_name if m.cfg.anim_name != &"" else StringName("mech_%s" % m.cfg.id)
+	var owner_name := str(entity.name) if entity else "?"
 	var src: AnimationPlayer = null
 	for n in vis.instance.find_children("*", "AnimationPlayer", true, false):
 		if (n as AnimationPlayer).has_animation(aname):
 			src = n
 			break
 	if src == null:
-		push_warning("[C_Mechanisms] %s: анимация '%s' не найдена в модели (экспорт из Blender: режим Actions, имя mech_<id>)" % [entity.name if entity else "?", aname])
+		push_warning("[C_Mechanisms] %s: анимация '%s' не найдена в модели (экспорт из Blender: режим Actions, имя mech_<id>)" % [owner_name, aname])
+		return
+	var base := src.get_node_or_null(src.root_node)
+	if base == null:
+		push_warning("[C_Mechanisms] %s: у плеера анимации '%s' не найден корень (root_node)" % [owner_name, aname])
 		return
 	var anim: Animation = src.get_animation(aname)
-	var lib := AnimationLibrary.new()
-	lib.add_animation(&"a", anim)
-	var p := AnimationPlayer.new()
-	p.name = "MechPlayer_%s" % m.cfg.id
-	src.get_parent().add_child(p)
-	p.root_node = src.root_node
-	p.add_animation_library(&"", lib)
-	p.play(&"a")
-	p.pause()
-	m.player = p
-	m.anim_len = anim.length
+	var tracks: Array = []
+	var t0 := INF
+	var t1 := -INF
+	for i in anim.get_track_count():
+		var kind := anim.track_get_type(i)
+		if kind != Animation.TYPE_POSITION_3D and kind != Animation.TYPE_ROTATION_3D and kind != Animation.TYPE_SCALE_3D:
+			continue
+		var keys := anim.track_get_key_count(i)
+		if not anim.track_is_enabled(i) or keys == 0:
+			continue
+		var path := anim.track_get_path(i)
+		if path.get_subname_count() > 0:
+			continue # кость скелета
+		var node := base.get_node_or_null(NodePath(path.get_concatenated_names())) as Node3D
+		if node == null:
+			push_warning("[C_Mechanisms] %s: анимация '%s': узел '%s' не найден" % [owner_name, aname, path])
+			continue
+		tracks.append({"node": node, "idx": i, "kind": kind})
+		t0 = minf(t0, anim.track_get_key_time(i, 0))
+		t1 = maxf(t1, anim.track_get_key_time(i, keys - 1))
+	if tracks.is_empty():
+		push_warning("[C_Mechanisms] %s: в анимации '%s' нет дорожек позиции, поворота или масштаба узлов" % [owner_name, aname])
+		return
+	m.anim = anim
+	m.anim_tracks = tracks
+	m.anim_t0 = t0
+	m.anim_t1 = maxf(t1, t0)
 
 
 ## Лампы на шине аксессуаров нагружают её (D6): потребитель регистрируется в PGM.bus

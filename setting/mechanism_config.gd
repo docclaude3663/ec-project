@@ -7,7 +7,7 @@ class_name MechanismConfig extends Resource
 ## Остальное - заготовки под следующие шаги (дышла, фары, дым, вентилятор, пантограф).
 
 enum Source { COMMAND, WHEEL_PHASE, SPEED, POWERED, DIRECTION }
-## ANIM (ATTN_24 §24.6): движение ведёт анимация из .glb (Blender Action), состояние 0..1 это время анимации.
+## ANIM (0_ATTN_24 §24.6): движение ведёт анимация из .glb (Blender Action), состояние 0..1 это время между первым и последним ключом.
 ## ANIM добавлен в конец списка: числа остальных значений в .tres не меняются
 enum Actuator { SLIDE, ROTATE, SPIN, CLIP, LIGHT, PARTICLES, ANIM }
 

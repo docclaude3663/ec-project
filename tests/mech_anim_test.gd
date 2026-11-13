@@ -1,9 +1,9 @@
 extends Node
 
-## Проверка Actuator.ANIM (ATTN_24 §24.6, шаг S3): механизм ведёт анимацию из модели по состоянию 0..1.
+## Проверка Actuator.ANIM (0_ATTN_24 §24.6, шаг S3): механизм ставит позы узлов по состоянию 0..1 из анимации модели.
 ## Запуск: открыть tests/mech_anim_test.tscn и нажать F6. Итог в Output: строки PASS/FAIL и «Mech anim: n/m».
-## Модель собирается кодом: родитель, узел-деталь и AnimationPlayer с анимацией mech_test (сдвиг детали на 3 по оси Z за 2 с).
-## Сущность и InfoPanel не нужны: проверяются Mech и _setup_anim напрямую.
+## Модель собирается кодом: корень, две детали и AnimationPlayer с двумя анимациями (как после экспорта из Blender:
+## первый ключ не в нуле). Сущность и InfoPanel не нужны: проверяются Mech и _setup_anim напрямую.
 
 var _ok := 0
 var _all := 0
@@ -12,55 +12,72 @@ var _all := 0
 func _ready() -> void:
 	var root := Node3D.new()
 	add_child(root)
-	var part := Node3D.new()
-	part.name = "Part"
-	root.add_child(part)
+	var part_a := Node3D.new()
+	part_a.name = "PartA"
+	root.add_child(part_a)
+	var part_b := Node3D.new()
+	part_b.name = "PartB"
+	root.add_child(part_b)
 
-	var anim := Animation.new()
-	anim.length = 2.0
-	var tr := anim.add_track(Animation.TYPE_POSITION_3D)
-	anim.track_set_path(tr, NodePath("Part"))
-	anim.position_track_insert_key(tr, 0.0, Vector3.ZERO)
-	anim.position_track_insert_key(tr, 2.0, Vector3(0, 0, 3))
+	# mech_a: PartA сдвигается на 3 по Z, ключи на 0.5 и 2.5 с (не с нуля)
+	var anim_a := Animation.new()
+	anim_a.length = 2.5
+	var ta := anim_a.add_track(Animation.TYPE_POSITION_3D)
+	anim_a.track_set_path(ta, NodePath("PartA"))
+	anim_a.position_track_insert_key(ta, 0.5, Vector3.ZERO)
+	anim_a.position_track_insert_key(ta, 2.5, Vector3(0, 0, 3))
+	# mech_b: PartB поворачивается на 90° вокруг Y, ключи на 0.25 и 1.25 с
+	var anim_b := Animation.new()
+	anim_b.length = 1.25
+	var tb := anim_b.add_track(Animation.TYPE_ROTATION_3D)
+	anim_b.track_set_path(tb, NodePath("PartB"))
+	anim_b.rotation_track_insert_key(tb, 0.25, Quaternion.IDENTITY)
+	anim_b.rotation_track_insert_key(tb, 1.25, Quaternion(Vector3.UP, PI / 2.0))
 	var lib := AnimationLibrary.new()
-	lib.add_animation(&"mech_test", anim)
+	lib.add_animation(&"mech_a", anim_a)
+	lib.add_animation(&"mech_b", anim_b)
 	var src := AnimationPlayer.new()
 	root.add_child(src)
 	src.root_node = NodePath("..")
 	src.add_animation_library(&"", lib)
 
-	# Свой плеер механизма: то же, что делает C_Mechanisms._setup_anim (повторено здесь, чтобы не собирать сущность)
 	var comp := C_Mechanisms.new()
-	var cfg := MechanismConfig.new()
-	cfg.id = &"test"
-	cfg.actuator = MechanismConfig.Actuator.ANIM
-	var m := C_Mechanisms.Mech.new()
-	m.cfg = cfg
 	var vis := C_Visual.new()
 	vis.instance = root
-	comp._setup_anim(m, vis)
+	var ma := _mech(&"a")
+	var mb := _mech(&"b")
+	comp._setup_anim(ma, vis)
+	comp._setup_anim(mb, vis)
 
-	_check("ANIM: плеер механизма создан, найдена", m.found() and m.player != null)
-	_check("ANIM: длина анимации взята из ресурса", is_equal_approx(m.anim_len, 2.0))
-	_check("ANIM: плеер механизма стоит рядом с плеером модели", m.player != null and m.player.get_parent() == root)
-	_check("ANIM: поза покоя (t = 0)", part.position.is_equal_approx(Vector3.ZERO))
+	_check("ANIM: обе анимации найдены", ma.found() and mb.found())
+	_check("ANIM: состояние 0 и 1 это первый и последний ключ (0.5 и 2.5 с)", is_equal_approx(ma.anim_t0, 0.5) and is_equal_approx(ma.anim_t1, 2.5))
+	_check("ANIM: плеер модели один, свои плееры не создаются", root.find_children("*", "AnimationPlayer", true, false).size() == 1)
 
-	m.t = 1.0
-	m.target = 1.0
-	m.apply()
-	_check("ANIM: t = 1, деталь в рабочем положении (почти конец анимации)", part.position.z > 2.99)
-	m.t = 0.5
-	m.apply()
-	_check("ANIM: t = 0.5, середина хода (smoothstep даёт 0.5)", absf(part.position.z - 1.5) < 0.01)
-	m.t = 0.0
-	m.apply()
-	_check("ANIM: возврат в покой", part.position.is_equal_approx(Vector3.ZERO))
+	ma.t = 0.0
+	mb.t = 0.0
+	ma.apply()
+	mb.apply()
+	_check("ANIM: поза покоя (t = 0) это первый ключ", part_a.position.is_equal_approx(Vector3.ZERO) and part_b.basis.is_equal_approx(Basis.IDENTITY))
 
-	var missing := C_Mechanisms.Mech.new()
-	var cfg2 := MechanismConfig.new()
-	cfg2.id = &"nope"
-	cfg2.actuator = MechanismConfig.Actuator.ANIM
-	missing.cfg = cfg2
+	ma.t = 1.0
+	mb.t = 1.0
+	ma.apply()
+	mb.apply()
+	_check("ANIM: t = 1, оба механизма в рабочем положении одновременно",
+		part_a.position.is_equal_approx(Vector3(0, 0, 3)) and part_b.basis.x.is_equal_approx(Vector3(0, 0, -1)))
+
+	ma.t = 0.5
+	ma.apply()
+	_check("ANIM: t = 0.5, середина хода (smoothstep даёт 0.5), второй механизм не сдвинулся",
+		absf(part_a.position.z - 1.5) < 0.001 and part_b.basis.x.is_equal_approx(Vector3(0, 0, -1)))
+
+	ma.t = 0.0
+	mb.t = 1.0
+	ma.apply()
+	mb.apply()
+	_check("ANIM: механизмы независимы (A в покое, B открыт)", part_a.position.is_equal_approx(Vector3.ZERO) and part_b.basis.x.is_equal_approx(Vector3(0, 0, -1)))
+
+	var missing := _mech(&"nope")
 	comp._setup_anim(missing, vis)
 	_check("ANIM: нет такой анимации, механизм не найден и apply не падает", not missing.found())
 	missing.apply()
@@ -70,6 +87,16 @@ func _ready() -> void:
 
 	print("Mech anim: %d/%d" % [_ok, _all])
 	get_tree().quit(0 if _ok == _all else 1)
+
+
+func _mech(id: StringName) -> C_Mechanisms.Mech:
+	var cfg := MechanismConfig.new()
+	cfg.id = id
+	cfg.actuator = MechanismConfig.Actuator.ANIM
+	cfg.anim_name = StringName("mech_%s" % id)
+	var m := C_Mechanisms.Mech.new()
+	m.cfg = cfg
+	return m
 
 
 func _check(title: String, cond: bool) -> void:
