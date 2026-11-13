@@ -25,10 +25,10 @@ border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(1, 1, 1, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 expand_margin_left = 2.0
 expand_margin_top = 2.0
 expand_margin_right = 2.0
@@ -171,10 +171,10 @@ border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.7059, 0.7686, 0.8196, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="panel_inner"]
 bg_color = Color(0.102, 0.102, 0.102, 0.85)
@@ -183,10 +183,10 @@ border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.5412, 0.5412, 0.5412, 0.5)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="header"]
 content_margin_left = 10.0
@@ -194,8 +194,8 @@ content_margin_top = 4.0
 content_margin_right = 10.0
 content_margin_bottom = 4.0
 bg_color = Color(0.1882, 0.302, 0.4471, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
+corner_radius_top_left = 4
+corner_radius_top_right = 4
 
 [sub_resource type="StyleBoxFlat" id="panel_warn"]
 content_margin_left = 10.0
@@ -208,10 +208,10 @@ border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
 border_color = Color(1, 0.8353, 0.3098, 0.6)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="popup_hover"]
 bg_color = Color(1, 1, 1, 0.1)
@@ -307,6 +307,30 @@ content_margin_left = 0.0
 color = Color(0.5412, 0.5412, 0.5412, 0.6)
 vertical = true
 
+[sub_resource type="StyleBoxFlat" id="dock_head"]
+content_margin_left = 8.0
+content_margin_right = 8.0
+bg_color = Color(1, 1, 1, 0.06)
+border_width_bottom = 1
+border_color = Color(0.5412, 0.5412, 0.5412, 0.6)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+
+[sub_resource type="StyleBoxFlat" id="tag_normal"]
+content_margin_left = 10.0
+content_margin_right = 10.0
+bg_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="tag_hover"]
+content_margin_left = 10.0
+content_margin_right = 10.0
+bg_color = Color(1, 1, 1, 0.12)
+
+[sub_resource type="StyleBoxFlat" id="tag_pressed"]
+content_margin_left = 10.0
+content_margin_right = 10.0
+bg_color = Color(0.1882, 0.302, 0.4471, 1)
+
 [resource]
 default_font = ExtResource("1_font")
 default_font_size = 16
@@ -340,6 +364,8 @@ CheckButton/colors/font_hover_pressed_color = Color(1, 1, 1, 1)
 CheckButton/colors/font_pressed_color = Color(1, 1, 1, 1)
 DCButton/base_type = &"Button"
 DCButton/constants/icon_max_width = 36
+DockHeadBar/base_type = &"PanelContainer"
+DockHeadBar/styles/panel = SubResource("dock_head")
 HScrollBar/styles/grabber = SubResource("grab")
 HScrollBar/styles/grabber_highlight = SubResource("grab_hi")
 HScrollBar/styles/grabber_pressed = SubResource("grab_pr")
@@ -404,6 +430,13 @@ TabContainer/styles/tab_selected = SubResource("tab_sel")
 TabContainer/styles/tab_unselected = SubResource("tab_unsel")
 TagButton/base_type = &"Button"
 TagButton/constants/icon_max_width = 20
+TagButton/font_sizes/font_size = 14
+TagButton/styles/disabled = SubResource("tag_normal")
+TagButton/styles/focus = SubResource("btn_focus")
+TagButton/styles/hover = SubResource("tag_hover")
+TagButton/styles/hover_pressed = SubResource("tag_pressed")
+TagButton/styles/normal = SubResource("tag_normal")
+TagButton/styles/pressed = SubResource("tag_pressed")
 TooltipLabel/colors/font_color = Color(0.902, 0.902, 0.902, 1)
 TooltipLabel/font_sizes/font_size = 14
 TooltipPanel/styles/panel = SubResource("tip_panel")

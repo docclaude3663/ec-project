@@ -23,10 +23,10 @@ border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.051, 0.2863, 0.3569, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 expand_margin_left = 2.0
 expand_margin_top = 2.0
 expand_margin_right = 2.0
@@ -173,10 +173,10 @@ border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
 border_color = Color(1, 1, 1, 0.7)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 shadow_color = Color(0, 0, 0, 0.25)
 shadow_size = 8
 shadow_offset = Vector2(3, 3)
@@ -188,10 +188,10 @@ border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
 border_color = Color(1, 1, 1, 0.7)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 shadow_color = Color(0, 0, 0, 0.2)
 shadow_size = 5
 shadow_offset = Vector2(2, 2)
@@ -202,8 +202,8 @@ content_margin_top = 4.0
 content_margin_right = 10.0
 content_margin_bottom = 4.0
 bg_color = Color(0.051, 0.3333, 0.4157, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
+corner_radius_top_left = 4
+corner_radius_top_right = 4
 
 [sub_resource type="StyleBoxFlat" id="panel_warn"]
 content_margin_left = 10.0
@@ -211,10 +211,10 @@ content_margin_top = 8.0
 content_margin_right = 10.0
 content_margin_bottom = 8.0
 bg_color = Color(1, 0.9216, 0.7804, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="popup_hover"]
 bg_color = Color(0.9569, 0.9333, 0.8863, 1)
@@ -226,10 +226,10 @@ border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.4353, 0.5608, 0.6196, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 shadow_color = Color(0, 0, 0, 0.2)
 shadow_size = 5
 shadow_offset = Vector2(2, 2)
@@ -312,6 +312,30 @@ content_margin_left = 0.0
 color = Color(0.4353, 0.5608, 0.6196, 0.5)
 vertical = true
 
+[sub_resource type="StyleBoxFlat" id="dock_head"]
+content_margin_left = 8.0
+content_margin_right = 8.0
+bg_color = Color(0.9373, 0.9098, 0.8627, 1)
+border_width_bottom = 1
+border_color = Color(0.4353, 0.5608, 0.6196, 0.5)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+
+[sub_resource type="StyleBoxFlat" id="tag_normal"]
+content_margin_left = 10.0
+content_margin_right = 10.0
+bg_color = Color(0, 0, 0, 0)
+
+[sub_resource type="StyleBoxFlat" id="tag_hover"]
+content_margin_left = 10.0
+content_margin_right = 10.0
+bg_color = Color(0, 0, 0, 0.08)
+
+[sub_resource type="StyleBoxFlat" id="tag_pressed"]
+content_margin_left = 10.0
+content_margin_right = 10.0
+bg_color = Color(0.051, 0.3333, 0.4157, 1)
+
 [resource]
 default_font_size = 16
 Button/colors/font_color = Color(0.1176, 0.1725, 0.1804, 1)
@@ -344,6 +368,8 @@ CheckButton/colors/font_hover_pressed_color = Color(0.051, 0.3333, 0.4157, 1)
 CheckButton/colors/font_pressed_color = Color(0.1176, 0.1725, 0.1804, 1)
 DCButton/base_type = &"Button"
 DCButton/constants/icon_max_width = 36
+DockHeadBar/base_type = &"PanelContainer"
+DockHeadBar/styles/panel = SubResource("dock_head")
 HScrollBar/styles/grabber = SubResource("grab")
 HScrollBar/styles/grabber_highlight = SubResource("grab_hi")
 HScrollBar/styles/grabber_pressed = SubResource("grab_pr")
@@ -408,6 +434,13 @@ TabContainer/styles/tab_selected = SubResource("tab_sel")
 TabContainer/styles/tab_unselected = SubResource("tab_unsel")
 TagButton/base_type = &"Button"
 TagButton/constants/icon_max_width = 20
+TagButton/font_sizes/font_size = 14
+TagButton/styles/disabled = SubResource("tag_normal")
+TagButton/styles/focus = SubResource("btn_focus")
+TagButton/styles/hover = SubResource("tag_hover")
+TagButton/styles/hover_pressed = SubResource("tag_pressed")
+TagButton/styles/normal = SubResource("tag_normal")
+TagButton/styles/pressed = SubResource("tag_pressed")
 TooltipLabel/colors/font_color = Color(0.9804, 0.9569, 0.9216, 1)
 TooltipLabel/font_sizes/font_size = 14
 TooltipPanel/styles/panel = SubResource("tip_panel")
