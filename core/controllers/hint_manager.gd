@@ -45,6 +45,7 @@ const HINTS := {
 	"sections/select_switch": [["@delete", "убрать секцию"], ["@level_up/@level_down", "высота стола ±5 (Shift ×5)"]],
 	"water_pour": [["ЛКМ", "налить воду (область видна до клика)"], ["Shift+ЛКМ", "осушить"], ["@level_up/@level_down", "глубина воды (Shift ×5)"], ["@level_up_x5/@level_down_x5", "глубина ±5"], ["@tool_undo", "отменить налив"], ["ПКМ", "выйти"]],
 	"plaster": [["ЛКМ", "сгладить весь холм под курсором"], ["Shift+ЛКМ", "только этот лист"], ["Ctrl+ЛКМ", "снять (Shift: только лист)"], ["@width_down и @width_up", "ступень пандуса, ю на слой"], ["@tool_undo", "отменить"], ["ПКМ", "выйти"]],
+	"paint": [["ЛКМ", "красить (тянуть)"], ["Ctrl+ЛКМ", "стереть"], ["@width_down и @width_up", "радиус кисти, ю (Shift ×5)"], ["@tool_undo", "отменить мазок"], ["ПКМ", "выйти"]],
 	"drag": [["Отпустить ЛКМ", "поставить"], ["ПКМ", "отмена"], ["@rotate_left/@rotate_right", "поворот 45° (Shift: 5°)"], ["@gesture_rotate", "вращать (Shift: точнее)"], ["@gesture_height", "высота"], ["@level_up/@level_down", "уровень"], ["Shift+@level_up/@level_down, @level_up_x5/@level_down_x5", "уровень ×5"], ["@reset_transform", "сброс"]],
 	"wire": [["ЛКМ по клемме", "начать провод"], ["ЛКМ по столу", "точка излома"], ["ЛКМ по второй клемме", "соединить"], ["ПКМ / @wire_cancel", "отмена, повторно выход"]],
 	"wire_started": [["ЛКМ по клемме", "соединить"], ["ЛКМ по столу", "точка излома"], ["ПКМ / @wire_cancel", "отмена провода"]],
@@ -146,6 +147,8 @@ func _context_key() -> String:
 			return "wire_started" if _ctx.get(&"wire_started", false) else "wire"
 		&"PlasterTool":   # XX claude-terra 13.5 G3: гипсовый бинт
 			return "plaster"
+		&"PaintTool":   # XX claude-terra 13.13 K2: кисть
+			return "paint"
 		&"WaterPourTool":   # XX claude-terra 13.4 W3: налить воду
 			return "water_pour"
 		&"TableTool":   # XX claude-table T2: постановка секций

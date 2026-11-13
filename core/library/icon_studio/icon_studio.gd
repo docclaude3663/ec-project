@@ -824,7 +824,8 @@ func _load_objects() -> void:
 			var res := load(dir + file)
 			if res is EntitySetting and res.build_behavior != EntitySetting.BuildBehavior.CUT_TOOL \
 					and res.build_behavior != EntitySetting.BuildBehavior.WATER_TOOL \
-					and res.build_behavior != EntitySetting.BuildBehavior.PLASTER_TOOL:   # 13.3 S2, 13.4: инструмент не объект
+					and res.build_behavior != EntitySetting.BuildBehavior.PLASTER_TOOL \
+					and res.build_behavior != EntitySetting.BuildBehavior.PAINT_TOOL:   # 13.3 S2, 13.4: инструмент не объект
 				_all.append(res)
 	_all.sort_custom(func(a: EntitySetting, b: EntitySetting) -> bool:
 		if a.category != b.category:

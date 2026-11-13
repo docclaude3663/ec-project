@@ -24,6 +24,7 @@ class_name ToolController extends Node3D
 var cut_tool: ThermoCutTool
 var water_tool: WaterPourTool   # XX claude-terra 13.4 W3
 var plaster_tool: PlasterTool   # XX claude-terra 13.5 G3
+var paint_tool: PaintTool   # XX claude-terra 13.13 K2
 var wire_tool: WireTool   # D4 (ATTN_10): провода между клеммами
 var table_tool: TableTool   # XX claude-table T2: постановка секций подмакетника (режим «Секции»)
 #@onready var save_controller: SaveManager = %SaveManager
@@ -69,6 +70,9 @@ func _ready() -> void:
 	plaster_tool = PlasterTool.new()
 	plaster_tool.name = &"PlasterTool"
 	%Tools.add_child(plaster_tool)
+	paint_tool = PaintTool.new()
+	paint_tool.name = &"PaintTool"
+	%Tools.add_child(paint_tool)
 	wire_tool = WireTool.new()
 	wire_tool.name = &"WireTool"
 	%Tools.add_child(wire_tool)
@@ -202,6 +206,12 @@ func select_build_object(setting: EntitySetting, variant: Dictionary = {}) -> vo
 	# XX claude-terra 13.5 G3: кнопка «Гипсовый бинт» включает PlasterTool
 	if setting.build_behavior == EntitySetting.BuildBehavior.PLASTER_TOOL:
 		switch_tool(plaster_tool)
+		return
+
+	# XX claude-terra 13.13 K2: кнопка кисти включает PaintTool, класс из facet "brush"
+	if setting.build_behavior == EntitySetting.BuildBehavior.PAINT_TOOL:
+		paint_tool.brush = PaintTool.brush_from_facet(setting.get_facet(&"brush"))
+		switch_tool(paint_tool)
 		return
 
 	# XX claude-table T2: пресет секции (категория table) включает TableTool, режим «Секции»

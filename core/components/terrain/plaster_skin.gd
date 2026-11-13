@@ -29,6 +29,17 @@ var _body: StaticBody3D
 var _shape: CollisionShape3D
 var _pending := false
 
+# XX claude-terra 13.13 K1
+## Оболочка пересчитана (или снята). Слушает PaintView: высоты под краской поменялись
+signal rebuilt
+## Последнее поле оболочки для запросов кисти: высота оболочки и «ячейка под бинтом». Индексы ячеек мировые (как у PaintMap)
+var _f_sk := PackedFloat32Array()
+var _f_own := PackedInt32Array()
+var _f_i0 := 0
+var _f_j0 := 0
+var _f_w := 0
+var _f_d := 0
+
 # XX claude-terra 13.13 K0
 ## Замер пересборки: включается GlobalSetting.plaster_log_time, итог одной строкой в Output
 var _log := false
@@ -72,7 +83,46 @@ func _on_delay() -> void:
 		rebuild()
 
 
+## Размер ячейки оболочки и краски, ю
+static func cell_size() -> float:
+	return float(Global.settings.terrain_grid_step) * CELL_K
+
+
+## 13.13 K1. Высота оболочки (она не ниже ступеней) в ячейке с мировыми индексами (i, j). NAN: ячейка вне поля
+func height_at_cell(i: int, j: int) -> float:
+	var ii := i - _f_i0
+	var jj := j - _f_j0
+	if ii < 0 or jj < 0 or ii >= _f_w or jj >= _f_d:
+		return NAN
+	return _f_sk[jj * _f_w + ii]
+
+
+## 13.13 K1. Ячейка (i, j) принадлежит листу с бинтом (под ним или на его пандусе): красить можно только здесь
+func is_plastered_cell(i: int, j: int) -> bool:
+	var ii := i - _f_i0
+	var jj := j - _f_j0
+	if ii < 0 or jj < 0 or ii >= _f_w or jj >= _f_d:
+		return false
+	return _f_own[jj * _f_w + ii] >= 0
+
+
+## 13.13 K1. То же по точке мира (x, z)
+func is_plastered_at(p: Vector2) -> bool:
+	var c := cell_size()
+	return is_plastered_cell(floori(p.x / c), floori(p.y / c))
+
+
+## 13.13 K1. Высота оболочки в точке мира (ближайшая ячейка). NAN: вне поля
+func height_at(p: Vector2) -> float:
+	var c := cell_size()
+	return height_at_cell(floori(p.x / c), floori(p.y / c))
+
+
 func clear() -> void:
+	_f_sk = PackedFloat32Array()
+	_f_own = PackedInt32Array()
+	_f_w = 0
+	_f_d = 0
 	_pending = false
 	has_content = false
 	region = Rect2()
@@ -81,6 +131,7 @@ func clear() -> void:
 	if is_instance_valid(_shape):
 		_shape.queue_free()
 	_shape = null
+	rebuilt.emit()
 
 
 func rebuild() -> void:
@@ -202,6 +253,12 @@ func rebuild() -> void:
 	var max_up: float = float(gs.plaster_max_up) * T
 	var sk := PlasterField.smooth(hh, run_arr, f, w, d, c, T, max_up)
 	_lap("оболочка")
+	_f_sk = sk
+	_f_own = own
+	_f_i0 = i0
+	_f_j0 = j0
+	_f_w = w
+	_f_d = d
 	_build_mesh(sk, hh, own, zones, origin, c, w, d)
 
 
@@ -381,7 +438,15 @@ func _build_mesh(sk: PackedFloat32Array, hh: PackedFloat32Array, own: PackedInt3
 	if tools.is_empty():
 		clear()
 		region = Rect2()
+		# XX claude-terra 13.13 K1: оболочки над ступенями нет (плоский верх), но лист с бинтом есть: красить на нём можно
+		_f_sk = sk
+		_f_own = own
+		_f_i0 = int(floor(origin.x / c))
+		_f_j0 = int(floor(origin.y / c))
+		_f_w = w
+		_f_d = d
 		_log_done(0)
+		rebuilt.emit()
 		return
 	var mesh := ArrayMesh.new()
 	for stage in tools:
@@ -396,3 +461,4 @@ func _build_mesh(sk: PackedFloat32Array, hh: PackedFloat32Array, own: PackedInt3
 	has_content = true
 	_lap("коллизия")
 	_log_done(tri_total)
+	rebuilt.emit()

@@ -121,6 +121,9 @@ func save_game(slot_name: String ='savegame') -> bool:
 	# Источники питания и сеть: команды пультов, estop, защита (ATTN_10 D2)
 	_saved_game.power_state = PGM.save_state()
 
+	# Краска кистей (ATTN_13 §13.13)
+	_saved_game.paint = TGM.paint.save_data()
+
 	# 2️⃣ Собираем все сущности на столе
 	var root_node = get_node_or_null(world_entities_root)
 	if root_node:
@@ -159,6 +162,7 @@ func clear_scene() -> void:
 	# XX claude-table T1: очищен и стол: новый макет со стартовой секцией (убрать все секции игрок может и сам, T4b)
 	LYM.reset()
 	LYM.ensure_start_section(root_node)
+	TGM.paint.clear()   # XX claude-terra 13.13 K1
 		
 	#INFO ДЕРГАЕМ ПАНЕЛЬ!
 	if tool_controller:
@@ -285,6 +289,9 @@ func load_game(slot_name: String  ='savegame', dir: String = SAVE_DIR, style_ove
 
 	# Источники питания: команды и защита из сейва, пульты ставят ручки (старый сейв: словарь пуст, остаются нули)
 	PGM.load_state(_saved_game.power_state)
+
+	# Краска кистей: после листов, чтобы оболочка уже была запрошена; пустой словарь очищает старую краску
+	TGM.paint.load_data(_saved_game.paint)
 
 	# 4. ВАЖНЕЙШИЙ ТАКТ СИНХРОНИЗАЦИИ ФИЗИКИ (см. Критические нюансы ниже)
 	await get_tree().physics_frame

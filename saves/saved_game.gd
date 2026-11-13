@@ -29,6 +29,9 @@ class_name SavedGame extends Resource
 ## Пусто в сейвах до D2: после загрузки питание 0
 @export var power_state: Dictionary = {}
 
+## Краска кистей (TGM.paint.save_data, ATTN_13 §13.13). Пусто = краски нет (в том числе сейвы до кистей)
+@export var paint: Dictionary = {}
+
 ### массив в GM контуры питания
 #@export var clip_numbers		:Array[int] = []
 #@export var power_pwm 			:Dictionary[int, int] = {}

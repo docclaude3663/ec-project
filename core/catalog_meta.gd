@@ -38,7 +38,7 @@ const TAGS := {
 	&"train": [&"loco", &"boxcar", &"parts", &"consist"],
 	&"track": [&"straight", &"curve", &"junction", &"special"],
 	&"building": [&"house"],
-	&"terrain": [&"foam", &"cut", &"water", &"plaster"],
+	&"terrain": [&"foam", &"cut", &"water", &"plaster", &"brush"],
 	&"table": [&"section"],
 	&"dc_controller": [&"2d", &"3d", &"switch", &"wire"],
 }
@@ -65,7 +65,7 @@ const FACET_SPECS := {
 }
 
 ## Признаки, допустимые у объекта, но не показываемые фильтрами (нужны для выбора рамкой и сводки на кнопке)
-const EXTRA_FACETS := [&"shape"]
+const EXTRA_FACETS := [&"shape", &"brush"]
 
 
 ## Данные категории для кнопки: {"id", "name", "icon"}. Неизвестная категория получает имя по id

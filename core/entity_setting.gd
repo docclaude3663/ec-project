@@ -39,8 +39,9 @@ class_name EntitySetting extends Resource
 # 13.3 S2: CUT_TOOL - не объект, а инструмент: кнопка включает ThermoCutTool (терморезак), форма выреза в facet "shape" (rect, polygon)
 # 13.5 G3: PLASTER_TOOL - инструмент «Гипсовый бинт» (PlasterTool), тоже не объект
 # 13.4 W3: WATER_TOOL - инструмент «Налить воду» (WaterPourTool), тоже не объект
+# 13.13 K2: PAINT_TOOL - инструмент «Кисть» (PaintTool), класс кисти в facet "brush" (grass, rock, gravel), тоже не объект
 # D4 (ATTN_10): WIRE_TOOL - инструмент «Провод» (WireTool), тоже не объект
-enum BuildBehavior { GHOST_PLACE, SPAWN_AND_DRAG, PLACE_THEN_STRETCH, DRAW_POLYGON, DRAW_STRIP, CUT_TOOL, WATER_TOOL, PLASTER_TOOL, WIRE_TOOL }
+enum BuildBehavior { GHOST_PLACE, SPAWN_AND_DRAG, PLACE_THEN_STRETCH, DRAW_POLYGON, DRAW_STRIP, CUT_TOOL, WATER_TOOL, PLASTER_TOOL, WIRE_TOOL, PAINT_TOOL }
 
 ## Как BuildTool ставит объект: гост + клик, или сразу спавн в драг
 @export var build_behavior: BuildBehavior = BuildBehavior.GHOST_PLACE

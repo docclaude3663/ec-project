@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://egp8w7ku4tud2"]
+
+[ext_resource type="Script" uid="uid://64ld6odgvls12" path="res://tests/paint_map_test.gd" id="1"]
+
+[node name="PaintMapTest" type="Node"]
+script = ExtResource("1")
