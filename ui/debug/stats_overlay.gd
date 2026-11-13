@@ -7,10 +7,12 @@ class_name StatsOverlay extends CanvasLayer
 ## show_stats (стенд «bench»). Обновляется 4 раза в секунду, обход сущностей копеечный.
 ## Отрисовка и треугольники читаются из Performance-мониторов Godot: это ВСЕ проходы кадра (основной, тени, depth prepass),
 ## поэтому цифры выше, чем «видно на экране», но для сравнения прогонов между собой годятся.
-## Угол экрана: CORNER. ModePanel занимает верхний правый, доки инструментов нижний левый.
+## Угол экрана: CORNER. TopBar занимает верх экрана на всю ширину (40), доки инструментов нижний левый.
 
 const REFRESH := 0.25
 const MARGIN := 8.0
+## Высота TopBar: сверху отступаем под него (U9)
+const TOP_BAR_H := 40.0
 const CORNER := Control.PRESET_TOP_LEFT   # или PRESET_BOTTOM_RIGHT
 
 var _label: Label
@@ -35,7 +37,7 @@ func _init() -> void:
 	panel.grow_horizontal = Control.GROW_DIRECTION_BEGIN if right else Control.GROW_DIRECTION_END
 	panel.grow_vertical = Control.GROW_DIRECTION_BEGIN if bottom else Control.GROW_DIRECTION_END
 	var ox := -MARGIN if right else MARGIN
-	var oy := -MARGIN if bottom else MARGIN
+	var oy := -MARGIN if bottom else MARGIN + TOP_BAR_H
 	panel.offset_left = ox
 	panel.offset_right = ox
 	panel.offset_top = oy

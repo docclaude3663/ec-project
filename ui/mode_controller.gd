@@ -35,19 +35,13 @@ var _library_prev_mode: StringName = &"build"
 ## Запрос «В игру» из Library: модель и исполнение, которые надо взять в руку после закрытия экрана (ATTN_22 L4)
 var _library_place_setting: EntitySetting
 var _library_place_variant: Dictionary = {}
-## Имя активного инструмента для ModeLabel (метка [LAB] добавляется к нему)
-var _tool_label := ""
+## Кнопки режимов живут в TopBar (U9). Берём через TopBar: изнутри его сцены % снаружи не виден
+@onready var _mode_panel = %TopBar.get_mode_panel()
 
 
 func _ready() -> void:
 	#⚡Сигнал о выборе режима из панели коннектится с контроллером
-	%ModePanel.mode_selected.connect(on_mode_selected)
-	# Метка с именем активного инструмента (временная, уйдёт вместе с ModeLabel в U9)
-	tool_controller.tool_changed.connect(func(tool_name: StringName) -> void:
-		_tool_label = str(tool_name)
-		_update_mode_label())
-	# Корректор графики (Lab, ATTN_14 §14.16) помечает метку: «<инструмент> [LAB]»
-	GFX.lab_changed.connect(func(_on: bool) -> void: _update_mode_label())
+	_mode_panel.mode_selected.connect(on_mode_selected)
 
 	var toolbar := get_node_or_null("%ToolbarController")
 	_handlers = {
@@ -61,7 +55,7 @@ func _ready() -> void:
 	# Режим быстрой загрузки: Observe недоступен, кнопка режима скрыта. Секций стола тоже нет (XX claude-table T1b)
 	if Global.fast_debug:
 		for btn_name in ["ObserveButton", "SectionsButton"]:
-			var fast_btn := %ModePanel.get_node_or_null("VBoxContainer/" + btn_name) as Control
+			var fast_btn := _mode_panel.get_node_or_null("VBoxContainer/" + btn_name) as Control
 			if fast_btn:
 				fast_btn.hide()
 
@@ -72,7 +66,7 @@ func _ready() -> void:
 	# Выбор режима для старта по Global переменной
 	var _mode := Global.current_mode
 	_show_mode_ui(_mode)
-	var _mode_button := %ModePanel.get_node_or_null("VBoxContainer/" + _mode.capitalize() + "Button") as Button
+	var _mode_button := _mode_panel.get_node_or_null("VBoxContainer/" + _mode.capitalize() + "Button") as Button
 	if _mode_button:
 		_mode_button.button_pressed = true
 	
@@ -83,11 +77,6 @@ func _ready() -> void:
 			handler.debug_open_category(Global.active_ui_category)
 
 
-
-
-## Текст ModeLabel: имя инструмента, в режиме Lab с меткой [LAB]
-func _update_mode_label() -> void:
-	%ModeLabel.text = _tool_label + (" [LAB]" if GFX.lab_mode else "")
 
 
 ##⚡ Сигнал из панели ModePanel. Ставим новый режим
@@ -165,7 +154,7 @@ func _on_library_closed() -> void:
 	if is_instance_valid(_library_layer):
 		_library_layer.queue_free()
 	_library_layer = null
-	var btn := %ModePanel.get_node_or_null("VBoxContainer/" + String(_library_prev_mode).capitalize() + "Button") as Button
+	var btn := _mode_panel.get_node_or_null("VBoxContainer/" + String(_library_prev_mode).capitalize() + "Button") as Button
 	if btn:
 		btn.button_pressed = true
 	if _library_place_setting != null:
@@ -186,7 +175,7 @@ func _on_library_place(setting: EntitySetting, variant: Dictionary) -> void:
 
 func _start_build_from_library(setting: EntitySetting, variant: Dictionary) -> void:
 	if Global.current_mode != &"build":
-		var build_btn := %ModePanel.get_node_or_null("VBoxContainer/BuildButton") as Button
+		var build_btn := _mode_panel.get_node_or_null("VBoxContainer/BuildButton") as Button
 		if build_btn:
 			build_btn.button_pressed = true
 		on_mode_selected(&"build")

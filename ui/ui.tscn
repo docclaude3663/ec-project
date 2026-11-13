@@ -1,21 +1,13 @@
 [gd_scene format=3 uid="uid://57xnplsftgls"]
 
 [ext_resource type="PackedScene" uid="uid://dcnqkqoa46nif" path="res://ui/dc_controllers/dc_controller_mini.tscn" id="1_bi8hs"]
-[ext_resource type="Script" uid="uid://bb1e4f7q4ak76" path="res://ui/panels/mode_panel.gd" id="1_tf0e0"]
 [ext_resource type="Script" uid="uid://cvw0jh02ub51b" path="res://ui/mode_controller.gd" id="2_bi8hs"]
-[ext_resource type="Texture2D" uid="uid://dm07bxms22v1a" path="res://ui/icons/library/bookshelf.svg" id="2_obcwv"]
-[ext_resource type="Texture2D" uid="uid://cmql245p6783u" path="res://ui/icons/electric/film-projector.svg" id="3_bo1jx"]
-[ext_resource type="Texture2D" uid="uid://bykn7sk7nse02" path="res://ui/icons/electric/joystick.svg" id="4_gycre"]
 [ext_resource type="Script" uid="uid://daixlawn7cjwi" path="res://ui/observe_controller.gd" id="4_ju45i"]
 [ext_resource type="Script" uid="uid://bm2guc8626oc2" path="res://ui/operate_controller.gd" id="4_mf2ns"]
 [ext_resource type="Script" uid="uid://clkuxy8sfhdwm" path="res://ui/toolbar/toolbar_controller.gd" id="4_tbc"]
-[ext_resource type="Texture2D" uid="uid://djywpcxpy5ypw" path="res://ui/icons/tool/tinker.svg" id="5_pa1oa"]
-[ext_resource type="Texture2D" path="res://ui/icons/resize.svg" id="99_sections"]
 [ext_resource type="PackedScene" uid="uid://boj0kanwn0n0e" path="res://ui/panels/info_panel.tscn" id="10_ay4pc"]
-[ext_resource type="PackedScene" uid="uid://d8t1asbj2c3s" path="res://ui/panels/top_panel.tscn" id="12_hrmpd"]
 [ext_resource type="Script" path="res://ui/ui.gd" id="99_uigd"]
-
-[sub_resource type="ButtonGroup" id="ButtonGroup_adgqd"]
+[ext_resource type="PackedScene" path="res://ui/hud/top_bar.tscn" id="13_topbar"]
 
 [node name="UI" type="CanvasLayer" unique_id=1965858759]
 script = ExtResource("99_uigd")
@@ -46,62 +38,9 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="ModePanel" type="MarginContainer" parent="HUD" unique_id=937983992]
-layout_mode = 1
+[node name="TopBar" parent="HUD" unique_id=1311200810 instance=ExtResource("13_topbar")]
 unique_name_in_owner = true
-editor_description = "панель режимов вверху справа"
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -161.0
-offset_bottom = 44.0
-grow_horizontal = 0
-mouse_filter = 0
-theme_override_constants/margin_left = 4
-theme_override_constants/margin_top = 4
-theme_override_constants/margin_right = 4
-theme_override_constants/margin_bottom = 4
-script = ExtResource("1_tf0e0")
-
-[node name="VBoxContainer" type="HBoxContainer" parent="HUD/ModePanel" unique_id=1794177629]
-layout_mode = 2
-theme_override_constants/separation = 3
-
-[node name="LibraryButton" type="Button" parent="HUD/ModePanel/VBoxContainer" unique_id=1990475818]
-layout_mode = 2
-theme_type_variation = &"ModeButton"
-toggle_mode = true
-button_group = SubResource("ButtonGroup_adgqd")
-icon = ExtResource("2_obcwv")
-
-[node name="SectionsButton" type="Button" parent="HUD/ModePanel/VBoxContainer"]
-layout_mode = 2
-tooltip_text = "Секции: выбор и правка ящиков подмакетника"
-theme_type_variation = &"ModeButton"
-toggle_mode = true
-button_group = SubResource("ButtonGroup_adgqd")
-icon = ExtResource("99_sections")
-
-[node name="ObserveButton" type="Button" parent="HUD/ModePanel/VBoxContainer" unique_id=445960366]
-layout_mode = 2
-theme_type_variation = &"ModeButton"
-toggle_mode = true
-button_group = SubResource("ButtonGroup_adgqd")
-icon = ExtResource("3_bo1jx")
-
-[node name="OperateButton" type="Button" parent="HUD/ModePanel/VBoxContainer" unique_id=1540514264]
-layout_mode = 2
-theme_type_variation = &"ModeButton"
-toggle_mode = true
-button_group = SubResource("ButtonGroup_adgqd")
-icon = ExtResource("4_gycre")
-
-[node name="BuildButton" type="Button" parent="HUD/ModePanel/VBoxContainer" unique_id=1106613651]
-layout_mode = 2
-theme_type_variation = &"ModeButton"
-toggle_mode = true
-button_group = SubResource("ButtonGroup_adgqd")
-icon = ExtResource("5_pa1oa")
+layout_mode = 1
 
 [node name="MainControl" type="Control" parent="HUD" unique_id=1246810602]
 unique_name_in_owner = true
@@ -232,26 +171,14 @@ size_flags_vertical = 1
 text = "Library"
 vertical_alignment = 1
 
-[node name="ModeLabel" type="Label" parent="HUD" unique_id=1060337780]
-unique_name_in_owner = true
-offset_left = 324.0
-offset_top = 2.0
-offset_right = 364.0
-offset_bottom = 21.0
-text = "mode"
-
 [node name="InfoPanel" parent="HUD" unique_id=1788166654 instance=ExtResource("10_ay4pc")]
+offset_top = 44.0
+offset_bottom = 293.0
 
 [node name="DCControlPanel" parent="HUD" unique_id=1088175003 instance=ExtResource("1_bi8hs")]
 unique_name_in_owner = true
 offset_top = -610.0
 offset_bottom = -291.0
-
-[node name="TopPanel" parent="HUD" unique_id=787446189 instance=ExtResource("12_hrmpd")]
-offset_left = 7.0
-offset_top = 41.0
-offset_right = 71.0
-offset_bottom = 74.0
 
 [node name="Windows" type="CanvasLayer" parent="." unique_id=1311200802]
 layer = 20
@@ -259,8 +186,3 @@ layer = 20
 [node name="Toasts" type="CanvasLayer" parent="." unique_id=1311200803]
 layer = 30
 
-[connection signal="pressed" from="HUD/ModePanel/VBoxContainer/LibraryButton" to="HUD/ModePanel" method="_on_library_button_pressed"]
-[connection signal="pressed" from="HUD/ModePanel/VBoxContainer/SectionsButton" to="HUD/ModePanel" method="_on_sections_button_pressed"]
-[connection signal="pressed" from="HUD/ModePanel/VBoxContainer/ObserveButton" to="HUD/ModePanel" method="_on_observe_button_pressed"]
-[connection signal="pressed" from="HUD/ModePanel/VBoxContainer/OperateButton" to="HUD/ModePanel" method="_on_operate_button_pressed"]
-[connection signal="pressed" from="HUD/ModePanel/VBoxContainer/BuildButton" to="HUD/ModePanel" method="_on_build_button_pressed"]

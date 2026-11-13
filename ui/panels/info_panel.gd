@@ -28,7 +28,7 @@ func _ready() -> void:
 	add_to_group(&"info_panel")   # по группе её находит спидометр
 	hide() # Прячем панель на старте
 	# ⚡Сигнал из ToolController: какой объект показывать
-	var _tc := get_node_or_null("../../ToolController")
+	var _tc := get_node_or_null("../../../ToolController")   # HUD → UI → GameRoot (после U8)
 	if _tc:
 		_tc.selection_changed.connect(set_target)
 

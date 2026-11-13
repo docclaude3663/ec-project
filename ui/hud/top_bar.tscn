@@ -1,0 +1,177 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://ui/hud/top_bar.gd" id="1_topbar"]
+[ext_resource type="Script" uid="uid://bb1e4f7q4ak76" path="res://ui/panels/mode_panel.gd" id="2_modepanel"]
+[ext_resource type="Texture2D" uid="uid://dq3ymk2gtv8pb" path="res://ui/icons/hamburger-menu.svg" id="3_menu"]
+[ext_resource type="Texture2D" uid="uid://dm07bxms22v1a" path="res://ui/icons/library/bookshelf.svg" id="4_library"]
+[ext_resource type="Texture2D" path="res://ui/icons/resize.svg" id="5_sections"]
+[ext_resource type="Texture2D" uid="uid://cmql245p6783u" path="res://ui/icons/electric/film-projector.svg" id="6_observe"]
+[ext_resource type="Texture2D" uid="uid://bykn7sk7nse02" path="res://ui/icons/electric/joystick.svg" id="7_operate"]
+[ext_resource type="Texture2D" uid="uid://djywpcxpy5ypw" path="res://ui/icons/tool/tinker.svg" id="8_build"]
+
+[sub_resource type="ButtonGroup" id="ButtonGroup_modes"]
+
+[node name="TopBar" type="PanelContainer"]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 40.0
+grow_horizontal = 2
+script = ExtResource("1_topbar")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 3
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 3
+
+[node name="Row" type="HBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="SystemMenu" type="MenuButton" parent="Margin/Row"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 32)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_constants/icon_max_width = 23
+tooltip_text = "Меню"
+action_mode = 1
+icon = ExtResource("3_menu")
+item_count = 8
+popup/item_0/text = "save"
+popup/item_0/id = 0
+popup/item_1/text = "load"
+popup/item_1/id = 1
+popup/item_2/text = "++"
+popup/item_2/id = 2
+popup/item_2/separator = true
+popup/item_3/text = "ничего"
+popup/item_3/id = 3
+popup/item_4/text = "jolt profile"
+popup/item_4/id = 4
+popup/item_4/separator = true
+popup/item_5/text = "default"
+popup/item_5/id = 5
+popup/item_6/text = "stable"
+popup/item_6/id = 6
+popup/item_7/text = "extreme"
+popup/item_7/id = 7
+
+[node name="LayoutNameLabel" type="Label" parent="Margin/Row"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+text = "Новый макет"
+vertical_alignment = 1
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="LabLabel" type="Label" parent="Margin/Row"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_type_variation = &"LabelDim"
+text = "[LAB]"
+vertical_alignment = 1
+
+[node name="StatsHost" type="Control" parent="Margin/Row"]
+unique_name_in_owner = true
+clip_contents = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StatsBar" type="HBoxContainer" parent="Margin/Row/StatsHost"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 16
+
+[node name="MoreStats" type="MenuButton" parent="Margin/Row/StatsHost/StatsBar"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(36, 32)
+layout_mode = 2
+size_flags_vertical = 4
+tooltip_text = "Остальная статистика"
+text = "…"
+
+[node name="Switches" type="HBoxContainer" parent="Margin/Row"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PowerSchemaCheck" type="CheckBox" parent="Margin/Row/Switches"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 0
+text = "Power schema"
+
+[node name="TrackShadowsCheck" type="CheckBox" parent="Margin/Row/Switches"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 0
+text = "Тени траков"
+
+[node name="ModePanel" type="MarginContainer" parent="Margin/Row"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 0
+editor_description = "кнопки режимов, справа в TopBar"
+script = ExtResource("2_modepanel")
+
+[node name="VBoxContainer" type="HBoxContainer" parent="Margin/Row/ModePanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="LibraryButton" type="Button" parent="Margin/Row/ModePanel/VBoxContainer"]
+custom_minimum_size = Vector2(40, 32)
+layout_mode = 2
+theme_type_variation = &"ModeButton"
+toggle_mode = true
+button_group = SubResource("ButtonGroup_modes")
+icon = ExtResource("4_library")
+
+[node name="SectionsButton" type="Button" parent="Margin/Row/ModePanel/VBoxContainer"]
+custom_minimum_size = Vector2(40, 32)
+layout_mode = 2
+tooltip_text = "Секции: выбор и правка ящиков подмакетника"
+theme_type_variation = &"ModeButton"
+toggle_mode = true
+button_group = SubResource("ButtonGroup_modes")
+icon = ExtResource("5_sections")
+
+[node name="ObserveButton" type="Button" parent="Margin/Row/ModePanel/VBoxContainer"]
+custom_minimum_size = Vector2(40, 32)
+layout_mode = 2
+theme_type_variation = &"ModeButton"
+toggle_mode = true
+button_group = SubResource("ButtonGroup_modes")
+icon = ExtResource("6_observe")
+
+[node name="OperateButton" type="Button" parent="Margin/Row/ModePanel/VBoxContainer"]
+custom_minimum_size = Vector2(40, 32)
+layout_mode = 2
+theme_type_variation = &"ModeButton"
+toggle_mode = true
+button_group = SubResource("ButtonGroup_modes")
+icon = ExtResource("7_operate")
+
+[node name="BuildButton" type="Button" parent="Margin/Row/ModePanel/VBoxContainer"]
+custom_minimum_size = Vector2(40, 32)
+layout_mode = 2
+theme_type_variation = &"ModeButton"
+toggle_mode = true
+button_group = SubResource("ButtonGroup_modes")
+icon = ExtResource("8_build")
+
+[connection signal="toggled" from="Margin/Row/Switches/PowerSchemaCheck" to="." method="_on_power_schema_check_toggled"]
+[connection signal="toggled" from="Margin/Row/Switches/TrackShadowsCheck" to="." method="_on_track_shadows_check_toggled"]
+[connection signal="pressed" from="Margin/Row/ModePanel/VBoxContainer/LibraryButton" to="Margin/Row/ModePanel" method="_on_library_button_pressed"]
+[connection signal="pressed" from="Margin/Row/ModePanel/VBoxContainer/SectionsButton" to="Margin/Row/ModePanel" method="_on_sections_button_pressed"]
+[connection signal="pressed" from="Margin/Row/ModePanel/VBoxContainer/ObserveButton" to="Margin/Row/ModePanel" method="_on_observe_button_pressed"]
+[connection signal="pressed" from="Margin/Row/ModePanel/VBoxContainer/OperateButton" to="Margin/Row/ModePanel" method="_on_operate_button_pressed"]
+[connection signal="pressed" from="Margin/Row/ModePanel/VBoxContainer/BuildButton" to="Margin/Row/ModePanel" method="_on_build_button_pressed"]
