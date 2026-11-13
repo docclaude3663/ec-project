@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cu8c4sg6im1fc"]
 
-[ext_resource type="Theme" uid="uid://t2vamkehlekl" path="res://ui/themes/theme_hud_dark.tres" id="1_klsv0"]
+[ext_resource type="Theme" uid="uid://eevw614dwo7r" path="res://ui/themes/theme_hud_light.tres" id="1_klsv0"]
 [ext_resource type="PackedScene" path="res://ui/templates/dc_indicators_template.tscn" id="2_dci"]
 
 [node name="HudLayoutTemplateB" type="Control" unique_id=1508504112]
@@ -766,8 +766,8 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -163.0
-offset_bottom = -159.0
+offset_top = -141.0
+offset_bottom = -137.0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
@@ -963,7 +963,6 @@ text = "Здесь нет пенопласта"
 vertical_alignment = 1
 
 [node name="InfoToolTipToolBad" type="PanelContainer" parent="HUD" unique_id=919955048]
-visible = false
 custom_minimum_size = Vector2(260, 0)
 layout_mode = 0
 offset_left = 1000.0
