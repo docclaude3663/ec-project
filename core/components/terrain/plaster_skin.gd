@@ -37,6 +37,15 @@ var _log_last := 0     # конец предыдущей фазы, мкс
 var _log_laps: Array[String] = []
 var _log_info := ""    # размеры поля и число листов
 
+# XX claude-terra 13.13 K0b-2
+## Кэш высот ступеней по листам. Опрос solid_intervals_at по ячейке был самой дорогой фазой пересборки (35-48%), а при
+## наложении бинта, смене стадии или стиля форма листов не меняется. Высоты хранятся кусками HCHUNK x HCHUNK ячеек в мировых
+## индексах (от рамки поля не зависят) и считаются лениво, только где спросили. Ключ формы листа: hash(форма, контур) + шаг + слой
+const HCHUNK := 16
+var _hcache := {}      # instance_id листа -> {"sig": Array, "chunks": {Vector2i: PackedFloat32Array}}
+var _hc_new := 0       # кусков посчитано в этой пересборке
+var _hc_hit := 0       # кусков взято из кэша
+
 
 func _ready() -> void:
 	name = "PlasterSkin"
@@ -79,6 +88,8 @@ func rebuild() -> void:
 	_log = bool(Global.settings.plaster_log_time)   # XX claude-terra 13.13 K0
 	_log_laps.clear()
 	_log_info = ""
+	_hc_new = 0
+	_hc_hit = 0
 	_log_t0 = Time.get_ticks_usec()
 	_log_last = _log_t0
 	var all: Array[C_TerrainLayer] = []
@@ -131,10 +142,12 @@ func rebuild() -> void:
 	_log_info = "поле %d x %d (%d яч.), листов с бинтом %d из %d" % [w, d, w * d, smooth_sheets.size(), all.size()]
 	_lap("зоны")
 
-	# 2. высоты ступеней: верх самого высокого твёрдого участка над центром ячейки
+	# 2. высоты ступеней: верх самого высокого твёрдого участка над центром ячейки (K0b-2: из кэша по листам)
 	var hh := PackedFloat32Array()
 	hh.resize(w * d)
+	var seen := {}
 	for l in all:
+		seen[l.get_instance_id()] = true
 		var lb := C_Contour.bounds_of(l.world_polygon())
 		if lb.size == Vector2.ZERO or not lb.intersects(box):
 			continue
@@ -142,14 +155,11 @@ func rebuild() -> void:
 		var x1 := mini(w - 1, ceili(lb.end.x / c) - i0)
 		var z0 := maxi(0, floori(lb.position.y / c) - j0)
 		var z1 := mini(d - 1, ceili(lb.end.y / c) - j0)
-		for j in range(z0, z1 + 1):
-			for i in range(x0, x1 + 1):
-				var p := origin + Vector2((float(i) + 0.5) * c, (float(j) + 0.5) * c)
-				if not lb.has_point(p):
-					continue
-				for iv: Vector2 in l.solid_intervals_at(p):
-					if iv.y > hh[j * w + i]:
-						hh[j * w + i] = iv.y
+		_raise_heights(hh, l, lb, c, i0, j0, w, x0, x1, z0, z1)
+	for id in _hcache.keys():   # листы, которых больше нет
+		if not seen.has(id):
+			_hcache.erase(id)
+	_log_info += ", кусков высот новых %d из кэша %d" % [_hc_new, _hc_hit]
 	_lap("высоты")
 
 	# 3. кому принадлежит ячейка: сначала лист под ней, потом тот, чей пандус сюда дотягивается
@@ -210,6 +220,67 @@ func _log_done(tri_count: int) -> void:
 		return
 	var total := float(Time.get_ticks_usec() - _log_t0) / 1000.0
 	print("[PlasterSkin] rebuild %.1f мс | %s | %s | треугольников %d" % [total, _log_info, ", ".join(_log_laps), tri_count])
+
+
+## K0b-2. Поднять hh до верха листа l над центрами ячеек в прямоугольнике x0..x1, z0..z1 (индексы поля).
+## Значения берутся из кусков кэша; кусок считается при первом обращении и после любой смены формы листа
+func _raise_heights(hh: PackedFloat32Array, l: C_TerrainLayer, lb: Rect2, c: float, i0: int, j0: int, w: int,
+		x0: int, x1: int, z0: int, z1: int) -> void:
+	if l.entity == null or not l.entity.is_inside_tree():
+		return   # как solid_intervals_at: листа вне сцены нет
+	var id := l.get_instance_id()
+	var sig: Array = [hash([l.shape_hash(), l.world_polygon()]), c, Global.settings.layer_height]
+	var entry: Dictionary = _hcache.get(id, {})
+	if entry.is_empty() or entry["sig"] != sig:
+		entry = {"sig": sig, "chunks": {}}
+		_hcache[id] = entry
+	var chunks: Dictionary = entry["chunks"]
+	var gx0 := x0 + i0   # тот же прямоугольник в мировых индексах ячеек
+	var gx1 := x1 + i0
+	var gz0 := z0 + j0
+	var gz1 := z1 + j0
+	for cz in range(floori(float(gz0) / HCHUNK), floori(float(gz1) / HCHUNK) + 1):
+		for cx in range(floori(float(gx0) / HCHUNK), floori(float(gx1) / HCHUNK) + 1):
+			var key := Vector2i(cx, cz)
+			var arr: PackedFloat32Array
+			if chunks.has(key):
+				arr = chunks[key]
+				_hc_hit += 1
+			else:
+				arr = _height_chunk(l, lb, c, cx, cz)
+				chunks[key] = arr
+				_hc_new += 1
+			var ox := cx * HCHUNK
+			var oz := cz * HCHUNK
+			var ia := maxi(gx0, ox)
+			var ib := mini(gx1, ox + HCHUNK - 1)
+			for gj in range(maxi(gz0, oz), mini(gz1, oz + HCHUNK - 1) + 1):
+				var hrow := (gj - j0) * w - i0      # индекс в hh = hrow + gi
+				var arow := (gj - oz) * HCHUNK - ox  # индекс в куске = arow + gi
+				for gi in range(ia, ib + 1):
+					var v := arr[arow + gi]
+					if v > hh[hrow + gi]:
+						hh[hrow + gi] = v
+
+
+## K0b-2. Высоты одного куска HCHUNK x HCHUNK ячеек листа l (cx, cz мировые индексы куска): верх самого высокого твёрдого
+## участка над центром ячейки или 0, если там твёрдого нет. Прежняя формула: центр ячейки внутри рамки листа lb
+func _height_chunk(l: C_TerrainLayer, lb: Rect2, c: float, cx: int, cz: int) -> PackedFloat32Array:
+	var arr := PackedFloat32Array()
+	arr.resize(HCHUNK * HCHUNK)
+	var ox := cx * HCHUNK
+	var oz := cz * HCHUNK
+	for j in HCHUNK:
+		for i in HCHUNK:
+			var p := Vector2((float(ox + i) + 0.5) * c, (float(oz + j) + 0.5) * c)
+			if not lb.has_point(p):
+				continue
+			var best := 0.0
+			for iv: Vector2 in l.solid_intervals_at(p):
+				if iv.y > best:
+					best = iv.y
+			arr[j * HCHUNK + i] = best
+	return arr
 
 
 ## Ячейки под траками (балласт и зазор), где низ балласта стоит на ступени

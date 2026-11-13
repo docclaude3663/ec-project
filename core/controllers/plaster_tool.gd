@@ -79,6 +79,9 @@ func handle_input(event: InputEvent) -> void:
 	var w := Actions.axis_step(event, &"width_up", &"width_down")
 	if w != 0:
 		_run = clampi(_run + w, 1, C_TerrainLayer.PLASTER_MAX_RUN)
+		# XX claude-terra 13.13 K0b-2: сообщение при каждом нажатии (подпись над листом видна только при наведении, а на холм
+		# ширина ложится по следующему ЛКМ)
+		_say("Ступень пандуса %d ю на слой (ЛКМ по холму применит)" % _run)
 		_dirty = true
 
 

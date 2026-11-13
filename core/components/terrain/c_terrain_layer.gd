@@ -834,6 +834,15 @@ func solid_intervals_at(pt: Vector2) -> Array[Vector2]:
 	return res
 
 
+# XX claude-terra 13.13 K0b-2
+## Ключ формы листа для кэша высот PlasterSkin: всё, от чего зависит solid_intervals_at (положение листа, база, блоки с вырезами).
+## Меняется при сдвиге, смене уровня, вырезе, правке контура. 0, если листа нет в сцене
+func shape_hash() -> int:
+	if entity == null or not entity.is_inside_tree():
+		return 0
+	return hash([entity.global_transform, base_y(), _blocks])
+
+
 ## Занимает ли лист (с вырезами) ту же область, что polygon (мировой) в диапазоне высот (y_from, y_to)
 func overlaps(polygon: PackedVector2Array, y_from: float, y_to: float) -> bool:
 	var T: float = Global.settings.layer_height
