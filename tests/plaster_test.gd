@@ -101,6 +101,34 @@ func _ready() -> void:
 	var nr := PlasterField.normal(s, w, d, 18, 2, c)
 	check("normal: на пандусе наклонена к низкой стороне (-X), нормаль.y меньше 1", nr.x < 0.0 and nr.y < 1.0 and nr.y > 0.5, str(nr))
 
+	# XX claude-terra 13.13 K0b: быстрые циклы дают тот же результат, что прежние (опорные копии _ref_* ниже)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7
+	var same_smooth := 0.0
+	var same_blur := 0.0
+	var same_pin := 0.0
+	for sz: Vector2i in [Vector2i(37, 29), Vector2i(3, 2), Vector2i(16, 16), Vector2i(40, 5), Vector2i(1, 1)]:
+		var tw := sz.x
+		var td := sz.y
+		var th := PackedFloat32Array()
+		var tr := PackedFloat32Array()
+		var tf := PackedFloat32Array()
+		var tp := PackedByteArray()
+		for _k in tw * td:
+			th.append(float(rng.randi_range(0, 4)))
+			tr.append(float(rng.randi_range(0, 4)))
+			tf.append(float(rng.randi_range(0, 2)) * 0.5)
+			tp.append(1 if rng.randf() < 0.12 else 0)
+		same_smooth = maxf(same_smooth, _max_abs_diff(PlasterField.smooth(th, tr, tf, tw, td, c, T, 1.0), _ref_smooth(th, tr, tf, tw, td, c, T, 1.0)))
+		for r in [1, 2, 3]:
+			same_blur = maxf(same_blur, _max_abs_diff(PlasterField.box_blur(tf, tw, td, r), _ref_blur(tf, tw, td, r)))
+			same_pin = maxf(same_pin, _max_abs_diff(PlasterField.pin_factor(tp, tw, td, r), _ref_pin_factor(tp, tw, td, r)))
+	check("K0b smooth: совпадает с прежним расчётом", same_smooth == 0.0, str(same_smooth))
+	check("K0b box_blur: совпадает с прежним расчётом", same_blur < 0.00001, str(same_blur))
+	check("K0b pin_factor: совпадает с прежним расчётом", same_pin < 0.00001, str(same_pin))
+	var no_pin := PlasterField.pin_factor(PackedByteArray([0, 0, 0, 0, 0, 0]), 3, 2, 2)
+	check("K0b pin_factor: без закреплений везде 1.0", no_pin.size() == 6 and _min_diff(no_pin, filled(6, 1.0)) == 0.0 and _max_diff(no_pin, filled(6, 1.0)) == 0.0)
+
 	print("ИТОГО: ", "всё PASS" if _fails == 0 else "FAIL: %d" % _fails)
 
 
@@ -116,3 +144,96 @@ func _max_diff(a: PackedFloat32Array, b: PackedFloat32Array) -> float:
 	for i in a.size():
 		m = maxf(m, a[i] - b[i])
 	return m
+
+
+func _max_abs_diff(a: PackedFloat32Array, b: PackedFloat32Array) -> float:
+	if a.size() != b.size():
+		return INF
+	var m := 0.0
+	for i in a.size():
+		m = maxf(m, absf(a[i] - b[i]))
+	return m
+
+
+# --- опорные копии прежнего кода PlasterField (до K0b), только для сравнения ---
+
+func _ref_smooth(h: PackedFloat32Array, run: PackedFloat32Array, f: PackedFloat32Array, w: int, d: int,
+		cell: float, T: float, max_up: float) -> PackedFloat32Array:
+	var s := h.duplicate()
+	for _i in 2:
+		_ref_sweep(s, h, run, w, d, cell, T, max_up, true)
+		_ref_sweep(s, h, run, w, d, cell, T, max_up, false)
+	var out := PackedFloat32Array()
+	out.resize(w * d)
+	for i in w * d:
+		out[i] = h[i] + (s[i] - h[i]) * f[i]
+	return out
+
+
+func _ref_sweep(s: PackedFloat32Array, h: PackedFloat32Array, run: PackedFloat32Array, w: int, d: int,
+		cell: float, T: float, max_up: float, forward: bool) -> void:
+	var dirs: Array[Vector3i]
+	if forward:
+		dirs = [Vector3i(-1, 0, 0), Vector3i(-1, -1, 1), Vector3i(0, -1, 0), Vector3i(1, -1, 1)]
+	else:
+		dirs = [Vector3i(1, 0, 0), Vector3i(1, 1, 1), Vector3i(0, 1, 0), Vector3i(-1, 1, 1)]
+	var j0 := 0 if forward else d - 1
+	var j1 := d if forward else -1
+	var dj := 1 if forward else -1
+	var i0 := 0 if forward else w - 1
+	var i1 := w if forward else -1
+	var di := 1 if forward else -1
+	var j := j0
+	while j != j1:
+		var i := i0
+		while i != i1:
+			var idx := j * w + i
+			var r := run[idx]
+			if r > 0.0:
+				var drop := T / r * cell
+				var best := s[idx]
+				for dir in dirs:
+					var nx := i + dir.x
+					var nz := j + dir.y
+					if nx < 0 or nx >= w or nz < 0 or nz >= d:
+						continue
+					var cand := s[nz * w + nx] - drop * (PlasterField.DIAG if dir.z == 1 else 1.0)
+					if cand > best:
+						best = cand
+				s[idx] = minf(best, h[idx] + max_up)
+			i += di
+		j += dj
+
+
+func _ref_blur(a: PackedFloat32Array, w: int, d: int, r: int) -> PackedFloat32Array:
+	var tmp := PackedFloat32Array()
+	tmp.resize(w * d)
+	var n := float(2 * r + 1)
+	for j in d:
+		for i in w:
+			var sum := 0.0
+			for k in range(-r, r + 1):
+				sum += a[j * w + clampi(i + k, 0, w - 1)]
+			tmp[j * w + i] = sum / n
+	var out := PackedFloat32Array()
+	out.resize(w * d)
+	for j in d:
+		for i in w:
+			var sum := 0.0
+			for k in range(-r, r + 1):
+				sum += tmp[clampi(j + k, 0, d - 1) * w + i]
+			out[j * w + i] = sum / n
+	return out
+
+
+func _ref_pin_factor(pin: PackedByteArray, w: int, d: int, r: int) -> PackedFloat32Array:
+	var a := PackedFloat32Array()
+	a.resize(w * d)
+	for i in w * d:
+		a[i] = float(pin[i])
+	if r > 0:
+		a = _ref_blur(a, w, d, r)
+		a = _ref_blur(a, w, d, r)
+	for i in w * d:
+		a[i] = 1.0 - clampf(a[i] * 2.0, 0.0, 1.0)
+	return a

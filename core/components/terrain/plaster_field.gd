@@ -32,37 +32,69 @@ static func smooth(h: PackedFloat32Array, run: PackedFloat32Array, f: PackedFloa
 
 static func _sweep(s: PackedFloat32Array, h: PackedFloat32Array, run: PackedFloat32Array, w: int, d: int,
 		cell: float, T: float, max_up: float, forward: bool) -> void:
-	var dirs: Array[Vector3i]   # (dx, dz, диагональ 0/1)
+	# XX claude-terra 13.13 K0b: соседи записаны развёрнуто (без массива направлений и проверок границ на каждый шаг).
+	# Порядок обхода и арифметика прежние, результат побитово тот же. Вперёд: (i-1,j) (i,j-1) и диагонали (i-1,j-1) (i+1,j-1);
+	# назад: (i+1,j) (i,j+1) и диагонали (i+1,j+1) (i-1,j+1)
+	var wm := w - 1
 	if forward:
-		dirs = [Vector3i(-1, 0, 0), Vector3i(-1, -1, 1), Vector3i(0, -1, 0), Vector3i(1, -1, 1)]
-	else:
-		dirs = [Vector3i(1, 0, 0), Vector3i(1, 1, 1), Vector3i(0, 1, 0), Vector3i(-1, 1, 1)]
-	var j0 := 0 if forward else d - 1
-	var j1 := d if forward else -1
-	var dj := 1 if forward else -1
-	var i0 := 0 if forward else w - 1
-	var i1 := w if forward else -1
-	var di := 1 if forward else -1
-	var j := j0
-	while j != j1:
-		var i := i0
-		while i != i1:
-			var idx := j * w + i
-			var r := run[idx]
-			if r > 0.0:
+		for j in d:
+			var row := j * w
+			for i in w:
+				var idx := row + i
+				var r := run[idx]
+				if r <= 0.0:
+					continue
 				var drop := T / r * cell   # падение высоты на шаг по стороне ячейки
+				var drop_d := drop * DIAG
 				var best := s[idx]
-				for dir in dirs:
-					var nx := i + dir.x
-					var nz := j + dir.y
-					if nx < 0 or nx >= w or nz < 0 or nz >= d:
-						continue
-					var cand := s[nz * w + nx] - drop * (DIAG if dir.z == 1 else 1.0)
+				var cand := 0.0
+				if i > 0:
+					cand = s[idx - 1] - drop
 					if cand > best:
 						best = cand
+				if j > 0:
+					cand = s[idx - w] - drop
+					if cand > best:
+						best = cand
+					if i > 0:
+						cand = s[idx - w - 1] - drop_d
+						if cand > best:
+							best = cand
+					if i < wm:
+						cand = s[idx - w + 1] - drop_d
+						if cand > best:
+							best = cand
 				s[idx] = minf(best, h[idx] + max_up)
-			i += di
-		j += dj
+	else:
+		var dm := d - 1
+		for j in range(dm, -1, -1):
+			var row := j * w
+			for i in range(wm, -1, -1):
+				var idx := row + i
+				var r := run[idx]
+				if r <= 0.0:
+					continue
+				var drop := T / r * cell
+				var drop_d := drop * DIAG
+				var best := s[idx]
+				var cand := 0.0
+				if i < wm:
+					cand = s[idx + 1] - drop
+					if cand > best:
+						best = cand
+				if j < dm:
+					cand = s[idx + w] - drop
+					if cand > best:
+						best = cand
+					if i < wm:
+						cand = s[idx + w + 1] - drop_d
+						if cand > best:
+							best = cand
+					if i > 0:
+						cand = s[idx + w - 1] - drop_d
+						if cand > best:
+							best = cand
+				s[idx] = minf(best, h[idx] + max_up)
 
 
 ## Мягкая маска закрепления: pin (0/1) размывается двумя проходами по радиусу r ячеек.
@@ -70,6 +102,9 @@ static func _sweep(s: PackedFloat32Array, h: PackedFloat32Array, run: PackedFloa
 static func pin_factor(pin: PackedByteArray, w: int, d: int, r: int) -> PackedFloat32Array:
 	var a := PackedFloat32Array()
 	a.resize(w * d)
+	if not pin.has(1):   # XX claude-terra 13.13 K0b: закреплений нет, везде свободно (1.0), размытие не нужно
+		a.fill(1.0)
+		return a
 	for i in w * d:
 		a[i] = float(pin[i])
 	if r > 0:
@@ -81,23 +116,29 @@ static func pin_factor(pin: PackedByteArray, w: int, d: int, r: int) -> PackedFl
 
 
 ## Размытие окном (2r + 1) по строкам и столбцам, за краем значение краевой ячейки
+## (K0b: сумма окна скользит, на ячейку две выборки вместо 2r + 1, результат тот же)
 static func box_blur(a: PackedFloat32Array, w: int, d: int, r: int) -> PackedFloat32Array:
 	var tmp := PackedFloat32Array()
 	tmp.resize(w * d)
 	var n := float(2 * r + 1)
 	for j in d:
-		for i in w:
-			var sum := 0.0
-			for k in range(-r, r + 1):
-				sum += a[j * w + clampi(i + k, 0, w - 1)]
-			tmp[j * w + i] = sum / n
+		var row := j * w
+		var sum := 0.0
+		for k in range(-r, r + 1):
+			sum += a[row + clampi(k, 0, w - 1)]
+		tmp[row] = sum / n
+		for i in range(1, w):
+			sum += a[row + mini(i + r, w - 1)] - a[row + maxi(i - 1 - r, 0)]
+			tmp[row + i] = sum / n
 	var out := PackedFloat32Array()
 	out.resize(w * d)
-	for j in d:
-		for i in w:
-			var sum := 0.0
-			for k in range(-r, r + 1):
-				sum += tmp[clampi(j + k, 0, d - 1) * w + i]
+	for i in w:
+		var sum := 0.0
+		for k in range(-r, r + 1):
+			sum += tmp[clampi(k, 0, d - 1) * w + i]
+		out[i] = sum / n
+		for j in range(1, d):
+			sum += tmp[mini(j + r, d - 1) * w + i] - tmp[maxi(j - 1 - r, 0) * w + i]
 			out[j * w + i] = sum / n
 	return out
 

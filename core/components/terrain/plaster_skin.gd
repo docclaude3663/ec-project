@@ -255,14 +255,29 @@ func _build_mesh(sk: PackedFloat32Array, hh: PackedFloat32Array, own: PackedInt3
 	var tools := {}   # стадия -> SurfaceTool
 	var counts := {}
 	var eps := PlasterField.MIN_RAISE
+	# XX claude-terra 13.13 K0b: вершина «поднята», если оболочка выше ступени. Ячейка без поднятых углов пропускается
+	# сразу (раньше на неё тратились массивы треугольников), нормаль вершины считается один раз и берётся из кэша.
+	# Порядок треугольников и вершин прежний, меш тот же
+	var n := w * d
+	var raised := PackedByteArray()
+	raised.resize(n)
+	for k in n:
+		if sk[k] - hh[k] > eps:
+			raised[k] = 1
+	var nrm := PackedVector3Array()
+	nrm.resize(n)
+	var nrm_ok := PackedByteArray()
+	nrm_ok.resize(n)
 	for j in d - 1:
 		for i in w - 1:
 			var a := j * w + i
+			if raised[a] + raised[a + 1] + raised[a + w] + raised[a + w + 1] == 0:
+				continue
 			var tris := [[a, a + 1, a + w + 1], [a, a + w + 1, a + w]]
 			for tri in tris:
 				var owner_idx := -1
 				for v: int in tri:
-					if sk[v] - hh[v] > eps:
+					if raised[v] == 1:
 						owner_idx = own[v]
 						break
 				if owner_idx < 0:
@@ -282,7 +297,10 @@ func _build_mesh(sk: PackedFloat32Array, hh: PackedFloat32Array, own: PackedInt3
 					var vi := v % w
 					@warning_ignore("integer_division")   # v / w: номер строки сетки, дробная часть не нужна
 					var vj := v / w
-					st.set_normal(PlasterField.normal(sk, w, d, vi, vj, c))
+					if nrm_ok[v] == 0:
+						nrm[v] = PlasterField.normal(sk, w, d, vi, vj, c)
+						nrm_ok[v] = 1
+					st.set_normal(nrm[v])
 					st.add_vertex(Vector3(origin.x + (float(vi) + 0.5) * c, sk[v], origin.y + (float(vj) + 0.5) * c))
 				counts[stage] += 1
 	_lap("меш: ячейки в вершины")
