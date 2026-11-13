@@ -97,6 +97,18 @@ static func _sweep(s: PackedFloat32Array, h: PackedFloat32Array, run: PackedFloa
 				s[idx] = minf(best, h[idx] + max_up)
 
 
+## 13.13 K3. На плоском верху оболочка рисуется только в крашеных ячейках: там она поднимается над ступенью на lift
+## (выше MIN_RAISE, иначе ячейка не попадёт в меш). Не трогает ячейки вне бинта (own < 0), у траков (f < 1) и уже
+## поднятые пандусом. mark: 1 = ячейка крашеная (PaintMap.painted_mask). Возвращает новую высоту оболочки
+static func lift_marked(sk: PackedFloat32Array, hh: PackedFloat32Array, own: PackedInt32Array, f: PackedFloat32Array,
+		mark: PackedByteArray, lift: float, eps: float) -> PackedFloat32Array:
+	var out := sk.duplicate()
+	for k in out.size():
+		if mark[k] == 1 and own[k] >= 0 and f[k] > 0.999 and out[k] - hh[k] <= eps:
+			out[k] = hh[k] + lift
+	return out
+
+
 ## Мягкая маска закрепления: pin (0/1) размывается двумя проходами по радиусу r ячеек.
 ## Результат: 0 внутри закреплённого, 1 вдали, между ними плавно
 static func pin_factor(pin: PackedByteArray, w: int, d: int, r: int) -> PackedFloat32Array:

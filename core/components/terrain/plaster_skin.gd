@@ -30,8 +30,13 @@ var _shape: CollisionShape3D
 var _pending := false
 
 # XX claude-terra 13.13 K1
-## Оболочка пересчитана (или снята). Слушает PaintView: высоты под краской поменялись
+## Оболочка пересчитана (или снята). Слушают те, кому важны высоты оболочки (кисть)
 signal rebuilt
+## K3: краска (для крашеных клеток на плоском верху) и сплэт с материалами верха; ставит TGM до add_child
+var paint: PaintMap
+var splat: PaintSplat
+## Подъём оболочки над ступенью в крашеной клетке на плоском верху, ю (больше PlasterField.MIN_RAISE)
+const PAINT_LIFT := 0.025
 ## Последнее поле оболочки для запросов кисти: высота оболочки и «ячейка под бинтом». Индексы ячеек мировые (как у PaintMap)
 var _f_sk := PackedFloat32Array()
 var _f_own := PackedInt32Array()
@@ -253,6 +258,10 @@ func rebuild() -> void:
 	var max_up: float = float(gs.plaster_max_up) * T
 	var sk := PlasterField.smooth(hh, run_arr, f, w, d, c, T, max_up)
 	_lap("оболочка")
+	# XX claude-terra 13.13 K3: на плоском верху оболочка есть только в крашеных ячейках
+	if paint != null and not paint.is_empty():
+		sk = PlasterField.lift_marked(sk, hh, own, f, paint.painted_mask(i0, j0, w, d), PAINT_LIFT, PlasterField.MIN_RAISE)
+		_lap("краска")
 	_f_sk = sk
 	_f_own = own
 	_f_i0 = i0
@@ -417,7 +426,7 @@ func _build_mesh(sk: PackedFloat32Array, hh: PackedFloat32Array, own: PackedInt3
 					fresh.begin(Mesh.PRIMITIVE_TRIANGLES)
 					var zl: C_TerrainLayer = zone["layer"]
 					var style := zl.style if zl.style != null else TerrainStyle.new()
-					fresh.set_material(style.get_top(stage))
+					fresh.set_material(splat.surface_material(style, stage) if splat != null else style.get_top(stage))
 					tools[stage] = fresh
 					counts[stage] = 0
 				var st: SurfaceTool = tools[stage]

@@ -141,6 +141,7 @@ func _finish_stroke() -> void:
 	_history.append(rec)
 	while _history.size() > MAX_HISTORY:
 		_history.pop_front()
+	TGM.plaster_dirty()   # K3: на плоском верху оболочка появляется в крашеных ячейках, это геометрия: после мазка
 
 
 func _stamp(p: Vector2) -> void:
@@ -155,6 +156,7 @@ func _undo() -> void:
 		_say("Отменять нечего")
 		return
 	TGM.paint.restore(_history.pop_back())
+	TGM.plaster_dirty()
 	_say("Мазок отменён")
 
 

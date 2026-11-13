@@ -18,6 +18,12 @@ class_name TerrainStyle extends Resource
 ## у сырого пенопласта встроенный пористый материал, у остальных стадий материал бока (срез тоже шпаклюют и красят)
 @export var cut_materials: Array[Material] = []
 
+## 13.13 K3. Текстуры классов краски (индекс = класс PaintMap: трава, скала, гравий). Пустой слот: встроенный шум
+@export var paint_textures: Array[Texture2D] = []
+
+## Цвета классов краски (умножаются на текстуру): трава, скала, гравий
+const PAINT_COLORS: Array[Color] = [Color(0.33, 0.58, 0.22), Color(0.52, 0.51, 0.50), Color(0.78, 0.68, 0.50)]
+
 static var _cache: Dictionary = {}   # "top0" -> Material
 
 
@@ -40,6 +46,61 @@ func get_cut(stage: int) -> Material:
 	if stage == 0:
 		return _porous()
 	return get_side(stage)
+
+
+## 13.13 K3. Текстура класса краски: из слота стиля или встроенный шум (трава мягкий, скала ячеистый, гравий мелкая крошка)
+func get_paint_texture(cls: int) -> Texture2D:
+	if cls >= 0 and cls < paint_textures.size() and paint_textures[cls] != null:
+		return paint_textures[cls]
+	return _paint_builtin(cls)
+
+
+## 13.13 K3. Шум для рваной границы мазка (значения 0..1), один на всех
+static func edge_noise() -> Texture2D:
+	if not _cache.has("edge"):
+		_cache["edge"] = _noise(2.0, 0.0, 1.0)
+	return _cache["edge"]
+
+
+static func _paint_builtin(cls: int) -> Texture2D:
+	var key := "paint%d" % cls
+	if _cache.has(key):
+		return _cache[key]
+	var t: NoiseTexture2D
+	match cls:
+		1:   # скала: ячеистый шум с неровными гранями
+			var n := FastNoiseLite.new()
+			n.noise_type = FastNoiseLite.TYPE_CELLULAR
+			n.frequency = 0.05
+			n.fractal_type = FastNoiseLite.FRACTAL_FBM
+			n.fractal_octaves = 3
+			t = NoiseTexture2D.new()
+			t.width = 256
+			t.height = 256
+			t.seamless = true
+			t.noise = n
+			var g := Gradient.new()
+			g.set_color(0, Color(0.55, 0.55, 0.55))
+			g.set_color(1, Color(1.0, 1.0, 1.0))
+			t.color_ramp = g
+		2:   # гравий: мелкая крошка
+			var n := FastNoiseLite.new()
+			n.noise_type = FastNoiseLite.TYPE_CELLULAR
+			n.frequency = 0.16
+			n.fractal_type = FastNoiseLite.FRACTAL_NONE
+			t = NoiseTexture2D.new()
+			t.width = 256
+			t.height = 256
+			t.seamless = true
+			t.noise = n
+			var g := Gradient.new()
+			g.set_color(0, Color(0.5, 0.5, 0.5))
+			g.set_color(1, Color(1.0, 1.0, 1.0))
+			t.color_ramp = g
+		_:   # трава: мягкий шум
+			t = _noise(1.6, 0.0, 0.6)
+	_cache[key] = t
+	return t
 
 
 ## Пористый срез сырого пенопласта: ячеистый шум (поры) в альбедо и в карте нормалей. Один материал на всех

@@ -129,6 +129,24 @@ func _ready() -> void:
 	var no_pin := PlasterField.pin_factor(PackedByteArray([0, 0, 0, 0, 0, 0]), 3, 2, 2)
 	check("K0b pin_factor: без закреплений везде 1.0", no_pin.size() == 6 and _min_diff(no_pin, filled(6, 1.0)) == 0.0 and _max_diff(no_pin, filled(6, 1.0)) == 0.0)
 
+	# XX claude-terra 13.13 K3: подъём оболочки в крашеных ячейках плоского верха
+	var lh := filled(6, 2.0)
+	var lsk := filled(6, 2.0)
+	lsk[5] = 2.5   # уже поднята пандусом
+	var lown := PackedInt32Array([0, 0, -1, 0, 0, 0])
+	var lf := filled(6, 1.0)
+	lf[3] = 0.5    # у трака
+	var lmark := PackedByteArray([1, 0, 1, 1, 1, 1])
+	var lout := PlasterField.lift_marked(lsk, lh, lown, lf, lmark, 0.025, PlasterField.MIN_RAISE)
+	check("K3 lift: крашеная ячейка поднята", near(lout[0], 2.025, 0.0001))
+	check("K3 lift: без краски не тронута", lout[1] == 2.0)
+	check("K3 lift: вне бинта не тронута", lout[2] == 2.0)
+	check("K3 lift: у трака не тронута", lout[3] == 2.0)
+	check("K3 lift: у трака на полном закреплении тоже", lout[3] == 2.0)
+	check("K3 lift: пандус не понижен", lout[5] == 2.5)
+	check("K3 lift: исходный массив не изменён", lsk[0] == 2.0)
+	check("K3 lift: выше порога меша", lout[0] - lh[0] > PlasterField.MIN_RAISE)
+
 	print("ИТОГО: ", "всё PASS" if _fails == 0 else "FAIL: %d" % _fails)
 
 

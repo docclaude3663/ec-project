@@ -77,6 +77,38 @@ func weights(i: int, j: int) -> Color:
 	return Color(data[o], data[o + 1], data[o + 2], data[o + 3]) / 255.0
 
 
+## Сырые байты чанка (CHUNK_BYTES, по ячейкам строка за строкой, CHANNELS на ячейку: трава, скала, гравий, запас).
+## Пусто, если в чанке краски не было
+func chunk_bytes(key: Vector2i) -> PackedByteArray:
+	if not _chunks.has(key):
+		return PackedByteArray()
+	return _chunks[key]
+
+
+## K3. Где есть краска: маска w x d (1 = в ячейке есть любой вес). Ячейка (0, 0) маски это ячейка (i0, j0) карты
+func painted_mask(i0: int, j0: int, w: int, d: int) -> PackedByteArray:
+	var mark := PackedByteArray()
+	mark.resize(w * d)
+	for key: Vector2i in _chunks:
+		var gx0 := key.x * CHUNK
+		var gz0 := key.y * CHUNK
+		if gx0 + CHUNK <= i0 or gx0 >= i0 + w or gz0 + CHUNK <= j0 or gz0 >= j0 + d:
+			continue
+		var data: PackedByteArray = _chunks[key]
+		for cj in CHUNK:
+			var gj := gz0 + cj - j0
+			if gj < 0 or gj >= d:
+				continue
+			for ci in CHUNK:
+				var gi := gx0 + ci - i0
+				if gi < 0 or gi >= w:
+					continue
+				var o := (cj * CHUNK + ci) * CHANNELS
+				if (data[o] | data[o + 1] | data[o + 2] | data[o + 3]) != 0:
+					mark[gj * w + gi] = 1
+	return mark
+
+
 ## Класс с наибольшим весом или -1, если краски меньше трети (85 из 255)
 func dominant(i: int, j: int) -> int:
 	var w := weights(i, j)

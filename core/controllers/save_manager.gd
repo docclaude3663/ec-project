@@ -292,6 +292,7 @@ func load_game(slot_name: String  ='savegame', dir: String = SAVE_DIR, style_ove
 
 	# Краска кистей: после листов, чтобы оболочка уже была запрошена; пустой словарь очищает старую краску
 	TGM.paint.load_data(_saved_game.paint)
+	TGM.plaster_dirty()   # K3: крашеные ячейки на плоском верху входят в оболочку
 
 	# 4. ВАЖНЕЙШИЙ ТАКТ СИНХРОНИЗАЦИИ ФИЗИКИ (см. Критические нюансы ниже)
 	await get_tree().physics_frame

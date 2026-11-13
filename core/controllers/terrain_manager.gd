@@ -23,9 +23,9 @@ const WATER_GROUP := &'water_body'
 const NO_WATER := -INF
 ## 13.5. Оболочка гипсового бинта (PlasterSkin), один узел на макет
 var skin: PlasterSkin
-## 13.13 K1. Краска кистей (мировая сетка, общая на макет) и её временная разметка плоскими цветами (K3 заменит шейдером)
+## 13.13 K1. Краска кистей (мировая сетка, общая на макет) и сплэт-текстура для материала оболочки (K3)
 var paint := PaintMap.new()
-var paint_view: PaintView
+var splat: PaintSplat
 
 ## Допуск по высоте, ю: касание верха одного листа с низом другого не считается пересечением
 const EPS := 0.001
@@ -34,12 +34,13 @@ const MIN_OVERLAP_AREA := 0.01
 
 
 func _ready() -> void:
+	splat = PaintSplat.new()
+	splat.map = paint
+	add_child(splat)
 	skin = PlasterSkin.new()
+	skin.paint = paint
+	skin.splat = splat
 	add_child(skin)
-	paint_view = PaintView.new()
-	paint_view.map = paint
-	paint_view.skin = skin
-	add_child(paint_view)
 	terrain_changed.connect(_on_terrain_changed_plaster)
 
 

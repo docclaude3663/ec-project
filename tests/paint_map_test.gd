@@ -147,6 +147,53 @@ func _ready() -> void:
 	m2.load_data(bad)
 	check("load: короткая запись чанка пропущена", m2.is_empty())
 
+	# K3: сырые байты чанка и маска крашеных ячеек
+	m = _fresh()
+	m.stamp(Vector2(0.25, 0.25), 1.0, 1.0, PaintMap.ROCK, 1.0)
+	var raw := m.chunk_bytes(Vector2i(0, 0))
+	check("chunk_bytes: размер чанка", raw.size() == PaintMap.CHUNK_BYTES)
+	check("chunk_bytes: нет чанка, пусто", m.chunk_bytes(Vector2i(5, 5)).is_empty())
+	check("chunk_bytes: канал скалы у ячейки (0, 0)", raw[PaintMap.ROCK] == 255 and raw[PaintMap.GRASS] == 0)
+	var mk := m.painted_mask(-2, -2, 6, 6)   # окно, ячейка (0, 0) карты это (2, 2) маски
+	check("painted_mask: размер окна", mk.size() == 36)
+	check("painted_mask: крашеная ячейка", mk[2 * 6 + 2] == 1)
+	check("painted_mask: ячейка вне мазка пуста", mk[5 * 6 + 5] == 0)
+	var far := m.painted_mask(100, 100, 4, 4)
+	check("painted_mask: окно вне краски пусто", not far.has(1))
+	var cnt := 0
+	for v in m.painted_mask(-20, -20, 40, 40):
+		cnt += v
+	var expect := 0
+	for j in range(-6, 7):
+		for i in range(-6, 7):
+			if Vector2((float(i) + 0.5) * 0.5, (float(j) + 0.5) * 0.5).distance_to(Vector2(0.25, 0.25)) < 1.0:
+				expect += 1
+	check("painted_mask: число ячеек равно числу ячеек в радиусе", cnt == expect and cnt > 0, "%d из %d" % [cnt, expect])
+
+	# K3: увеличение чанка для текстуры
+	var src := PackedByteArray()
+	src.resize(PaintMap.CHUNK_BYTES)
+	var o := (3 * PaintMap.CHUNK + 5) * PaintMap.CHANNELS   # ячейка (5, 3)
+	src[o] = 10
+	src[o + 1] = 20
+	src[o + 2] = 30
+	src[o + 3] = 40
+	var px := PaintSplat.chunk_pixels(src)
+	check("chunk_pixels: размер 32 x 32 x 4", px.size() == 32 * 32 * 4)
+	var all4 := true
+	for dj in 2:
+		for di in 2:
+			var p := ((3 * 2 + dj) * 32 + 5 * 2 + di) * 4
+			if px[p] != 10 or px[p + 1] != 20 or px[p + 2] != 30 or px[p + 3] != 40:
+				all4 = false
+	check("chunk_pixels: ячейка стала четырьмя пикселями", all4)
+	var other := 0
+	for b in px:
+		if b != 0:
+			other += 1
+	check("chunk_pixels: больше ничего не закрашено", other == 16, str(other))
+	check("chunk_pixels: неверный размер даёт нули", not PaintSplat.chunk_pixels(PackedByteArray([1, 2, 3])).has(1))
+
 	# clear
 	m = _fresh()
 	m.stamp(Vector2.ZERO, 3.0, 1.0, PaintMap.GRASS, 1.0)
