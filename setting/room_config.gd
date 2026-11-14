@@ -7,7 +7,7 @@ class_name RoomConfig extends Resource
 ## Сейчас по этим данным RoomBuilder строит greybox. Арт-версия (S7) подключается через scene.
 
 @export var id: StringName = &"kid_room_10"
-## Название и подсказка карточки комнаты в Observe (для комнат из data/rooms; у встроенных они в RoomCatalog.BUILTIN)
+## Название и подсказка карточки комнаты (список комнат, Room Studio) (для комнат из data/rooms; у встроенных они в RoomCatalog.BUILTIN)
 @export var title := ""
 @export var tip := ""
 ## Сцена комнаты (data/rooms/<id>/<id>.tscn, корень RoomRoot). Пусто = комнату строит кодом RoomBuilder.

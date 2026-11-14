@@ -29,6 +29,32 @@ func _init() -> void:
 				var g := (Engine.get_main_loop() as SceneTree).root.get_node_or_null("GameRoot/Gimbal") as Gimbal
 				if g:
 					g.set_free_camera(on))
+	add_child(make_header("Комната"))
+	_add_toggle("Комната (стены и мебель)", "Скрывает стены, пол и мебель. Стол, свет и границы камеры остаются", "RoomBuilder.set_room_visible",
+			func() -> bool:
+				var r := _room()
+				return r == null or r.is_room_visible(),
+			func(on: bool) -> void:
+				var r := _room()
+				if r:
+					r.set_room_visible(on))
+	_add_toggle("Потолок", "Показывает плиту потолка. Скрытая плита всё равно отбрасывает тень (в Observe)", "RoomBuilder.set_ceiling_visible",
+			func() -> bool:
+				var r := _room()
+				return r != null and r.is_ceiling_visible(),
+			func(on: bool) -> void:
+				var r := _room()
+				if r:
+					r.set_ceiling_visible(on))
+	if OS.has_feature("editor"):
+		var to_scene := Button.new()
+		to_scene.text = "Комнату в сцену"
+		to_scene.tooltip_text = "Только из редактора. Записывает текущую процедурную комнату в data/rooms/<id>/ (сцена и паспорт). Со следующего запуска комната берётся из сцены. Уйдёт в Room Studio (ATTN_25 RM4)"
+		to_scene.pressed.connect(func() -> void:
+			var r := _room()
+			if r:
+				r.save_room_scene())
+		add_child(to_scene)
 	add_child(make_header("Маркеры и рельсы"))
 	_add_toggle("Маркеры (куб над Entity, сокеты)", "Рисуются у объектов, созданных после включения", "Global.debug_markers",
 			func() -> bool: return Global.debug_markers,
@@ -98,6 +124,11 @@ func _init() -> void:
 	_confirm.dialog_text = "Удалить все объекты со сцены? Несохраненное пропадет."
 	_confirm.confirmed.connect(_clear_scene)
 	add_child(_confirm)
+
+
+## Комната игры (RoomBuilder в группе room_root). null в режиме --fast
+func _room() -> RoomBuilder:
+	return (Engine.get_main_loop() as SceneTree).get_first_node_in_group(&"room_root") as RoomBuilder
 
 
 func setup(save_manager: SaveManager) -> void:

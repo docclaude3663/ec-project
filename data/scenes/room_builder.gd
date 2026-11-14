@@ -7,7 +7,8 @@ class_name RoomBuilder extends Node3D
 ## Подмакетник (Table): плиту строят секции-Entity (C_TableSection, слой ground, ATTN_23 T1), здесь только ножки на room.
 ## Он не скрывается кнопкой «Комната».
 ## Всё остальное (Room) на слое room (физика) и на visual layer Global.ROOM_VISUAL_LAYER.
-## Комната слушает ObserveController.observe_action (категория room), про поезда не знает ничего.
+## Про поезда комната не знает ничего. Карточек комнаты в Observe нет: видимость комнаты и потолка (F3 → Toggles) и смена комнаты
+## (request_room) идут из кода. Observe зовёт только тени стен при входе и выходе.
 
 ## ⚡ XX claude-table T3. Пол, ножки и границы камеры пересобраны после изменения секций или высоты стола
 signal room_layout_applied
@@ -29,7 +30,7 @@ var ceiling: Node3D
 var _ceiling_mesh: MeshInstance3D   # плита потолка: скрытая в Observe, она всё равно отбрасывает тень (закрывает солнце сверху)
 var table: Node3D
 var _layout_dirty := false
-var _room_lights: Node3D   # потолочные лампы RoomConfig.lamps: не часть visuals, чтобы кнопка «Комната» не гасила свет
+var _room_lights: Node3D   # потолочные лампы RoomConfig.lamps: не часть visuals, чтобы скрытие комнаты (F3 → Toggles) не гасило свет
 
 var _mats := {}
 var _walls: Array[MeshInstance3D] = []   # стены, рама, шторы и подоконник: тень только в Observe
@@ -90,16 +91,15 @@ func _use_wood_floor() -> void:
 		shape.set_deferred("disabled", false)
 
 
-## Карточки категории Room (S1). Ищем по группе: ObserveController живёт в сцене UI, а %-имена видны только внутри своей сцены
+## Тени стен в Observe. Ищем по группе: ObserveController живёт в сцене UI, а %-имена видны только внутри своей сцены
 func _connect_observe() -> void:
 	await get_tree().process_frame   # контроллер встаёт в группу в своём _ready
 	var oc = get_tree().get_first_node_in_group(&"observe_controller")
 	if oc:
-		oc.observe_action.connect(_on_observe_action)
 		oc.observe_entered.connect(func(): _set_observe_shadows(true))
 		oc.observe_exited.connect(func(): _set_observe_shadows(false))
 	else:
-		push_warning("RoomBuilder: ObserveController не найден, кнопки категории Room не работают")
+		push_warning("RoomBuilder: ObserveController не найден, тени стен в Observe не переключаются")
 
 
 ## Лампочка светится по GFX.lamp_changed, мелочи прячутся по QualityPreset.room_detail_lod
@@ -322,8 +322,46 @@ func get_room_id() -> StringName:
 	return config.id if config else RoomCatalog.DEFAULT_ID
 
 
+## Источники смены активной комнаты (ATTN_25 §25.3)
+const SRC_START := &"start"        # выбор игрока или аргумент --room при запуске
+const SRC_SCENARIO := &"scenario"  # сценарий
+const SRC_LOAD := &"load"          # загрузка сейва: возвращает комнату сейва
+const SRC_ADMIN := &"admin"        # админ (Global.debug_mode) через Room Studio
+
+
+## Может ли источник менять комнату. Игрок в сессии менять не может: любой другой источник (Observe, Build, Operate) отклоняется
+static func can_change(source: StringName) -> bool:
+	match source:
+		SRC_START, SRC_SCENARIO, SRC_LOAD:
+			return true
+		SRC_ADMIN:
+			return Global.debug_mode
+	return false
+
+
+## Единственный путь смены активной комнаты. true: комната теперь id (в том числе была уже такой).
+## Отказ (чужой источник, неизвестный id) пишет push_warning и ничего не меняет. Исключение: загрузка сейва с неизвестным id
+## (комнату убрали или переименовали) ставит комнату по умолчанию
+func request_room(id: StringName, source: StringName) -> bool:
+	if not can_change(source):
+		push_warning("RoomBuilder.request_room: источник '%s' не может менять комнату (запрошена '%s')" % [source, id])
+		return false
+	if Global.fast_debug:
+		return false   # в --fast комнаты нет
+	var target := id
+	if not RoomCatalog.has(target):
+		if source != SRC_LOAD:
+			push_warning("RoomBuilder.request_room: комнаты '%s' нет в каталоге" % id)
+			return false
+		push_warning("RoomBuilder.request_room: комнаты '%s' из сейва нет в каталоге, берём '%s'" % [id, RoomCatalog.DEFAULT_ID])
+		target = RoomCatalog.DEFAULT_ID
+	switch_room(target)
+	return get_room_id() == target
+
+
 ## Заменить комнату целиком (старая освобождается, в памяти одна). Стол пересобирается по паспорту новой комнаты.
 ## До _ready только подменяет паспорт (стартовую сборку сделает _ready). Варианты цветов переносятся
+## Внутренний метод: снаружи звать request_room
 func switch_room(id: StringName) -> void:
 	if Global.fast_debug:
 		return
@@ -399,33 +437,12 @@ func set_ceiling_visible(on: bool) -> void:
 	_apply_ceiling()
 
 
-## ⚡Сигнал из ObserveController
-func _on_observe_action(_cat: StringName, _id: StringName, _pressed: bool) -> void:
-	if _cat != &'room':
-		return
-	match _id:
-		&'room_visible':
-			set_room_visible(_pressed)
-			return
-		&'ceiling':
-			set_ceiling_visible(_pressed)
-			return
-		&'room_save_scene':
-			if _pressed:
-				save_room_scene()
-			return
-	if String(_id).begins_with("room_") and RoomCatalog.has(StringName(String(_id).trim_prefix("room_"))):
-		if _pressed:
-			switch_room(StringName(String(_id).trim_prefix("room_")))
-		return
-	# Варианты: wall_cream, bed_blue, curt_yellow, poster_trains
-	if not _pressed:
-		return
-	var s := String(_id)
-	for pair in [["wall_", "wall"], ["bed_", "bedding"], ["curt_", "curtains"], ["poster_", "posters"]]:
-		if s.begins_with(pair[0]):
-			set_variant(pair[1], s.trim_prefix(pair[0]))
-			return
+func is_room_visible() -> bool:
+	return _room_visible
+
+
+func is_ceiling_visible() -> bool:
+	return _ceiling_visible
 
 
 # ==========================================

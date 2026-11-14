@@ -25,6 +25,10 @@ var debug_mode := OS.is_debug_build()
 ## или настройкой проекта ec/fast_debug = true
 var fast_debug := false  # Упростил 
 #OS.get_cmdline_user_args().has("--fast") or bool(ProjectSettings.get_setting("ec/fast_debug", false))
+
+## Комната, выбранная при запуске: аргумент `--room=<id>` (Run with args: -- --room=attic). Пусто: комната из сейва или по умолчанию.
+## Источник «start» (RoomBuilder.request_room): для тестов и ранней сборки, пока нет экрана выбора комнаты (ATTN_25 §25.3)
+var start_room: StringName = _cmdline_room()
 ##=======
 ## Физика вагона во время драга. false (по умолчанию): rb замораживается и едет за ентити как ребёнок,
 ## Физика вагона во время драга. false (по умолчанию): rb замораживается и едет за ентити как ребёнок,
@@ -98,3 +102,11 @@ func active_layers(data:Array) -> int:
 			'power'  : i = i | 1 << 13
 			## Контуры Outline это visual layers 15-20 (cull_mask), к физике не относятся
 	return i
+
+
+## Значение `--room=<id>` из пользовательских аргументов запуска или пустое имя
+static func _cmdline_room() -> StringName:
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--room="):
+			return StringName(a.trim_prefix("--room=").strip_edges())
+	return &""

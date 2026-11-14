@@ -15,6 +15,10 @@ const SNAP_RETRY_FRAMES := 60
 ## Сколько физкадров пробуем восстановить сцепки после посадки вагонов
 const LINK_RETRY_FRAMES := 20
 
+## Комната, выбранная при запуске (--room=<id>, источник start). Действует один раз: на первую загрузку или новую игру,
+## дальше комнату задаёт сейв. Автосейв потом запишет эту комнату (ATTN_25 §25.3)
+var _room_override: StringName = Global.start_room
+
 # Ссылка на узел дерева, где лежат все рельсы
 @onready var world_entities_root = "/root/GameRoot/EntitiesRoot"
 @onready var entity_factory: EntityFactory = $"/root/GameRoot/EntityFactory"
@@ -30,9 +34,20 @@ func _ready() -> void:
 	if FileAccess.file_exists(SAVE_DIR + "autosave.tres"):
 		load_game('autosave')
 	else:
-		# Новая игра: автосейва ещё нет, создаём его из стартового состояния (комната по умолчанию, стартовая секция стола)
+		# Новая игра: автосейва ещё нет, создаём его из стартового состояния (комната по умолчанию или --room, стартовая секция стола)
+		_apply_room_override()
 		LYM.ensure_start_section(get_node_or_null(world_entities_root))   # XX claude-table T1
 		save_game('autosave')
+
+
+## Ставит комнату из --room=<id> (источник start), если она задана. true: комната применена. Аргумент расходуется в любом случае
+func _apply_room_override() -> bool:
+	var id := _room_override
+	_room_override = &""
+	if id == &"":
+		return false
+	var rb := _room()
+	return rb != null and rb.request_room(id, RoomBuilder.SRC_START)
 
 
 ## Разово копирует сейвы из res://saves/ в user://saves/ (только то, чего там еще нет)
@@ -209,7 +224,9 @@ func load_game(slot_name: String  ='savegame', dir: String = SAVE_DIR, style_ove
 	# 0️⃣ комната мира (в памяти одна): до камеры, чтобы границы камеры были уже новой комнаты
 	var _rb := _room()
 	if _rb:
-		_rb.switch_room(_saved_game.room_id)
+		# --room при запуске важнее комнаты сейва (один раз), иначе сейв просит свою комнату как «load»
+		if not _apply_room_override():
+			_rb.request_room(_saved_game.room_id, RoomBuilder.SRC_LOAD)
 		# XX claude-table T0: варианты комнаты из сейва. Старый сейв (layout пуст) их не хранит: остаются текущие
 		if not _saved_game.layout.is_empty():
 			_rb.set_variants(_saved_game.room_variants)

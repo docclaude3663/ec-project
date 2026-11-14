@@ -3,7 +3,7 @@ class_name CameraBounds extends Node
 ########################
 ## Подаёт Gimbal границы комнаты (RoomConfig.bounds).
 ## Сами ограничения живут внутри Gimbal (на целевом состоянии), здесь только связка:
-## комната скрыта (кнопка Room) -> границы выключаются, показана -> включаются.
+## Границы заданы всегда, включает их Gimbal (по умолчанию свободная камера). Комнату сменили: границы читаются заново.
 ########################
 
 var gimbal: Gimbal
@@ -23,8 +23,6 @@ func _ready() -> void:
 		return
 	gimbal.set_bounds(room.get_bounds(), false)   # границы заданы, но выключены
 	gimbal.set_free_camera(true)                  # свободная камера по умолчанию
-	#gimbal.set_bounds(room.get_bounds(), true)
-	#room.room_visible_changed.connect(func(on: bool): gimbal.set_bounds_enabled(on))
 	# Другая комната: новые границы (включены, если комната показана)
 	room.room_changed.connect(func(_id): gimbal.set_bounds(room.get_bounds(), room.visuals == null or room.visuals.visible))
 	# XX claude-table T3: высота стола меняет потолок, границы пересчитываются, включённость прежняя

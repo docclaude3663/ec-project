@@ -316,25 +316,26 @@ API (RM2): `RoomBuilder.request_room(id, source)`, где `source` это `&"sta
 
 **Проверка:** открыть `ATTN_25_rooms.md` и `ATTN_14_observe_room.md` в предпросмотре, ссылки между документами открываются, в списке документов README есть ATTN_25.
 
-### RM1. Observe без комнаты [ ]
+### RM1. Observe без комнаты [x]
 
 **Файлы:** `ui/toolbar/card_catalog_provider.gd`, `data/scenes/room_builder.gd`, `data/scenes/camera_bounds.gd` (мёртвые строки), `ui/debug/debug_toggles_tab.gd`.
 
-- [ ] Категория `room` убрана из `CATEGORIES` и `CARDS`, ветки `_cards_for` и `_is_on` для `room_pick` удалены.
-- [ ] `RoomBuilder` не подписывается на `observe_action`; `_on_observe_action` удалён вместе с `save_room_scene`-вызовом из Observe.
-- [ ] «Комната» (`set_room_visible`) и «Потолок» доступны как галочки F3 → Toggles.
-- [ ] Закомментированные строки в `camera_bounds.gd` удалены.
+- [x] Категория `room` убрана из `CATEGORIES` и `CARDS`, ветки `_cards_for` и `_is_on` для `room_pick` удалены.
+- [x] `RoomBuilder` не подписывается на `observe_action`; `_on_observe_action` удалён.
+- [x] «Комната» (`set_room_visible`) и «Потолок» доступны как галочки F3 → Toggles; «Комнату в сцену» (`save_room_scene`) временно там же, только в редакторе, до Room Studio (RM4).
+- [x] Карточки цвета стен, постели, штор и постеров убраны вместе с категорией; `set_variant` и `set_variants` остаются для сейва и `look_lab.gd` до RM9.
+- [x] Закомментированные строки в `camera_bounds.gd` удалены.
 
 **Проверка:** (1) Observe: категорий пять (Look, Light, Camera, Photo, Weather), кнопки Room нет. (2) Look, Light, Camera, Photo работают как раньше. (3) F3 → Toggles: «Комната» скрывает стены и мебель, «Потолок» меняет видимость плиты; свет и границы камеры не ломаются. (4) Output без ошибок при входе и выходе из Observe, при `--fast` Observe по-прежнему нет.
 
-### RM2. Активная комната и права смены [ ]
+### RM2. Активная комната и права смены [x]
 
 **Файлы:** `data/scenes/room_builder.gd`, `core/controllers/save_manager.gd`, `core/globals.gd` или разбор аргументов запуска, `tests/room_access_test.tscn` (новый).
 
-- [ ] `RoomBuilder.request_room(id, source)` по таблице §25.3; чужой источник и неизвестный id отклоняются с `push_warning`.
-- [ ] `SaveManager.load_game` просит комнату как `&"load"`.
-- [ ] Аргумент `--room=<id>` (источник `start`) для тестов и ранней сборки.
-- [ ] Тест: админ меняет, игрок нет; несуществующий id не ломает текущую комнату.
+- [x] `RoomBuilder.request_room(id, source)` по таблице §25.3; чужой источник и неизвестный id отклоняются с `push_warning`.
+- [x] `SaveManager.load_game` просит комнату как `&"load"`; неизвестный id в сейве даёт `RoomCatalog.DEFAULT_ID`.
+- [x] Аргумент `--room=<id>` (`Global.start_room`, источник `start`) для тестов и ранней сборки: действует один раз, на первую загрузку или новую игру; автосейв затем запишет эту комнату.
+- [x] Тест `tests/room_access_test.tscn`: админ меняет, игрок нет; несуществующий id не ломает текущую комнату; в Observe нет категории Room.
 
 **Проверка:** F6 на `tests/room_access_test.tscn`: все PASS. Запуск игры с `--room=attic`: стартует мансарда. Загрузка автосейва возвращает его комнату.
 

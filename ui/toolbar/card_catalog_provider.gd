@@ -1,7 +1,7 @@
 class_name CardCatalogProvider extends CatalogProvider
 
 ###########################
-## CardCatalogProvider. Карточки режима Observe (пресеты, время суток, камеры, комната, фото)
+## CardCatalogProvider. Карточки режима Observe (пресеты, время суток, камеры, фото, погода)
 ###########################
 ## Вместо отрисовки в ObserveController. Данные карточек (CARDS) и состояние радио-групп и переключателей
 ## живут здесь: состояние переживает пересборку категории (кнопки создаются заново при каждом показе).
@@ -14,7 +14,6 @@ const CATEGORIES := [
 	{"id": &"look", "name": "Look", "icon": null},
 	{"id": &"light", "name": "Light", "icon": null},
 	{"id": &"camera", "name": "Camera", "icon": null},
-	{"id": &"room", "name": "Room", "icon": null},
 	{"id": &"photo", "name": "Photo", "icon": null},
 	{"id": &"weather", "name": "Weather", "icon": null},
 ]
@@ -49,27 +48,6 @@ const CARDS := {
 		{"id": &"pov", "title": "POV", "toggle": true, "tip": "Вид из вагона. Сначала кликните по вагону. Esc: выйти"},
 		{"id": &"pov_flip", "title": "POV ↔", "toggle": true, "tip": "Развернуть POV-камеру в другую сторону"},
 		{"id": &"orbit", "title": "Orbit", "toggle": true, "tip": "Автокамера вокруг стола. Esc: выйти"},
-	],
-	&"room": [
-		{"id": &"room_visible", "title": "Комната", "toggle": true, "default": true},
-		{"id": &"ceiling", "title": "Потолок", "toggle": true},
-		# Здесь стоят карточки выбора комнаты (группа room_pick): их строит _cards_for из RoomCatalog (встроенные и папки data/rooms)
-		{"id": &"wall_cream", "title": "Стены: беж", "group": &"wall"},
-		{"id": &"wall_sky", "title": "Стены: небо", "group": &"wall"},
-		{"id": &"wall_mint", "title": "Стены: мята", "group": &"wall"},
-		{"id": &"wall_blue", "title": "Стены: синий", "group": &"wall"},
-		{"id": &"wall_dusty", "title": "Стены: пыльный голубой", "group": &"wall", "default": true},
-		{"id": &"wall_slate", "title": "Стены: сланец", "group": &"wall"},
-		{"id": &"wall_sage", "title": "Стены: шалфей", "group": &"wall"},
-		{"id": &"bed_blue", "title": "Постель: синяя", "group": &"bedding", "default": true},
-		{"id": &"bed_red", "title": "Постель: красная", "group": &"bedding"},
-		{"id": &"bed_green", "title": "Постель: зелёная", "group": &"bedding"},
-		{"id": &"curt_yellow", "title": "Шторы: жёлтые", "group": &"curtains", "default": true},
-		{"id": &"curt_red", "title": "Шторы: красные", "group": &"curtains"},
-		{"id": &"curt_blue", "title": "Шторы: синие", "group": &"curtains"},
-		{"id": &"poster_trains", "title": "Постеры: поезда", "group": &"posters", "default": true},
-		{"id": &"poster_map", "title": "Постеры: карта", "group": &"posters"},
-		{"id": &"poster_space", "title": "Постеры: космос", "group": &"posters"},
 	],
 	&"photo": [
 		{"id": &"hide_ui", "title": "Скрыть UI", "toggle": true, "tip": "Клавиша H. Esc: вернуть UI"},
@@ -155,12 +133,6 @@ func set_toggle_state(id: StringName, on: bool) -> void:
 ## Нажата ли карточка при показе: из сохраненного состояния, иначе по "default"
 func _is_on(data: Dictionary) -> bool:
 	var g: StringName = data.get("group", &"")
-	if g == &"room_pick":
-		# Живая комната: её могла сменить загрузка сейва
-		var tree := Engine.get_main_loop() as SceneTree
-		var rb := tree.get_first_node_in_group(&"room_root") as RoomBuilder if tree else null
-		if rb != null:
-			return &"room_" + String(rb.get_room_id()) == String(data.id)
 	if g != &"":
 		if _group_state.has(g):
 			return _group_state[g] == data.id
@@ -170,25 +142,12 @@ func _is_on(data: Dictionary) -> bool:
 	return false
 
 
-## Карточки категории. В Room после «Потолок» вставляются комнаты из RoomCatalog (радио-группа room_pick), а в редакторе
-## ещё и кнопка записи комнаты в сцену
+## Карточки категории. Lab видна только админу (debug). Комната в Observe не меняется (ATTN_25 §25.4)
 func _cards_for(category: StringName) -> Array:
 	var base: Array = CARDS.get(category, [])
 	if category == &"look" and not Global.debug_mode:
 		return base.filter(func(d: Dictionary) -> bool: return d.id != &"lab")
-	if category != &"room":
-		return base
-	var out: Array = []
-	for d in base:
-		out.append(d)
-		if d.id == &"ceiling":
-			for e in RoomCatalog.entries():
-				out.append({"id": StringName("room_" + String(e.id)), "title": "Комната: " + String(e.title).to_lower(),
-						"group": &"room_pick", "default": e.id == RoomCatalog.DEFAULT_ID, "tip": e.tip})
-			if OS.has_feature("editor"):
-				out.append({"id": &"room_save_scene", "title": "Комнату в сцену",
-						"tip": "Только из редактора. Записывает текущую процедурную комнату в data/rooms/<id>/ (сцена и паспорт). Со следующего запуска комната берётся из сцены"})
-	return out
+	return base
 
 
 func _card_data(category: StringName, id: StringName) -> Dictionary:
