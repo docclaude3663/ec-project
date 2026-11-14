@@ -7,13 +7,10 @@ class_name TopBar extends PanelContainer
 ## Статистику считает LayoutStats, чипы описаны данными (StatSpec). Что не влезло, уходит в список «…».
 ########################
 
-## id пункта «Подсказки» в меню
-const HINTS_MENU_ID := 100
-
 const CHIP_SCENE := preload("res://ui/widgets/stat_chip.tscn")
 ## Пути к сервисам игры: HUD → UI → GameRoot
 @onready var save_manager: SaveManager = $"../../../SaveManager"
-## Кнопка системного меню (полноценное меню в U10)
+## Кнопка системного меню: пункты и действия задаёт SystemMenu (U10)
 @onready var menu_button: MenuButton = %SystemMenu
 ## Чекбокс слоя питания (временно тут, потом SideDock)
 @onready var power_schema_check: CheckBox = %PowerSchemaCheck
@@ -24,6 +21,8 @@ const CHIP_SCENE := preload("res://ui/widgets/stat_chip.tscn")
 @onready var _stats_bar: HBoxContainer = %StatsBar
 @onready var _more: MenuButton = %MoreStats
 @onready var _lab_label: Label = %LabLabel
+@onready var _layout_name: Label = %LayoutNameLabel
+@onready var _layout_edit: LineEdit = %LayoutNameEdit
 
 var _stats: LayoutStats
 var _chips: Array[StatChip] = []
@@ -43,18 +42,18 @@ static func stat_specs() -> Array[StatSpec]:
 
 
 func _ready() -> void:
-	# Меню: пункты сцены; «Подсказки» добавляем кодом
-	menu_button.get_popup().id_pressed.connect(_on_menu_button_pressed)
 	# Слой питания могут переключить не из чекбокса (Observe при входе/выходе): держим вид в синхроне
 	PGM.power_layer_toggled.connect(_on_power_layer_toggled)
 	power_schema_check.set_pressed_no_signal(PGM.is_power_layer_active)
 	track_shadows_check.set_pressed_no_signal(GFX.is_track_shadows())
 	GFX.track_shadows_changed.connect(_on_track_shadows_changed)
-	# Подсказки внизу экрана: галочка в меню
-	var popup := menu_button.get_popup()
-	popup.add_separator()
-	popup.add_check_item("Подсказки", HINTS_MENU_ID)
-	popup.set_item_checked(popup.get_item_index(HINTS_MENU_ID), Hints.enabled)
+	# Название макета: показывает SaveManager.layout_name, двойной щелчок переименовывает
+	save_manager.layout_name_changed.connect(_on_layout_name_changed)
+	_on_layout_name_changed(save_manager.layout_name)
+	_layout_name.gui_input.connect(_on_layout_name_gui_input)
+	_layout_edit.text_submitted.connect(func(_t: String) -> void: _end_rename(true))
+	_layout_edit.focus_exited.connect(func() -> void: _end_rename(true))
+	_layout_edit.gui_input.connect(_on_layout_edit_gui_input)
 	_build_style_selector()
 
 	# Метка Lab: прежний «[LAB]» из ModeLabel
@@ -74,6 +73,42 @@ func _ready() -> void:
 	_stats.changed.connect(_refresh_stats)
 	_stats_host.resized.connect(_fit_stats)
 	_refresh_stats()
+
+
+## Кнопка меню для SystemMenu
+func get_system_menu_button() -> MenuButton:
+	return menu_button
+
+
+func _on_layout_name_changed(layout: String) -> void:
+	_layout_name.text = layout
+
+
+func _on_layout_name_gui_input(event: InputEvent) -> void:
+	var mb := event as InputEventMouseButton
+	if mb != null and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT and mb.double_click:
+		_layout_edit.text = _layout_name.text
+		_layout_name.visible = false
+		_layout_edit.visible = true
+		_layout_edit.grab_focus()
+		_layout_edit.select_all()
+
+
+func _on_layout_edit_gui_input(event: InputEvent) -> void:
+	var key := event as InputEventKey
+	if key != null and key.pressed and key.keycode == KEY_ESCAPE:
+		_end_rename(false)
+		_layout_edit.accept_event()
+
+
+func _end_rename(apply: bool) -> void:
+	if not _layout_edit.visible:
+		return
+	var txt := _layout_edit.text
+	_layout_edit.visible = false
+	_layout_name.visible = true
+	if apply:
+		save_manager.set_layout_name(txt)
 
 
 ## Кнопки режимов для ModeController (сам узел внутри этой сцены, снаружи по % не виден)
@@ -197,41 +232,6 @@ func _sync_style_selector(id: StringName) -> void:
 		if _style_option.get_item_metadata(i) == id:
 			_style_option.select(i)
 			return
-
-
-## Обработка сигнала от попап меню сейв\лоад. Принимает ToolController
-func _on_menu_button_pressed(_index : int) -> void:
-	#menu_button_pressed.emit(_index)
-	match _index:
-		HINTS_MENU_ID: # подсказки вкл/выкл
-			var popup := menu_button.get_popup()
-			Hints.set_enabled(not Hints.enabled)
-			popup.set_item_checked(popup.get_item_index(HINTS_MENU_ID), Hints.enabled)
-		0: # save
-			#SaveManager.save_game()
-			pass
-		1: # load
-			#SaveManager.load_game('savegame')
-			#print(OS.get_data_dir())
-			pass
-		2: # ++
-			pass
-		3: #ничего
-			save_manager.clear_scene() # Хотя это больше подходит для тулза стройки, но пока тут
-			pass
-			
-		5: #DEFAULT jolt
-			#GM. apply_jolt_profile(GM.AssistProfile.DEFAULT) 
-			pass
-		6: #STABLE jolt
-			#GM. apply_jolt_profile(GM.AssistProfile.STABLE) 
-			pass
-		7: #EXTREME jolt
-			#GM. apply_jolt_profile(GM.AssistProfile.EXTREME) 
-			pass
-	pass
-	
-
 
 
 ## Включение Cлоя power (11) на камере. Режим повер 2лвл

@@ -90,6 +90,9 @@ func _register_defaults() -> void:
 	register(&"tool_undo", "action.tool_undo", &"terrain", [G_TERRAIN, G_SECTIONS], _key(KEY_Z, false, true))
 	# Провода: Esc отменяет провод, повторно выходит. Не переназначается: Esc займёт стек окон (U10), как observe_cancel
 	register(&"wire_cancel", "action.wire_cancel", &"wire", [G_WIRE], _key(KEY_ESCAPE), false)
+	# Общая отмена (U10): Esc закрывает верхнее окно, иначе снимает выбор и группу в SelectTool.
+	# Не переназначается: Esc у окон, провода и Observe (wire_cancel, observe_cancel) тоже фиксирован
+	register(&"cancel", "action.cancel", &"system", [G_SELECT], _key(KEY_ESCAPE), false)
 	# Observe
 	register(&"photo_hide_ui", "action.photo_hide_ui", &"observe", [G_OBSERVE], _key(KEY_H))
 	register(&"photo_snap", "action.photo_snap", &"observe", [G_OBSERVE], _key(KEY_P))

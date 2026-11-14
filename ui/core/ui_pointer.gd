@@ -12,3 +12,8 @@ static func is_over_ui(viewport: Viewport) -> bool:
 	if viewport == null:
 		return false
 	return viewport.gui_get_hovered_control() != null
+
+
+## U10: открыто ли модальное окно (диалог). Инструменты и камера тогда не читают клавиши
+static func modal_open() -> bool:
+	return WindowStack.has_open()

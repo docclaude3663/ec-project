@@ -90,6 +90,9 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# U10: пока открыто модальное окно, клавиши (Delete, V, Z...) инструментам не идут
+	if UIPointer.modal_open():
+		return
 	# XX claude-terra 13.1.7: Z - показать или скрыть зоны проблем flex (радиус, уклон) в режиме Build
 	if Actions.pressed(event, &"flex_zones_toggle") and Global.current_mode == &'build':
 		Global.flex_zones = not Global.flex_zones

@@ -5,6 +5,9 @@ class_name SavedGame extends Resource
 ## Ресурс содержит данные для сохранения всех объектов
 ########################
 
+## Название макета для TopBar (U10). Пусто в старых сейвах: тогда «Новый макет»
+@export var layout_name: String = ""
+
 ## данные камеры
 #@export var gimbal_transform 	:Transform3D
 #@export var gimbal_elevation 	:Transform3D 

@@ -7,6 +7,8 @@ class_name SaveManager  #это в автолоад прописано
 
 # В экспортированной игре res:// только для чтения, сейвы пишем в user://
 const SAVE_DIR = "user://saves/"
+## Название макета по умолчанию
+const DEFAULT_LAYOUT_NAME := "Новый макет"
 # Старое место сейвов (разовый перенос) и эталонная диорама (шаблон только для чтения, грузится по F9 в debug)
 const LEGACY_SAVE_DIR = "res://saves/"
 const REFERENCE_DIR = "res://data/debug/"
@@ -18,6 +20,11 @@ const LINK_RETRY_FRAMES := 20
 ## Комната, выбранная при запуске (--room=<id>, источник start). Действует один раз: на первую загрузку или новую игру,
 ## дальше комнату задаёт сейв. Автосейв потом запишет эту комнату (ATTN_25 §25.3)
 var _room_override: StringName = Global.start_room
+
+## ⚡ Название макета сменилось (TopBar показывает его)
+signal layout_name_changed(layout_name: String)
+## Название текущего макета. Пишется в сейв, при New сбрасывается
+var layout_name: String = DEFAULT_LAYOUT_NAME
 
 # Ссылка на узел дерева, где лежат все рельсы
 @onready var world_entities_root = "/root/GameRoot/EntitiesRoot"
@@ -133,6 +140,9 @@ func save_game(slot_name: String ='savegame') -> bool:
 	# Активный стиль траков макета (ATTN_17 §17.13)
 	_saved_game.track_style = TSM.current_id
 
+	# Название макета (U10)
+	_saved_game.layout_name = layout_name
+
 	# Источники питания и сеть: команды пультов, estop, защита (ATTN_10 D2)
 	_saved_game.power_state = PGM.save_state()
 
@@ -178,6 +188,7 @@ func clear_scene() -> void:
 	LYM.reset()
 	LYM.ensure_start_section(root_node)
 	TGM.paint.clear()   # XX claude-terra 13.13 K1
+	set_layout_name("")   # U10: новый макет
 		
 	#INFO ДЕРГАЕМ ПАНЕЛЬ!
 	if tool_controller:
@@ -221,6 +232,7 @@ func load_game(slot_name: String  ='savegame', dir: String = SAVE_DIR, style_ove
 	#🚩res все данные игры собраны здесь
 	var _saved_game :SavedGame = load(save_path) as SavedGame #автокомплит
 	if not _saved_game: return
+	set_layout_name(_saved_game.layout_name)   # U10: пусто (старый сейв) = название по умолчанию
 	# 0️⃣ комната мира (в памяти одна): до камеры, чтобы границы камеры были уже новой комнаты
 	var _rb := _room()
 	if _rb:
@@ -401,3 +413,38 @@ func load_game(slot_name: String  ='savegame', dir: String = SAVE_DIR, style_ove
 			#pass
 	#pass
 	#
+
+
+## U10: ставит название макета (пусто: по умолчанию) и сообщает TopBar
+func set_layout_name(new_name: String) -> void:
+	var n := new_name.strip_edges()
+	layout_name = n if n != "" else DEFAULT_LAYOUT_NAME
+	layout_name_changed.emit(layout_name)
+
+
+## U10: имя файла сейва из названия макета: без символов, недопустимых в имени файла
+static func slot_from_name(layout: String) -> String:
+	var s := layout.strip_edges()
+	for ch in ["\\", "/", ":", "*", "?", "\"", "<", ">", "|", "."]:
+		s = s.replace(ch, "_")
+	return s if s != "" else "savegame"
+
+
+## U10: файлы из user://saves/, свежие первыми: [{slot, path, time (unix, UTC)}]
+func list_saves() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var dir := DirAccess.open(SAVE_DIR)
+	if dir == null:
+		return out
+	for f in dir.get_files():
+		if f.get_extension() != "tres":
+			continue
+		out.append({"slot": f.get_basename(), "path": SAVE_DIR + f, "time": FileAccess.get_modified_time(SAVE_DIR + f)})
+	out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["time"] > b["time"])
+	return out
+
+
+## U10: выход из игры из меню: автосейв и закрытие (то же, что при закрытии окна)
+func quit_game() -> void:
+	await save_game('autosave')
+	get_tree().quit()

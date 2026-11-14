@@ -65,6 +65,12 @@ func process_tick(_delta):
 
 
 func handle_input(event: InputEvent):
+	# U10: Esc снимает выбор и группу (окна забирают Esc раньше, в своём _input)
+	if Actions.pressed(event, &"cancel"):
+		if selected_entity != null or not _group.members.is_empty():
+			_clear_selection()
+			get_viewport().set_input_as_handled()
+		return
 	# XX claude-table T2: в режиме «Секции» R/F (Shift, PgUp/PgDn) меняют высоту стола
 	if Global.current_mode == &'sections':
 		var n := ElevationInput.step_from_event(event)

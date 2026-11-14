@@ -1,0 +1,110 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://ui/windows/save_load_dialog.gd" id="1_win"]
+
+[node name="SaveLoadDialog" type="Control"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_win")
+
+[node name="Dim" type="ColorRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.5)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(480, 0)
+layout_mode = 2
+
+[node name="Box" type="VBoxContainer" parent="Center/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Header" type="PanelContainer" parent="Center/Panel/Box"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+theme_type_variation = &"PanelContainerHeader"
+
+[node name="Title" type="Label" parent="Center/Panel/Box/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"LabelOnAccent"
+text = "Макет"
+vertical_alignment = 1
+
+[node name="Body" type="MarginContainer" parent="Center/Panel/Box"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="Content" type="VBoxContainer" parent="Center/Panel/Box/Body"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="NameRow" type="HBoxContainer" parent="Center/Panel/Box/Body/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="NameLabel" type="Label" parent="Center/Panel/Box/Body/Content/NameRow"]
+layout_mode = 2
+text = "Название"
+vertical_alignment = 1
+
+[node name="NameEdit" type="LineEdit" parent="Center/Panel/Box/Body/Content/NameRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+max_length = 64
+
+[node name="SaveList" type="ItemList" parent="Center/Panel/Box/Body/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 240)
+layout_mode = 2
+
+[node name="EmptyLabel" type="Label" parent="Center/Panel/Box/Body/Content"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_type_variation = &"LabelDim"
+text = "Сохранений пока нет"
+
+[node name="Buttons" type="HBoxContainer" parent="Center/Panel/Box/Body/Content"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 2
+
+[node name="CancelButton" type="Button" parent="Center/Panel/Box/Body/Content/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 32)
+layout_mode = 2
+text = "Отмена"
+
+[node name="OkButton" type="Button" parent="Center/Panel/Box/Body/Content/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 32)
+layout_mode = 2
+text = "Да"

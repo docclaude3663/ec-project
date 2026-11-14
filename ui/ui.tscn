@@ -8,6 +8,9 @@
 [ext_resource type="PackedScene" uid="uid://boj0kanwn0n0e" path="res://ui/panels/info_panel.tscn" id="10_ay4pc"]
 [ext_resource type="Script" path="res://ui/ui.gd" id="99_uigd"]
 [ext_resource type="PackedScene" path="res://ui/hud/top_bar.tscn" id="13_topbar"]
+[ext_resource type="PackedScene" path="res://ui/windows/confirm_dialog.tscn" id="14_confirm"]
+[ext_resource type="PackedScene" path="res://ui/windows/save_load_dialog.tscn" id="15_saveload"]
+[ext_resource type="Script" path="res://ui/hud/system_menu.gd" id="16_sysmenu"]
 
 [node name="UI" type="CanvasLayer" unique_id=1965858759]
 script = ExtResource("99_uigd")
@@ -186,3 +189,11 @@ layer = 20
 [node name="Toasts" type="CanvasLayer" parent="." unique_id=1311200803]
 layer = 30
 
+[node name="ConfirmDialog" parent="Windows" unique_id=1311200820 instance=ExtResource("14_confirm")]
+unique_name_in_owner = true
+
+[node name="SaveLoadDialog" parent="Windows" unique_id=1311200821 instance=ExtResource("15_saveload")]
+unique_name_in_owner = true
+
+[node name="SystemMenu" type="Node" parent="." unique_id=1311200822]
+script = ExtResource("16_sysmenu")

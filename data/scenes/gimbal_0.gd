@@ -176,24 +176,29 @@ func _zoom(delta: float) -> void:
 	#printt(mult,camera.position.z  )
 
 
+## Клавиша движения нажата и не открыто модальное окно (U10: набор названия не двигает камеру)
+func _key_down(action: StringName) -> bool:
+	return not UIPointer.modal_open() and Input.is_action_pressed(action)
+
+
 ## Перемещение камеры 
 func move_cam(_delta):
 	#окно игры в фокусе
 	if get_viewport().get_window().has_focus():
 		#скролл по краю, то постоянно опрос позиции мыши, что не есть хорошо
-		if scroll_edge:
+		if scroll_edge and not UIPointer.modal_open():
 			move_edge() 
 		# вперед\назад	
-		if Input.is_action_pressed("key_w"):
+		if _key_down("key_w"):
 			move.z = lerp(move.z,-wasd_speed, damp_speed)
-		elif Input.is_action_pressed("key_s"):
+		elif _key_down("key_s"):
 			move.z = lerp(move.z,wasd_speed, damp_speed)
 		else: # если отпущена кнопка то замедляемся до 0
 			move.z = lerp(move.z, 0.0, damp_speed)
 		# влево\вправо 
-		if Input.is_action_pressed("key_a"):
+		if _key_down("key_a"):
 			move.x = lerp(move.x,-wasd_speed, damp_speed)
-		elif Input.is_action_pressed("key_d"):
+		elif _key_down("key_d"):
 			move.x = lerp(move.x,wasd_speed, damp_speed)
 		else: # если отпущена кнопка то замедляемся до 0
 			move.x = lerp(move.x, 0.0, damp_speed)
