@@ -5,7 +5,7 @@
      Постоянно: Edit, Preferences, Add-ons, Install from Disk, выбрать этот файл (Blender 4.2 и новее покажет предупреждение про legacy-аддон: это нормально).
   2. Без интерфейса (проверка перед коммитом):
         blender -b art/blender/wagon_04.blend -P tools/blender/ec_model_tools.py -- check
-        blender -b art/blender/wagon_04.blend -P tools/blender/ec_model_tools.py -- export --id wagon_04 --kind trains
+        blender -b art/blender/wagon_04.blend -P tools/blender/ec_model_tools.py -- export --id wagon_04
      Код возврата 1, если проверка нашла ошибки.
 
 Что делает
@@ -51,6 +51,16 @@ BUFFER_TOL = 0.043
 BUFFER_SPACING = 1.74
 BUFFER_SPACING_TOL = 0.035
 BUFFER_UMIN = 0.835
+# Рабочие папки автора (меняются в панели): исходники .blend и каталог моделей игры
+DEFAULT_ART_DIR = r"E:\GodotCopy\Blender\Art"
+DEFAULT_MODELS_DIR = r"D:\Godot\ec-project\data\models"
+# Эталон пути: колея между внутренними гранями рельсов 1.65, рельс-бокс 0.1 x 25 x 0.25 (вместе 1.85 по ширине), толщина колеса
+GAUGE = 1.65
+RAIL_W = 0.1
+RAIL_LEN = 25.0
+RAIL_H = 0.25
+WHEEL_T = 0.12
+AXLE_R = 0.07
 REF_COLLECTION = "EC_ref"
 REPORT_TEXT = "EC_report"
 PREFLIGHT_TEXT = "EC_preflight"
@@ -66,9 +76,9 @@ ROLE_PRESETS = [
     ("buffer_2", "buffer_2: ось буфера", ""),
     ("buffer_3", "buffer_3: ось буфера", ""),
     ("buffer_4", "buffer_4: ось буфера", ""),
-    ("light_head_front", "light_head_front: якорь фары", ""),
-    ("light_head_rear", "light_head_rear: якорь заднего света", ""),
-    ("light_cab", "light_cab: якорь света кабины", ""),
+    ("headlight_front", "headlight_front: фара передняя (белая)", ""),
+    ("headlight_rear", "headlight_rear: фара задняя (красная)", ""),
+    ("cab_light", "cab_light: свет кабины", ""),
 ]
 
 # Последний отчёт: панель, крупное окно, редактор Text и буфер обмена берут его отсюда
@@ -161,14 +171,28 @@ def is_transparent(mat):
 
 
 def repo_root(start=None):
-    p = Path(start or bpy.data.filepath or ".").resolve()
-    for d in [p] + list(p.parents):
-        if (d / "project.godot").exists():
-            return d
+    """Корень репозитория (папка с project.godot): от start, от «Папки моделей» из панели или от файла .blend"""
+    cands = []
+    if start:
+        cands.append(Path(start))
+    try:
+        md = bpy.context.scene.ec_tools.models_dir
+        if md:
+            cands.append(Path(bpy.path.abspath(md)))
+    except Exception:
+        pass
+    if bpy.data.filepath:
+        cands.append(Path(bpy.data.filepath))
+    for c in cands:
+        try:
+            c = c.resolve()
+        except OSError:
+            continue
+        for d in [c] + list(c.parents):
+            if (d / "project.godot").exists():
+                return d
     return None
 
-
-# ---------------------------------------------------------------- проверка
 
 def check_model(scene, buffer_h=BUFFER_H, kind="trains", brush=False):
     """Возвращает список (level, text, object_name|None). level: ERROR, WARN, INFO"""
@@ -263,12 +287,21 @@ def check_model(scene, buffer_h=BUFFER_H, kind="trains", brush=False):
             (width, height, length, cx, (hi[2] + lo[2]) / 2.0, -cy))
 
     # ---- буферы (NEM 303) ----
+    # Ось буфера: у пустышки её положение, у меша центр габарита (origin меша не влияет). Если меш не симметричен
+    # (рассекатель снега, подножка), центр габарита не ось буфера: тогда нужна пустышка buffer_N на оси
     bufs = [o for r, lst in roles.items() if r.startswith("buffer") for o in lst]
     if bufs:
-        info = []  # (x, y, z центра, z низа) в мировых осях Blender
+        info = []  # (x, y, z центра, z низа, объект) в мировых осях Blender
         for o in bufs:
             a_, b_ = world_bbox(o)
             info.append(((a_[0] + b_[0]) / 2.0, (a_[1] + b_[1]) / 2.0, (a_[2] + b_[2]) / 2.0, a_[2], o))
+            if o.type == "MESH":
+                add("INFO", "Буфер '%s' (%s): ось по центру габарита меша, Z=%.3f (origin не учитывается)." % (o.name, role_of(o), (a_[2] + b_[2]) / 2.0), o)
+                if b_[2] - a_[2] > 0.6:
+                    add("WARN", "Буфер '%s': меш высотой %.2f, это не похоже на буфер (рассекатель, подножка?). Ось по центру габарита может не совпасть с осью буфера: "
+                                "уберите роль и поставьте пустышку на ось (кнопка «Создать пустышки буферов»)." % (o.name, b_[2] - a_[2]), o)
+            else:
+                add("INFO", "Буфер '%s' (%s): пустышка, ось в её положении, Z=%.3f." % (o.name, role_of(o), (a_[2] + b_[2]) / 2.0), o)
         zs = [t[2] for t in info]
         mean_z = sum(zs) / len(zs)
         add("INFO", "Буферы (%d): ось на Z=%.3f относительно метки (NEM 303: на метке, допуск %.3f)." % (len(bufs), mean_z, BUFFER_TOL))
@@ -289,12 +322,14 @@ def check_model(scene, buffer_h=BUFFER_H, kind="trains", brush=False):
             if o_.type == "MESH" and low_ + buffer_h < BUFFER_UMIN - 0.01:
                 add("WARN", "Буфер '%s': нижняя кромка на %.3f над рельсом, NEM 303 требует не ниже %.3f." % (o_.name, low_ + buffer_h, BUFFER_UMIN), o_)
     else:
-        add("WARN", "Нет объектов с ролью buffer_*: высоту буферов проверить нельзя. Назначьте buffer_1...buffer_4 мешам буферов или пустышкам на их осях.")
+        add("WARN", "Нет объектов с ролью buffer_*: высоту буферов проверить нельзя. Назначьте buffer_1...buffer_4 мешам буферов или добавьте пустышки на осях "
+                    "кнопкой «Создать пустышки буферов» (если буферов в модели нет, пустышка на стандартной высоте тоже годится).")
 
     # ---- меши: материалы, UV, треугольники ----
     tris = 0
     mats = {}
     uv2_missing = 0
+    uv2_missing_names = []
     for o in meshes:
         tris += tri_count(o)
         if not o.material_slots:
@@ -306,14 +341,19 @@ def check_model(scene, buffer_h=BUFFER_H, kind="trains", brush=False):
                 mats[sl.material.name] = sl.material
         uvs = len(o.data.uv_layers)
         if uvs == 0:
-            add("WARN", "Меш '%s': нет UV-карты." % o.name, o)
+            add("WARN", "Меш '%s': нет UV-карт (кнопка «Создать UV1/UV2»)." % o.name, o)
+            uv2_missing_names.append(o.name)
         elif uvs < 2:
             uv2_missing += 1
+            uv2_missing_names.append(o.name)
+        elif uvs > 2:
+            add("WARN", "Меш '%s': UV-карт %d, игра использует две (UV1 для текстур, UV2 для кисти и запекания): лишние уберите (кнопка «Убрать лишние UV»)." % (o.name, uvs), o)
     if tris > TRI_BUDGET.get(kind, 50000):
         add("WARN", "Треугольников %d, бюджет около %d." % (tris, TRI_BUDGET.get(kind, 50000)))
     add("INFO", "Мешей %d, материалов %d, треугольников %d." % (len(meshes), len(mats), tris))
-    if uv2_missing:
-        add("WARN" if brush else "INFO", "Вторая UV-карта (UV2) нужна кисти Library: нет у %d из %d мешей. Без неё работает покраска по зонам." % (uv2_missing, len(meshes)))
+    if uv2_missing_names:
+        add("WARN" if brush else "INFO", "Нет второй UV-карты (UV2) у мешей: %s. Она нужна кисти Library (кнопка «Создать UV1/UV2»); без неё работает покраска по зонам." %
+            ", ".join(uv2_missing_names[:8]) + (" и ещё %d" % (len(uv2_missing_names) - 8) if len(uv2_missing_names) > 8 else ""))
     paint = [n for n in mats if n.lower().startswith("paint_")]
     for name, mat in mats.items():
         if DUP_SUFFIX.search(name):
@@ -495,36 +535,194 @@ def prepare_transforms(scene):
     return "; ".join(problems) if problems else None
 
 
-def make_refs(scene, buffer_h, wheel_d, ys):
-    """Эталон: рельс (плоскость на Z=-H) и колёса диаметром D, верх колеса относительно метки. Лежат в коллекции EC_ref, в экспорт не входят"""
+def _box(verts, faces, cx, cy, cz, sx, sy, sz):
+    k = len(verts)
+    for dx in (-0.5, 0.5):
+        for dy in (-0.5, 0.5):
+            for dz in (-0.5, 0.5):
+                verts.append((cx + dx * sx, cy + dy * sy, cz + dz * sz))
+    for f in ((0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1), (2, 3, 7, 6), (0, 2, 6, 4), (1, 5, 7, 3)):
+        faces.append(tuple(k + i for i in f))
+
+
+def _cylinder_x(verts, faces, x0, x1, cy, cz, radius, n=32):
+    """Цилиндр с осью вдоль X: кольца на x0 и x1, центр (cy, cz) в осях Y, Z"""
+    k = len(verts)
+    for x in (x0, x1):
+        for i in range(n):
+            a = 2 * math.pi * i / n
+            verts.append((x, cy + radius * math.cos(a), cz + radius * math.sin(a)))
+    for i in range(n):
+        j = (i + 1) % n
+        faces.append((k + i, k + j, k + n + j, k + n + i))
+    faces.append(tuple(k + i for i in range(n - 1, -1, -1)))
+    faces.append(tuple(k + n + i for i in range(n)))
+
+
+def make_refs(scene, buffer_h, wheel_d, ys, gauge=GAUGE):
+    """Эталон (коллекция EC_ref, в экспорт не входит): два рельса-бокса 0.1 x 25 x 0.25 с внутренними гранями на расстоянии gauge,
+    верх рельса на Z = -buffer_h; колёсные пары (два колеса и ось) диаметром wheel_d, колёса в центрах колеи (x = ±gauge/2),
+    низ колеса на головке рельса. Возвращает (число рельсов, число колёсных пар)"""
     col = bpy.data.collections.get(REF_COLLECTION) or bpy.data.collections.new(REF_COLLECTION)
     if col.name not in scene.collection.children:
         scene.collection.children.link(col)
     for o in list(col.objects):
         bpy.data.objects.remove(o, do_unlink=True)
-    me = bpy.data.meshes.new("EC_ref_rail_mesh")
-    s = 6.0
-    me.from_pydata([(-s / 2, -20, 0), (s / 2, -20, 0), (s / 2, 20, 0), (-s / 2, 20, 0)], [], [(0, 1, 2, 3)])
-    rail = bpy.data.objects.new("EC_ref_rail", me)
-    rail.location = (0, 0, -buffer_h)
-    rail.display_type = "WIRE"
-    col.objects.link(rail)
+
+    def new_obj(name, verts, faces):
+        me = bpy.data.meshes.new(name + "_mesh")
+        me.from_pydata(verts, [], faces)
+        me.update()
+        ob = bpy.data.objects.new(name, me)
+        ob.display_type = "WIRE"
+        ob.hide_render = True
+        col.objects.link(ob)
+        return ob
+
+    for name, side in (("EC_ref_rail_L", -1), ("EC_ref_rail_R", 1)):
+        v, f = [], []
+        _box(v, f, side * (gauge / 2.0 + RAIL_W / 2.0), 0.0, -buffer_h - RAIL_H / 2.0, RAIL_W, RAIL_LEN, RAIL_H)
+        new_obj(name, v, f)
     r = wheel_d / 2.0
     for k, y in enumerate(ys):
-        cm = bpy.data.meshes.new("EC_ref_wheel_mesh_%d" % k)
-        n = 32
-        verts = []
-        for side in (-0.05, 0.05):
-            for i in range(n):
-                a = 2 * math.pi * i / n
-                verts.append((side, r * math.cos(a), r * math.sin(a)))
-        faces = [tuple(range(n)), tuple(range(2 * n - 1, n - 1, -1))] + [(i, (i + 1) % n, n + (i + 1) % n, n + i) for i in range(n)]
-        cm.from_pydata(verts, [], faces)
-        w = bpy.data.objects.new("EC_ref_wheel_%d" % k, cm)
-        w.location = (0, y, r - buffer_h)
-        w.display_type = "WIRE"
-        col.objects.link(w)
-    return len(ys)
+        v, f = [], []
+        cz = r - buffer_h
+        for side in (-1, 1):
+            _cylinder_x(v, f, side * gauge / 2.0 - WHEEL_T / 2.0, side * gauge / 2.0 + WHEEL_T / 2.0, y, cz, r)
+        _cylinder_x(v, f, -gauge / 2.0, gauge / 2.0, y, cz, min(AXLE_R, r * 0.5), 16)
+        new_obj("EC_ref_wheelset_%d" % k, v, f)
+    return 2, len(ys)
+
+
+def add_buffer_empties(scene):
+    """Пустышки buffer_1...buffer_4 на осях буферов (Z=0, шаг BUFFER_SPACING, торцы кузова по Y), детьми кузова. Существующие роли не дублирует.
+    Возвращает (созданные имена, текст ошибки или None)"""
+    bodies = find_body(scene)
+    if len(bodies) != 1:
+        return [], "Нужен ровно один объект с role = body"
+    body = bodies[0]
+    have = {role_of(o) for o in export_set(body)}
+    lo = Vector((1e9, 1e9, 1e9))
+    hi = Vector((-1e9, -1e9, -1e9))
+    for o in export_set(body):
+        if o.type == "MESH":
+            a, b = world_bbox(o)
+            for i in range(3):
+                lo[i] = min(lo[i], a[i])
+                hi[i] = max(hi[i], b[i])
+    if lo[1] > hi[1]:
+        return [], "В модели нет мешей"
+    x = BUFFER_SPACING / 2.0
+    spec = (("buffer_1", x, hi[1]), ("buffer_2", -x, hi[1]), ("buffer_3", x, lo[1]), ("buffer_4", -x, lo[1]))
+    made = []
+    for role, bx, by in spec:
+        if role in have:
+            continue
+        e = bpy.data.objects.new("Buffer_" + role[-1], None)
+        e.empty_display_type = "SPHERE"
+        e.empty_display_size = 0.15
+        scene.collection.objects.link(e)
+        e.parent = body
+        e.matrix_parent_inverse = body.matrix_world.inverted()
+        e.location = (bx, by, 0.0)
+        e["role"] = role
+        made.append(e.name)
+    return made, None
+
+
+def mesh_datas(scene):
+    """Меши модели без повторов по данным (общие данные обрабатываются один раз): [(объект, данные)]"""
+    bodies = find_body(scene)
+    if len(bodies) != 1:
+        return []
+    out, seen = [], set()
+    for o in export_set(bodies[0]):
+        if o.type == "MESH" and o.data not in seen:
+            seen.add(o.data)
+            out.append((o, o.data))
+    return out
+
+
+def ensure_uvs(scene):
+    """Каждому мешу модели доводит число UV-карт до двух: UV1 (Smart UV Project, если карт нет) и UV2 (Lightmap Pack: без перекрытий).
+    Существующие карты не трогает. Возвращает (список 'меш: что создано', список ошибок)"""
+    view = bpy.context.view_layer
+    prev_sel = [o for o in scene.objects if o.select_get()]
+    prev_act = view.objects.active
+    made, problems = [], []
+
+    def unwrap(o, layer, how):
+        for x in scene.objects:
+            x.select_set(False)
+        o.select_set(True)
+        view.objects.active = o
+        o.data.uv_layers.active = layer
+        bpy.ops.object.mode_set(mode="EDIT")
+        try:
+            bpy.ops.mesh.select_all(action="SELECT")
+            if how == "smart":
+                bpy.ops.uv.smart_project(**export_params(bpy.ops.uv.smart_project, angle_limit=math.radians(66.0), island_margin=0.02))
+            else:
+                # набор параметров lightmap_pack меняется между версиями Blender: передаём только существующие
+                bpy.ops.uv.lightmap_pack(**export_params(bpy.ops.uv.lightmap_pack, PREF_CONTEXT="ALL_FACES", PREF_PACK_IN_ONE=True,
+                                                         PREF_NEW_UVLAYER=False, PREF_APPLY_IMAGE=False, PREF_IMG_PX_SIZE=1024,
+                                                         PREF_BOX_DIV=12, PREF_MARGIN_DIV=0.1))
+        finally:
+            bpy.ops.object.mode_set(mode="OBJECT")
+
+    try:
+        if view.objects.active is not None and view.objects.active.mode != "OBJECT":
+            bpy.ops.object.mode_set(mode="OBJECT")
+        for o, me in mesh_datas(scene):
+            n = len(me.uv_layers)
+            if n >= 2:
+                continue
+            did = []
+            created = []
+            try:
+                if n == 0:
+                    first = me.uv_layers.new(name="UV1")
+                    created.append(first.name)
+                    unwrap(o, first, "smart")
+                    did.append("UV1")
+                second = me.uv_layers.new(name="UV2")
+                created.append(second.name)
+                unwrap(o, second, "lightmap")
+                did.append("UV2")
+                me.uv_layers.active_index = 0
+                me.uv_layers[0].active_render = True
+                made.append("%s: %s" % (o.name, ", ".join(did)))
+            except (RuntimeError, TypeError) as e:
+                # откат: недоделанные карты не оставляем (пустая вторая карта хуже, чем её отсутствие)
+                for nm in created:
+                    lay = me.uv_layers.get(nm)
+                    if lay is not None:
+                        me.uv_layers.remove(lay)
+                problems.append("%s: %s" % (o.name, e))
+    finally:
+        for x in scene.objects:
+            x.select_set(False)
+        for o in prev_sel:
+            try:
+                o.select_set(True)
+            except RuntimeError:
+                pass
+        view.objects.active = prev_act
+    return made, problems
+
+
+def trim_uvs(scene, keep=2):
+    """Оставляет у мешей модели первые keep UV-карт. Возвращает список 'меш: сколько убрано'"""
+    out = []
+    for o, me in mesh_datas(scene):
+        n = len(me.uv_layers)
+        if n <= keep:
+            continue
+        while len(me.uv_layers) > keep:
+            me.uv_layers.remove(me.uv_layers[len(me.uv_layers) - 1])
+        me.uv_layers.active_index = 0
+        out.append("%s: убрано %d" % (o.name, n - keep))
+    return out
 
 
 def rotation_path(obj):
@@ -629,24 +827,42 @@ def run_preflight_tool(glb, kind, brush):
         return "Не удалось запустить glb_preflight.py: %s" % e
 
 
-def default_export_path(s):
+def models_dir_of(s):
+    """Папка моделей игры: из настройки панели, иначе data/models найденного репозитория, иначе рядом с .blend"""
+    md = getattr(s, "models_dir", "")
+    if md:
+        return Path(bpy.path.abspath(md))
     root = repo_root()
-    mid = s.model_id or "model"
     if root:
-        return str(root / "data" / "models" / mid / (mid + ".glb"))
-    base = os.path.dirname(bpy.data.filepath) if bpy.data.filepath else os.getcwd()
-    return os.path.join(base, mid + ".glb")
+        return root / "data" / "models"
+    return Path(os.path.dirname(bpy.data.filepath) if bpy.data.filepath else os.getcwd())
+
+
+def model_id_of(s):
+    """Id модели: из панели, иначе имя файла .blend"""
+    mid = (getattr(s, "model_id", "") or "").strip()
+    if mid:
+        return mid
+    return Path(bpy.data.filepath).stem if bpy.data.filepath else "model"
+
+
+def default_export_path(s):
+    mid = model_id_of(s)
+    return str(models_dir_of(s) / mid / (mid + ".glb"))
 
 
 # ---------------------------------------------------------------- Blender: свойства, операторы, панель
 
 class ECSettings(bpy.types.PropertyGroup):
     kind: EnumProperty(name="Вид", items=[("trains", "Подвижной состав", ""), ("buildings", "Здание", "")], default="trains")
-    model_id: StringProperty(name="Id модели", description="Имя файла и папки: wagon_04", default="")
+    model_id: StringProperty(name="Id модели", description="Имя файла и папки: wagon_04. Пусто: имя файла .blend", default="")
+    models_dir: StringProperty(name="Папка моделей", description="Куда экспортировать: <папка>/<id>/<id>.glb (каталог data/models репозитория)",
+                               subtype="DIR_PATH", default=DEFAULT_MODELS_DIR)
+    gauge: FloatProperty(name="Колея", description="Расстояние между внутренними гранями рельсов, единицы игры", default=GAUGE, min=0.5, max=4.0, precision=3)
     buffer_h: FloatProperty(name="Высота буферов", description="Ось буферов над головкой рельса, единицы игры (1 = 1 м прототипа), NEM 303: 12.2 мм в H0 = 1.061",
                             default=BUFFER_H, min=0.5, max=2.0, precision=3)
-    wheel_d: FloatProperty(name="Диаметр колеса", description="Для эталонных колёс", default=1.0, min=0.3, max=3.0, precision=3)
-    wheel_ys: StringProperty(name="Оси колёс по Y", description="Положения осей вдоль вагона через запятую (знак: +Y нос)", default="-5, -3.5, 3.5, 5")
+    wheel_d: FloatProperty(name="Диаметр колеса", description="Для эталонных колёсных пар", default=1.0, min=0.3, max=3.0, precision=3)
+    wheel_ys: StringProperty(name="Колёсные пары по Y", description="Положения колёсных пар вдоль вагона через запятую (+Y нос)", default="-5, -3.5, 3.5, 5")
     role: StringProperty(name="Роль", description="Custom Property role для выделенных объектов", default="")
     role_preset: EnumProperty(name="Шаблон", items=ROLE_PRESETS, default="body")
     mech_id: StringProperty(name="Id механизма", description="Имя действия станет mech_<id>", default="door_left")
@@ -654,7 +870,7 @@ class ECSettings(bpy.types.PropertyGroup):
     wrap: IntProperty(name="Перенос строк", description="Ширина строки отчёта в панели, символов (подберите под ширину панели)", default=46, min=24, max=200)
     show_info: BoolProperty(name="Показывать INFO", description="В панели показывать и справочные строки (габариты, заготовки конфигов); в окне и буфере обмена они есть всегда", default=False)
     brush: BoolProperty(name="Нужна кисть (UV2)", description="Отсутствие второй UV-карты считать предупреждением", default=False)
-    export_path: StringProperty(name="Файл .glb", description="Пусто: <репозиторий>/data/models/<id>/<id>.glb", subtype="FILE_PATH", default="")
+    export_path: StringProperty(name="Файл .glb", description="Пусто: <Папка моделей>/<id>/<id>.glb", subtype="FILE_PATH", default="")
 
 
 class EC_OT_check(bpy.types.Operator):
@@ -747,6 +963,66 @@ class EC_OT_set_role(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class EC_OT_clear_role(bpy.types.Operator):
+    bl_idname = "ec.clear_role"
+    bl_label = "Удалить роль"
+    bl_description = "Удаляет Custom Property role у выделенных объектов (и с данных меша, если роль попала туда по ошибке)"
+
+    def execute(self, context):
+        n = 0
+        for o in context.selected_objects:
+            hit = False
+            if "role" in o.keys():
+                del o["role"]
+                hit = True
+            data = getattr(o, "data", None)
+            if data is not None and hasattr(data, "keys") and "role" in data.keys():
+                del data["role"]
+                hit = True
+            n += 1 if hit else 0
+        self.report({"INFO"}, "Роль удалена у %d объектов" % n)
+        return {"FINISHED"}
+
+
+class EC_OT_add_buffers(bpy.types.Operator):
+    bl_idname = "ec.add_buffers"
+    bl_label = "Создать пустышки буферов"
+    bl_description = "Добавляет пустышки buffer_1...buffer_4 на оси буферов (Z=0, шаг по NEM 303, торцы кузова). Уже назначенные роли не дублируются"
+
+    def execute(self, context):
+        made, err = add_buffer_empties(context.scene)
+        if err:
+            self.report({"ERROR"}, err)
+            return {"CANCELLED"}
+        self.report({"INFO"}, "Создано: %s" % (", ".join(made) if made else "ничего (роли buffer_1...buffer_4 уже есть)"))
+        return {"FINISHED"}
+
+
+class EC_OT_make_uvs(bpy.types.Operator):
+    bl_idname = "ec.make_uvs"
+    bl_label = "Создать UV1/UV2"
+    bl_description = "Кузову и вложенным мешам доводит UV-карты до двух: UV1 (Smart UV Project, если карт нет) и UV2 (Lightmap Pack, без перекрытий, для кисти). Существующие карты не трогает"
+
+    def execute(self, context):
+        made, problems = ensure_uvs(context.scene)
+        if problems:
+            self.report({"WARNING"}, "Не удалось: %s" % "; ".join(problems))
+        else:
+            self.report({"INFO"}, "Создано: %s" % ("; ".join(made) if made else "ничего (у всех мешей уже две карты и больше)"))
+        return {"FINISHED"}
+
+
+class EC_OT_trim_uvs(bpy.types.Operator):
+    bl_idname = "ec.trim_uvs"
+    bl_label = "Убрать лишние UV"
+    bl_description = "Оставляет у мешей модели только первые две UV-карты (игра использует две)"
+
+    def execute(self, context):
+        done = trim_uvs(context.scene)
+        self.report({"INFO"}, "Убрано: %s" % ("; ".join(done) if done else "ничего (карт не больше двух)"))
+        return {"FINISHED"}
+
+
 class EC_OT_prepare(bpy.types.Operator):
     bl_idname = "ec.prepare"
     bl_label = "Применить трансформы"
@@ -763,18 +1039,18 @@ class EC_OT_prepare(bpy.types.Operator):
 
 class EC_OT_refs(bpy.types.Operator):
     bl_idname = "ec.refs"
-    bl_label = "Эталон: рельс и колёса"
-    bl_description = "Создаёт рамки рельса (на Z = -высота буферов) и колёс заданного диаметра; в экспорт не попадают"
+    bl_label = "Эталон: рельсы и колёсные пары"
+    bl_description = "Создаёт два рельса-бокса (внутренние грани на расстоянии колеи, верх на Z = -высота буферов) и колёсные пары (два колеса и ось) заданного диаметра; в экспорт не попадают"
 
     def execute(self, context):
         s = settings(context.scene)
         try:
             ys = [float(v) for v in s.wheel_ys.replace(";", ",").split(",") if v.strip()]
         except ValueError:
-            self.report({"ERROR"}, "Оси колёс: числа через запятую")
+            self.report({"ERROR"}, "Колёсные пары по Y: числа через запятую")
             return {"CANCELLED"}
-        n = make_refs(context.scene, s.buffer_h, s.wheel_d, ys)
-        self.report({"INFO"}, "Эталон создан: рельс и %d колёс (коллекция %s)" % (n, REF_COLLECTION))
+        rails, sets = make_refs(context.scene, s.buffer_h, s.wheel_d, ys, s.gauge)
+        self.report({"INFO"}, "Эталон создан: %d рельса и %d колёсных пар (коллекция %s)" % (rails, sets, REF_COLLECTION))
         return {"FINISHED"}
 
 
@@ -844,12 +1120,18 @@ class EC_PT_panel(bpy.types.Panel):
         box.prop(s, "role")
         op = box.operator("ec.set_role", text="Назначить свою")
         op.use_preset = False
+        box.operator("ec.clear_role", icon="X")
+        box.operator("ec.add_buffers", icon="EMPTY_AXIS")
 
         box = lay.box()
         box.label(text="2. Подготовка")
         box.operator("ec.prepare", icon="OBJECT_ORIGIN")
+        row = box.row(align=True)
+        row.operator("ec.make_uvs", icon="UV")
+        row.operator("ec.trim_uvs", icon="TRASH")
         col = box.column(align=True)
         col.prop(s, "wheel_d")
+        col.prop(s, "gauge")
         col.prop(s, "wheel_ys")
         box.operator("ec.refs", icon="MESH_CYLINDER")
 
@@ -865,6 +1147,7 @@ class EC_PT_panel(bpy.types.Panel):
 
         box = lay.box()
         box.label(text="4. Экспорт")
+        box.prop(s, "models_dir")
         box.prop(s, "export_path")
         box.operator("ec.export", icon="EXPORT")
 
@@ -885,8 +1168,8 @@ class EC_PT_panel(bpy.types.Panel):
                 draw_wrapped(box, lv, tx, s.wrap)
 
 
-CLASSES = (ECSettings, EC_OT_check, EC_OT_show_report, EC_OT_copy_report, EC_OT_open_report, EC_OT_set_role, EC_OT_prepare, EC_OT_refs,
-           EC_OT_mech_key, EC_OT_export, EC_PT_panel)
+CLASSES = (ECSettings, EC_OT_check, EC_OT_show_report, EC_OT_copy_report, EC_OT_open_report, EC_OT_set_role, EC_OT_clear_role, EC_OT_add_buffers,
+           EC_OT_prepare, EC_OT_make_uvs, EC_OT_trim_uvs, EC_OT_refs, EC_OT_mech_key, EC_OT_export, EC_PT_panel)
 
 
 def register():
@@ -911,7 +1194,8 @@ def _cli(argv):
     ap.add_argument("--kind", choices=["trains", "buildings"], default="trains")
     ap.add_argument("--buffer-h", type=float, default=BUFFER_H)
     ap.add_argument("--brush", action="store_true")
-    ap.add_argument("--out", default="", help="путь .glb (по умолчанию <репозиторий>/data/models/<id>/<id>.glb)")
+    ap.add_argument("--models-dir", default=DEFAULT_MODELS_DIR, help="папка моделей игры (по умолчанию %s)" % DEFAULT_MODELS_DIR)
+    ap.add_argument("--out", default="", help="путь .glb (по умолчанию <папка моделей>/<id>/<id>.glb)")
     a = ap.parse_args(argv)
     scene = bpy.context.scene
     if a.cmd == "check":
@@ -920,11 +1204,8 @@ def _cli(argv):
         return 1 if any(lv == "ERROR" for lv, _, _ in items) else 0
     path = a.out
     if not path:
-        if not a.id:
-            print("Нужен --id или --out")
-            return 2
-        class _S:  # минимальная замена настроек панели
-            model_id, kind = a.id, a.kind
+        class _S:  # минимальная замена настроек панели; id по умолчанию берётся из имени файла .blend
+            model_id, kind, models_dir = a.id, a.kind, a.models_dir
         path = default_export_path(_S)
     ok, msg, rep = do_export(scene, path, a.kind, a.buffer_h, a.brush)
     print(msg)
