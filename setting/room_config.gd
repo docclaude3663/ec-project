@@ -13,7 +13,7 @@ class_name RoomConfig extends Resource
 @export var tip := ""
 ## Тестовая комната (стенд, куб): игроку не показывается (sandbox_setup, карточки старта), админу и Room Studio видна с пометкой
 @export var dev_only := false
-## Сцена комнаты (data/rooms/<id>/<id>.tscn, корень RoomRoot). Пусто = комнату строит кодом RoomBuilder.
+## Сцена комнаты (data/models/room_<имя>/room_<имя>.tscn, корень RoomRoot). Пусто = комнату строит кодом RoomBuilder.
 ## Для комнаты из сцены поля стен и лампы ниже не используются: стены, мебель и лампы лежат в самой сцене.
 ## Остаются паспортные данные: floor_y, стол, bounds, daylight, ambient_mul
 @export var scene: PackedScene

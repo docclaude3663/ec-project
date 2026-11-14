@@ -13,7 +13,7 @@
 [ext_resource type="Script" uid="uid://di5kuetyise5i" path="res://core/controllers/select_tool.gd" id="9_7cj6n"]
 [ext_resource type="PackedScene" uid="uid://57xnplsftgls" path="res://ui/ui.tscn" id="9_jy1t0"]
 [ext_resource type="Script" uid="uid://bcb1ssgahu3n4" path="res://core/graphics/environment_root.gd" id="15_35vuu"]
-[ext_resource type="Script" uid="uid://ctds4lgyuysse" path="res://data/scenes/room_builder.gd" id="16_5q6to"]
+[ext_resource type="Script" uid="uid://ctds4lgyuysse" path="res://core/room/room_builder.gd" id="16_5q6to"]
 [ext_resource type="Script" uid="uid://n5h0jtq1feyq" path="res://core/controllers/observe_camera_rig.gd" id="17_camrig"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_igrpr"]

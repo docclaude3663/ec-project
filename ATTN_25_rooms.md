@@ -53,13 +53,13 @@
 | № | Файл | Что расходится с решениями | Этап |
 |---|---|---|---|
 | C1 | `ui/toolbar/card_catalog_provider.gd` | категория `room`: карточки «Комната», «Потолок», выбор комнаты (`room_pick`), цвета стен, постель, шторы, постеры, «Комнату в сцену» | RM1 |
-| C2 | `data/scenes/room_builder.gd` `_on_observe_action` | комната подписана на `observe_action` категории `room` | RM1 |
-| C3 | `data/scenes/room_builder.gd` `switch_room` | смена комнаты без проверки, кто просит; её зовут `SaveManager.load_game` и карточки Observe | RM2 |
-| C4 | `data/scenes/room_catalog.gd` | каталог сканирует папки `data/rooms/<id>/`; названия и подсказки встроенных комнат лежат в коде (`BUILTIN`) | RM3 |
+| C2 | `core/room/room_builder.gd` `_on_observe_action` | комната подписана на `observe_action` категории `room` | RM1 |
+| C3 | `core/room/room_builder.gd` `switch_room` | смена комнаты без проверки, кто просит; её зовут `SaveManager.load_game` и карточки Observe | RM2 |
+| C4 | `core/room/room_catalog.gd` | каталог сканирует папки `data/rooms/<id>/`; названия и подсказки встроенных комнат лежат в коде (`BUILTIN`) | RM3 |
 | C5 | `setting/room_config.gd` | в одном ресурсе поля процедурной комнаты (`shape`, `window`, `door`, `lamps`, `roof_top_x`, `furnished`, `variants`, `wall_thickness`) и поля сцены; нет `dev_only`; в комментариях «кнопка Room» | RM3, RM9 |
 | C6 | `core/library/room_studio/room_studio.gd` | нет своей сцены: по F6 не запустить; нет активации комнаты; нет панели объектов; паспорт только для чтения | RM4, RM5 |
 | C7 | `core/library/library_screen.gd` | нет сигнала «оставить комнату активной» (есть только `place_requested` для моделей) | RM4 |
-| C8 | `data/rooms/room_root.gd` | контракт только по именам детей (`Floor`, `Shell`, …); ролей и `extras` из `.glb` нет; управляемых объектов нет | RM8 |
+| C8 | `core/room/room_root.gd` | контракт только по именам детей (`Floor`, `Shell`, …); ролей и `extras` из `.glb` нет; управляемых объектов нет | RM8 |
 | C9 | `saves/saved_game.gd`, `core/controllers/save_manager.gd` | `room_variants` хранятся и применяются; состояния света комнаты в сейве нет | RM6, RM9 |
 | C10 | `core/graphics/look_lab.gd` | прогон вариантов использует слоты `RoomBuilder.set_variant` | RM9 |
 | C11 | `tests/` | тестов на каталог комнат, контракт `RoomRoot`, права смены нет; `catalog_lint.gd` комнат не знает | RM2, RM3, RM8 |
@@ -74,20 +74,35 @@
 
 - **Не `Entity`**: не лежит в `EntitiesRoot`, не сохраняется как сущность, не выбирается, не красится, не попадает в `Global.object_dirs` и в каталог Build.
 - **`RoomConfig`** это и карточка (название, подсказка, `dev_only`), и конфиг (`floor_y`, `bounds`, окно, дверь, `daylight`, `ambient_mul`, стол). Один ресурс, как `EntitySetting` у вагона.
-- **Сцена**: корень `RoomRoot` ([data/rooms/room_root.gd](data/rooms/room_root.gd)), внутри либо руками собранные ноды, либо инстанс `.glb`.
+- **Сцена**: корень `RoomRoot` ([core/room/room_root.gd](core/room/room_root.gd)), внутри либо руками собранные ноды, либо инстанс `.glb`.
 - **Процедурная комната** (`kid_room_10`, `cube`): карточки нет, её строит код `RoomBuilder`. Остаётся временно (RM9).
 
-**Папки** (по схеме [0_ATTN_24 §24.12](0_ATTN_24_model_pipeline.md): тяжёлое по комнате, лёгкие карточки в одной папке):
+**Папки.** Правило проекта: `data/` это данные (карточки, `.tres`, модели, сцены), скрипты в `data/` не лежат. Комната повторяет схему вагонов ([0_ATTN_24 §24.12](0_ATTN_24_model_pipeline.md)): тяжёлое (`.glb`, `.tscn`) по папке на модель в `data/models/`, лёгкие карточки в одной папке рядом с каталогом, код в `core/`. Вид модели читается по префиксу в имени: `room_` (как `wagon_`, `loco_`).
 
 ```
-art/blender/rooms/<id>.blend            # исходник (или вне git); .gdignore в art/ уже есть
-data/rooms/<id>/<id>.glb (+ .import)    # экспорт из Blender, имя постоянное
-data/rooms/<id>/<id>.tscn               # сцена-обёртка: RoomRoot, инстанс .glb, добавки Godot
-data/rooms/cards/<id>.tres              # карточка и конфиг (RoomConfig), id равен имени файла
-data/rooms/room_root.gd                 # контракт сцены (как сейчас)
+art/blender/room_<имя>.blend             # исходник (или вне git); .gdignore в art/ уже есть
+data/models/room_<имя>/room_<имя>.glb    # экспорт из Blender, имя постоянное (+ .import)
+data/models/room_<имя>/room_<имя>.tscn   # сцена-обёртка: RoomRoot, инстанс .glb, добавки Godot
+data/rooms/cards/<id>.tres               # карточка и конфиг (RoomConfig), id равен имени файла; в data/rooms только cards/
+core/room/                               # код комнаты: room_builder, room_catalog, room_root, room_decor, room_attic, table_supports
+core/library/room_studio/                # Room Studio (инструмент Library, рядом с track_studio и icon_studio)
 ```
 
-Каталог читает **только** `data/rooms/cards/*.tres`, без рекурсии, как каталог объектов читает `data/<категория>/objects/` (папки не сканируются). Карточки `attic` и `bench` перенесены из `data/rooms/<id>/<id>.tres` в `data/rooms/cards/` (RM3, `git mv`: сцены остались на месте, поэтому пути в `ext_resource` не менялись). Старое место проверяет `RoomCatalog.validate()`.
+Имя модели: id карточки с префиксом `room_` (`attic` → `room_attic`; id, что уже начинается с `room_`, например `room_test_01`, остаётся как есть), см. `RoomCatalog.model_id`. Id карточки в сейвах не меняется: меняется только путь сцены внутри карточки.
+
+Каталог читает **только** `data/rooms/cards/*.tres`, без рекурсии, как каталог объектов читает `data/<категория>/objects/` (папки не сканируются). Карточки `attic` и `bench` перенесены из `data/rooms/<id>/` в `data/rooms/cards/` (RM3), а их сцены в `data/models/room_attic/` и `data/models/room_bench/`, скрипты комнаты из `data/scenes/` и `data/rooms/` в `core/room/` (RM3b, `git mv`, `uid` сохранены). Старое место и лишние файлы в `data/rooms/` проверяет `RoomCatalog.validate()`.
+
+**Остальные скрипты в `data/` (предложение, не сделано, ждёт решения автора).** В RM3b вынесен только код комнаты. Что осталось и куда можно:
+
+| Сейчас | Что это | Предложение |
+|---|---|---|
+| `data/scenes/gimbal.gd`, `gimbal.tscn`, `gimbal_0.gd`, `camera_bounds.gd`, `core/controllers/observe_camera_rig.gd`, `data/trains/wagon_camera.gd` (+`.tscn`) | камеры | `core/camera/`: все скрипты камер в одном месте; сцены `gimbal.tscn` и `wagon_camera.tscn` там же, пока они без `.glb` |
+| `data/scenes/game_root.gd`, `game_root.tscn` | корень игровой сцены (главная сцена), собирает комнату, камеру, UI | `core/game/` (после вынесения камеры и комнаты `data/scenes/` пустеет и удаляется) |
+| `data/scenes/gimbal_guide.gd.old`, `gimbal_guide.tscn.old` | старый код | удалить |
+| `data/tracks/ghost_node.gd` | весь файл закомментирован, на него нет ссылок | удалить |
+| `data/tools/speedometer.gd` (+3 сцены `.tscn`, `rulette.tscn`, картинки) | измерительные инструменты | скрипт в `core/tools/`, сцены и картинки остаются в `data/tools/` |
+
+Лишние переезды (`gimbal.tscn`, `game_root.tscn`) трогают главную сцену и `uid`, поэтому они идут отдельным патчем после проверки RM3b. Room Studio остаётся в `core/library/room_studio/`: это один из инструментов Library, как `track_studio` и `icon_studio`, а не часть кода самой комнаты.
 
 **Поля `RoomConfig` после перехода на сцены** (процедурные поля живут до RM9):
 
@@ -201,7 +216,7 @@ API (RM2): `RoomBuilder.request_room(id, source)`, где `source` это `&"sta
 12. Текстуры вшиты в `.glb`, до 2048, не больше 2 атласов или trim sheet на комнату ([§14.5 S6](ATTN_14_observe_room.md)). Палитра 12–16 насыщенных цветов.
 13. UV2 не нужен, пока не решено про bake света (RM9, вопрос D2 в ATTN_14).
 
-**Экспорт.** Как у вагонов (+Y Up, Custom Properties включены, без камер и Punctual Lights, без Draco, анимации Actions), но **Vertex Colors включены**. Файл `data/rooms/<id>/<id>.glb`, повторный экспорт поверх старого. Проверка `glb_preflight.py --kind room` запускается панелью EC Room сама.
+**Экспорт.** Как у вагонов (+Y Up, Custom Properties включены, без камер и Punctual Lights, без Draco, анимации Actions), но **Vertex Colors включены**. Файл `data/models/room_<имя>/room_<имя>.glb`, повторный экспорт поверх старого. Проверка `glb_preflight.py --kind room` запускается панелью EC Room сама.
 
 ### 25.7.2. Роли и имена
 
@@ -290,13 +305,13 @@ API (RM2): `RoomBuilder.request_room(id, source)`, где `source` это `&"sta
 
 ### 25.7.6. Скрипты
 
-- **`tools/blender/ec_room_tools.py`** (RM7): панель **EC Room**, по образцу `ec_model_tools.py` ([0_ATTN_24 §24.9](0_ATTN_24_model_pipeline.md)): «Проверить комнату» (правила §25.7.5 на объектах сцены, отчёт в панели, буфере и `EC_report`); блок «Роли» (пишет `role` и свойства §25.7.4, шаблоны на группы и якоря); «Подготовка» (применить трансформы, создать прокси-коробки по габариту, эталон «стол 200 × 100 на нуле и пол −0.50»); «Механизм» (ключи покоя и рабочего положения, `mech_<id>`); «Экспорт» (проверка, glb с настройками комнаты, затем `glb_preflight.py --kind room`). Командный режим: `blender -b art/blender/rooms/<id>.blend -P tools/blender/ec_room_tools.py -- check` (код возврата 1 при ERROR). Общие вспомогательные функции с `ec_model_tools.py` копируются в файл: скрипт должен ставиться одним файлом.
+- **`tools/blender/ec_room_tools.py`** (RM7): панель **EC Room**, по образцу `ec_model_tools.py` ([0_ATTN_24 §24.9](0_ATTN_24_model_pipeline.md)): «Проверить комнату» (правила §25.7.5 на объектах сцены, отчёт в панели, буфере и `EC_report`); блок «Роли» (пишет `role` и свойства §25.7.4, шаблоны на группы и якоря); «Подготовка» (применить трансформы, создать прокси-коробки по габариту, эталон «стол 200 × 100 на нуле и пол −0.50»); «Механизм» (ключи покоя и рабочего положения, `mech_<id>`); «Экспорт» (проверка, glb с настройками комнаты, затем `glb_preflight.py --kind room`). Командный режим: `blender -b art/blender/room_<имя>.blend -P tools/blender/ec_room_tools.py -- check` (код возврата 1 при ERROR). Общие вспомогательные функции с `ec_model_tools.py` копируются в файл: скрипт должен ставиться одним файлом.
 - **`tools/glb_preflight.py --kind room`** (RM7): те же правила на готовом `.glb` без Blender и без Godot. Печатает числа для карточки (§25.7.3), список управляемых объектов и заготовки `MechanismConfig`.
 - **Шпаргалка** `tools/blender/CHEATSHEET_ROOM.md` (RM7).
 
 ## 25.8. Godot: что делает импорт
 
-1. `.glb` кладётся в `data/rooms/<id>/`, импорт с `nodes/root_scale = 100` (**проверить в редакторе**).
+1. `.glb` кладётся в `data/models/room_<имя>/`, импорт с `nodes/root_scale = 100` (**проверить в редакторе**).
 2. Обёртка `<id>.tscn`: корень `RoomRoot`, под ним инстанс `.glb` (меши не копируются, `Editable Children` не включать), рядом необязательный узел `Extras` для добавок Godot (свет с `RoomControl`, любые ноды).
 3. `RoomRoot.setup` (RM8) обходит дерево один раз:
    - группы находит **по роли** (`extras.role`) или по имени ребёнка корня (`Floor`, `Shell`, `Ceiling`, `Decor`, `DecorT2`, `DecorT3`, `FakeAO`, `Lights`): комнаты, собранные руками (`attic`, `bench`), продолжают работать;
@@ -318,7 +333,7 @@ API (RM2): `RoomBuilder.request_room(id, source)`, где `source` это `&"sta
 
 ### RM1. Observe без комнаты [x]
 
-**Файлы:** `ui/toolbar/card_catalog_provider.gd`, `data/scenes/room_builder.gd`, `data/scenes/camera_bounds.gd` (мёртвые строки), `ui/debug/debug_toggles_tab.gd`.
+**Файлы:** `ui/toolbar/card_catalog_provider.gd`, `core/room/room_builder.gd`, `data/scenes/camera_bounds.gd` (мёртвые строки), `ui/debug/debug_toggles_tab.gd`.
 
 - [x] Категория `room` убрана из `CATEGORIES` и `CARDS`, ветки `_cards_for` и `_is_on` для `room_pick` удалены.
 - [x] `RoomBuilder` не подписывается на `observe_action`; `_on_observe_action` удалён.
@@ -330,7 +345,7 @@ API (RM2): `RoomBuilder.request_room(id, source)`, где `source` это `&"sta
 
 ### RM2. Активная комната и права смены [x]
 
-**Файлы:** `data/scenes/room_builder.gd`, `core/controllers/save_manager.gd`, `core/globals.gd` или разбор аргументов запуска, `tests/room_access_test.tscn` (новый).
+**Файлы:** `core/room/room_builder.gd`, `core/controllers/save_manager.gd`, `core/globals.gd` или разбор аргументов запуска, `tests/room_access_test.tscn` (новый).
 
 - [x] `RoomBuilder.request_room(id, source)` по таблице §25.3; чужой источник и неизвестный id отклоняются с `push_warning`.
 - [x] `SaveManager.load_game` просит комнату как `&"load"`; неизвестный id в сейве даёт `RoomCatalog.DEFAULT_ID`.
@@ -341,12 +356,21 @@ API (RM2): `RoomBuilder.request_room(id, source)`, где `source` это `&"sta
 
 ### RM3. Карточки комнат в отдельной папке [x]
 
-**Файлы:** `data/scenes/room_catalog.gd`, `setting/room_config.gd` (+`dev_only`, `@tool`), `data/rooms/cards/` (карточки перенесены в патче), `core/library/room_studio/room_studio.gd` (пометка `[dev]`), `data/scenes/room_builder.gd` (`save_room_scene` пишет карточку в `cards/`), `tests/room_catalog_test.tscn` (новый), `tests/catalog_lint.gd`.
+**Файлы:** `core/room/room_catalog.gd`, `setting/room_config.gd` (+`dev_only`, `@tool`), `data/rooms/cards/` (карточки перенесены в патче), `core/library/room_studio/room_studio.gd` (пометка `[dev]`), `core/room/room_builder.gd` (`save_room_scene` пишет карточку в `cards/`), `tests/room_catalog_test.tscn` (новый), `tests/catalog_lint.gd`.
 
 - [x] Каталог читает `data/rooms/cards/*.tres` без рекурсии; встроенные процедурные остаются в коде (временно). `entries(for_player)` скрывает `dev_only` (`bench`, `cube`), `is_dev_only(id)`.
-- [x] `RoomCatalog.validate()`: `id` равен имени файла, у карточки есть сцена `data/rooms/<id>/<id>.tscn`, id уникальны, название не пустое, карточек в старом месте нет. Блок «Комнаты» в `catalog_lint.gd` зовёт её же.
+- [x] `RoomCatalog.validate()`: `id` равен имени файла, у карточки есть сцена `data/models/room_<имя>/room_<имя>.tscn`, id уникальны, название не пустое, в `data/rooms/` ничего кроме `cards/`. Блок «Комнаты» в `catalog_lint.gd` зовёт её же.
 
-**Проверка:** (1) в FileSystem `data/rooms/cards/` содержит `attic.tres` и `bench.tres`, папки `data/rooms/attic/` и `bench/` без `.tres`; открыть оба: сцена на месте, `bench` с галочкой `dev_only`, предупреждений о путях нет. (2) F6 на `tests/room_catalog_test.tscn`: все OK, в конце ИТОГ: OK. (3) File → Run на `tests/catalog_lint.gd`: строка «Комнаты: ... проблем 0». (4) Library → Room Studio: `attic` в списке обычная, `bench [dev]` помечена, `kid_room_10` и `cube` серые «(процедурная)». (5) Игра запускается, `--room=attic` и `--room=bench` работают, как в RM2; перезапуск проекта без «resource not found»; `git status` показывает переименования, а не удаление и создание.
+**Проверка:** (1) в FileSystem `data/rooms/cards/` содержит `attic.tres` и `bench.tres`, сцены лежат в `data/models/room_attic/` и `data/models/room_bench/`, папок `attic` и `bench` в `data/rooms/` нет; открыть оба `.tres`: сцена на месте, `bench` с галочкой `dev_only`, предупреждений о путях нет. (2) F6 на `tests/room_catalog_test.tscn`: все OK, в конце ИТОГ: OK. (3) File → Run на `tests/catalog_lint.gd`: строка «Комнаты: ... проблем 0». (4) Library → Room Studio: `attic` в списке обычная, `bench [dev]` помечена, `kid_room_10` и `cube` серые «(процедурная)». (5) Игра запускается, `--room=attic` и `--room=bench` работают, как в RM2; перезапуск проекта без «resource not found»; `git status` показывает переименования, а не удаление и создание.
+
+### RM3b. Файлы комнаты: код в `core/room`, сцены в `data/models` [x]
+
+**Файлы:** `git mv` шести скриптов (`room_builder`, `room_catalog`, `room_decor`, `room_attic`, `room_root`, `table_supports`) из `data/scenes/` и `data/rooms/` в `core/room/` (с `.uid`); сцены `attic` и `bench` в `data/models/room_attic/room_attic.tscn` и `data/models/room_bench/room_bench.tscn`; пути в `game_root.tscn` и карточках; `RoomCatalog.model_id/model_dir/scene_path`, `save_room_scene` пишет в `data/models/room_<id>/`.
+
+- [x] В `data/rooms/` только `cards/`; `validate()` проверяет путь сцены и лишние файлы.
+- [x] Остальные скрипты из `data/` вынесены в предложение (таблица в §25.2), без переезда.
+
+**Проверка:** (1) открыть проект: Output без «resource not found» и «invalid UID». (2) FileSystem: `core/room/` содержит 6 скриптов с `.uid`; `data/scenes/` без `room_*.gd` и `table_supports.gd`; `data/rooms/` только `cards/`. (3) Игра по умолчанию строит `kid_room_10`; `--room=attic` строит мансарду (скос крыши, лампы), `--room=bench` стенд. (4) F6 на `tests/room_catalog_test.tscn`, `tests/room_access_test.tscn`, `tests/table_support_test.tscn`: везде «ИТОГ: OK». (5) `catalog_lint.gd`: «Комнаты: ... проблем 0».
 
 ### RM4. Room Studio: запуск и «Оставить активной» [ ]
 
@@ -360,7 +384,7 @@ API (RM2): `RoomBuilder.request_room(id, source)`, где `source` это `&"sta
 
 ### RM5. Room Studio: панель объектов [ ]
 
-**Файлы:** новые `data/rooms/room_control.gd` (`RoomControl`), `data/rooms/room_control_registry.gd`, `data/rooms/room_mechanism.gd`; правка `room_studio.gd` (вкладки «Паспорт», «Объекты», «Проверка», кнопка «Обновить из сцены»).
+**Файлы:** новые `core/room/room_control.gd` (`RoomControl`), `core/room/room_control_registry.gd`, `core/room/room_mechanism.gd`; правка `room_studio.gd` (вкладки «Паспорт», «Объекты», «Проверка», кнопка «Обновить из сцены»).
 
 - [ ] `RoomControl` и `RoomControlRegistry` (источник «сцена Godot»; источник `.glb` добавит RM8).
 - [ ] Вкладка «Объекты»: переключатели и ползунки над экземпляром комнаты в студии.
@@ -386,11 +410,11 @@ API (RM2): `RoomBuilder.request_room(id, source)`, где `source` это `&"sta
 - [ ] Панель EC Room (блоки §25.7.6), командный режим.
 - [ ] Тестовая комната: группы, `collider`, `window`, `door`, `camera_bounds`, `room_volume`, 2 якоря `light`, `bulb`, шторы-механизм `mech_curtain`.
 
-**Проверка:** (1) `python tools/glb_preflight.py data/rooms/room_test_01/room_test_01.glb --kind room`: ERROR 0, в INFO числа карточки и список управляемых объектов. (2) Испортить сцену (две роли `room`, объект с `.001`, лампа без `ctl_id`): отчёт показывает ERROR по каждой, экспорт останавливается. (3) Blender: Scripting → Run Script, вкладка EC Room, «Проверить комнату» и «Экспорт» работают; без интерфейса `blender -b … -- check` возвращает 1 на испорченной сцене.
+**Проверка:** (1) `python tools/glb_preflight.py data/models/room_test_01/room_test_01.glb --kind room`: ERROR 0, в INFO числа карточки и список управляемых объектов. (2) Испортить сцену (две роли `room`, объект с `.001`, лампа без `ctl_id`): отчёт показывает ERROR по каждой, экспорт останавливается. (3) Blender: Scripting → Run Script, вкладка EC Room, «Проверить комнату» и «Экспорт» работают; без интерфейса `blender -b … -- check` возвращает 1 на испорченной сцене.
 
 ### RM8. Импорт `.glb` в `RoomRoot` [ ]
 
-**Файлы:** `data/rooms/room_root.gd`, `data/rooms/room_control_registry.gd`, `data/scenes/room_builder.gd` (мелко), `setting/room_config.gd`, `tests/room_glb_test.tscn`, `data/rooms/room_test_01/` (обёртка и карточка в `data/rooms/cards/`).
+**Файлы:** `core/room/room_root.gd`, `core/room/room_control_registry.gd`, `core/room/room_builder.gd` (мелко), `setting/room_config.gd`, `tests/room_glb_test.tscn`, `data/models/room_test_01/` (обёртка) и карточка `data/rooms/cards/room_test_01.tres`.
 
 - [ ] `RoomRoot.setup` читает роли (§25.8 п. 3), по имени ребёнка продолжает работать.
 - [ ] Число карточки из меток, Room Studio «Обновить из сцены».

@@ -1,6 +1,6 @@
 # data/models
 
-Модели, по одной папке на модель: `data/models/<id>/`. Вид модели читается по id (`wagon_`, `loco_`, `house_`), отдельных подпапок по видам нет.
+Модели, по одной папке на модель: `data/models/<id>/`. Вид модели читается по id (`wagon_`, `loco_`, `house_`, `room_`), отдельных подпапок по видам нет. Комнаты: `data/models/room_<имя>/room_<имя>.tscn` (карточка комнаты в `data/rooms/cards/<id>.tres`, id комнаты без префикса, например `attic` → `room_attic`).
 
 ```
 data/models/wagon_04/

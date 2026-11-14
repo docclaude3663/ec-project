@@ -182,7 +182,7 @@ func rebuild_room() -> void:
 	_build_room()
 
 
-## Dev (только запуск из редактора): записывает текущую процедурную комнату в сцену data/rooms/<id>/<id>.tscn
+## Dev (только запуск из редактора): записывает текущую процедурную комнату в сцену data/models/room_<id>/room_<id>.tscn
 ## и карточку data/rooms/cards/<id>.tres. Со следующего запуска RoomCatalog берёт сцену вместо кода. Возвращает путь сцены или "".
 ## Структура сцены описана в RoomRoot. Живую комнату это не меняет: в сцену уходят копии нод (ресурсы общие)
 func save_room_scene() -> String:
@@ -195,8 +195,8 @@ func save_room_scene() -> String:
 	if visuals == null or not is_instance_valid(visuals):
 		return ""
 	var id := String(config.id)
-	var dir := "res://data/rooms/%s" % id
-	var scene_path := "%s/%s.tscn" % [dir, id]
+	var dir := RoomCatalog.model_dir(config.id)
+	var scene_path := RoomCatalog.scene_path(config.id)
 	var passport_path := "%s/%s.tres" % [RoomCatalog.CARDS_DIR, id]
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(dir))
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(RoomCatalog.CARDS_DIR))

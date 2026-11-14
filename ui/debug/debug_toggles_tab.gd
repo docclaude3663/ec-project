@@ -49,7 +49,7 @@ func _init() -> void:
 	if OS.has_feature("editor"):
 		var to_scene := Button.new()
 		to_scene.text = "Комнату в сцену"
-		to_scene.tooltip_text = "Только из редактора. Записывает текущую процедурную комнату в data/rooms/<id>/ (сцена и паспорт). Со следующего запуска комната берётся из сцены. Уйдёт в Room Studio (ATTN_25 RM4)"
+		to_scene.tooltip_text = "Только из редактора. Записывает текущую процедурную комнату: сцена в data/models/room_<id>/, карточка в data/rooms/cards/. Со следующего запуска комната берётся из сцены. Уйдёт в Room Studio (ATTN_25 RM4)"
 		to_scene.pressed.connect(func() -> void:
 			var r := _room()
 			if r:

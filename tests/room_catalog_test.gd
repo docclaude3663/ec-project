@@ -3,7 +3,7 @@ extends Node
 ## ATTN_25 RM3: каталог комнат читает карточки из data/rooms/cards/. Запуск: открыть tests/room_catalog_test.tscn и нажать F6.
 ## Результат в Output: во всех строках OK, в конце ИТОГ: OK.
 ## Проверяет: папка карточек чистая (RoomCatalog.validate), порядок и состав списка, dev_only (стенд и куб не видны игроку),
-## сцена у карточек attic и bench, процедурные kid_room_10 и cube без сцены, и что validate() ловит плохие карточки
+## сцена у карточек attic и bench (в data/models/room_*), процедурные kid_room_10 и cube без сцены, и что validate() ловит плохие карточки
 ## (временные файлы в user://, в проект ничего не пишется).
 
 var _bad := 0
@@ -64,6 +64,12 @@ func _ready() -> void:
 	var attic := RoomCatalog.make(&"attic")
 	var bench := RoomCatalog.make(&"bench")
 	check("attic: сцена из карточки", attic.scene != null and attic.id == &"attic", str(attic.scene))
+	check("attic: сцена в data/models/room_attic", attic.scene != null and attic.scene.resource_path == RoomCatalog.scene_path(&"attic"),
+			attic.scene.resource_path if attic.scene else "")
+	check("bench: сцена в data/models/room_bench", bench.scene != null and bench.scene.resource_path == "res://data/models/room_bench/room_bench.tscn")
+	check("model_id: attic → room_attic", RoomCatalog.model_id(&"attic") == "room_attic")
+	check("model_id: префикс не дублируется", RoomCatalog.model_id(&"room_test_01") == "room_test_01")
+	check("scene_path", RoomCatalog.scene_path(&"attic") == "res://data/models/room_attic/room_attic.tscn")
 	check("bench: сцена из карточки, dev_only", bench.scene != null and bench.dev_only)
 	check("kid_room_10: процедурная, без сцены", RoomCatalog.make(&"kid_room_10").scene == null)
 	check("cube: процедурная, без сцены, dev_only", RoomCatalog.make(&"cube").scene == null and RoomCatalog.make(&"cube").dev_only)
@@ -79,7 +85,7 @@ func _ready() -> void:
 	var wrong_path := RoomConfig.new()
 	wrong_path.id = &"baz"
 	wrong_path.title = "Baz"
-	wrong_path.scene = attic.scene
+	wrong_path.scene = load("res://data/scenes/gimbal.tscn") as PackedScene   # сцена вне data/models/room_*
 	written.append(_save(wrong_path, dir + "/baz.tres"))
 	var dup := RoomConfig.new()
 	dup.id = &"baz"

@@ -5,7 +5,8 @@ class_name RoomCatalog extends RefCounted
 ########################
 ## Два источника:
 ##  1. Карточка data/rooms/cards/<id>.tres (RoomConfig, id равен имени файла) со сценой в RoomConfig.scene (корень RoomRoot,
-##     обычно data/rooms/<id>/<id>.tscn). Карточки читаются из одной папки, без вложенных (как data/<категория>/objects/ у объектов).
+##     data/models/room_<имя>/room_<имя>.tscn, рядом .glb: как у вагонов). Карточки читаются из одной папки, без вложенных
+##     (как data/<категория>/objects/ у объектов); в data/rooms лежит только cards/ (скрипты комнат в core/room/).
 ##     Новая комната из сцены = новая карточка в cards/, кода менять не нужно. Карточка без сцены каталогом не читается.
 ##  2. BUILTIN: процедурные комнаты, которые строит RoomBuilder кодом (ветки в make()). Если в cards/ лежит карточка
 ##     с тем же id, вместо процедурной берётся сцена. Сцену из процедурной комнаты записывает кнопка «Комнату в сцену» (F3 → Toggles, только редактор).
@@ -14,6 +15,9 @@ class_name RoomCatalog extends RefCounted
 const DEFAULT_ID := &"kid_room_10"
 const ROOMS_DIR := "res://data/rooms"
 const CARDS_DIR := "res://data/rooms/cards"
+## Сцены и модели комнат: по одной папке на комнату, вид читается по префиксу room_ (как wagon_, loco_), data/models/README.md
+const MODELS_DIR := "res://data/models"
+const MODEL_PREFIX := "room_"
 
 ## Процедурные комнаты: id, название и подсказка карточки. dev_only: тестовая, игроку не показывается
 const BUILTIN := [
@@ -50,6 +54,21 @@ static func entries(for_player := false) -> Array[Dictionary]:
 	if for_player:
 		out = out.filter(func(d: Dictionary) -> bool: return not d.dev_only)
 	return out
+
+
+## Имя модели комнаты: id с префиксом room_ (attic → room_attic; id, что уже начинается с room_, остаётся как есть)
+static func model_id(id: StringName) -> String:
+	var s := String(id)
+	return s if s.begins_with(MODEL_PREFIX) else MODEL_PREFIX + s
+
+
+## Папка и сцена модели комнаты: data/models/room_<имя>/room_<имя>.tscn
+static func model_dir(id: StringName) -> String:
+	return "%s/%s" % [MODELS_DIR, model_id(id)]
+
+
+static func scene_path(id: StringName) -> String:
+	return "%s/%s.tscn" % [model_dir(id), model_id(id)]
 
 
 ## true: комната тестовая (игроку не показывается). Неизвестный id: false
@@ -122,19 +141,22 @@ static func validate(cards_dir := CARDS_DIR) -> Array[String]:
 		seen[c.id] = path
 		if c.scene == null:
 			out.append("%s: нет сцены (карточка без сцены каталогом не читается)" % path)
-		elif c.scene.resource_path != "%s/%s/%s.tscn" % [ROOMS_DIR, file_id, file_id]:
-			out.append("%s: сцена %s, ожидается %s/%s/%s.tscn" % [path, c.scene.resource_path, ROOMS_DIR, file_id, file_id])
+		else:
+			var sp := c.scene.resource_path
+			var folder := sp.get_base_dir().get_file()
+			if sp.get_base_dir().get_base_dir() != MODELS_DIR or not folder.begins_with(MODEL_PREFIX) \
+					or sp.get_file() != folder + ".tscn":
+				out.append("%s: сцена %s, ожидается %s/%s<имя>/%s<имя>.tscn" % [path, sp, MODELS_DIR, MODEL_PREFIX, MODEL_PREFIX])
 		if c.title == "" and not _is_builtin(c.id):
 			out.append("%s: пустое название" % path)
 	if cards_dir != CARDS_DIR:
 		return out
-	# Старое место карточек: data/rooms/<id>/<id>.tres
+	# В data/rooms только cards/: сцены в data/models/room_*, скрипты в core/room/
 	for dn in DirAccess.get_directories_at(ROOMS_DIR):
-		if dn == "cards":
-			continue
-		for f in DirAccess.get_files_at("%s/%s" % [ROOMS_DIR, dn]):
-			if f.ends_with(".tres") or f.ends_with(".tres.remap"):
-				out.append("%s/%s/%s: карточка не в data/rooms/cards/" % [ROOMS_DIR, dn, f])
+		if dn != "cards":
+			out.append("%s/%s: лишняя папка, карточки в cards/, сцены в %s/" % [ROOMS_DIR, dn, MODELS_DIR])
+	for f in DirAccess.get_files_at(ROOMS_DIR):
+		out.append("%s/%s: лишний файл, в data/rooms только cards/ (скрипты в core/room/)" % [ROOMS_DIR, f])
 	if not has(DEFAULT_ID):
 		out.append("комнаты по умолчанию '%s' нет в каталоге" % DEFAULT_ID)
 	return out
