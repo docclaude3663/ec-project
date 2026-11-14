@@ -18,9 +18,11 @@ signal closed
 ## Поставить выбранную модель в игре (L4): ModeController закрывает экран и включает Build с этим исполнением.
 ## variant пуст, если покраски нет
 signal place_requested(setting: EntitySetting, variant: Dictionary)
+## Админ оставил комнату активной в Room Studio (ATTN_25 RM4): при закрытии экрана ModeController просит RoomBuilder сменить комнату.
+## Приходит перед closed. id комнаты, которую надо сделать активной
+signal room_keep_requested(id: StringName)
 
 const ModelStudio := preload("res://core/library/model_studio.gd")
-const RoomStudio := preload("res://core/library/room_studio/room_studio.gd")
 
 ## Выключать 3D главного вьюпорта, пока открыт экран (в игре под экраном рисовать нечего)
 const DISABLE_GAME_3D := true
@@ -34,7 +36,7 @@ const TOOLS := [
 	{"id": &"model", "title": "Model Studio"},
 	{"id": &"track", "title": "Track Studio", "scene": "res://core/library/track_studio/track_studio.tscn"},
 	{"id": &"icon", "title": "Icon Studio", "scene": "res://core/library/icon_studio/icon_studio.tscn"},
-	{"id": &"room", "title": "Room Studio", "script": RoomStudio},
+	{"id": &"room", "title": "Room Studio", "scene": "res://core/library/room_studio/room_studio.tscn"},
 ]
 
 var _embedded := false
@@ -48,6 +50,7 @@ var _active: Control
 var _active_id: StringName = TOOL_MODEL
 var _busy := false          # студия достраивает интерфейс: переключать и закрывать нельзя
 var _closing := false
+var _keep_room: StringName = &""   # выбор «Оставить активной» из Room Studio; живёт, пока открыт экран (студию можно закрыть и открыть)
 
 
 func _ready() -> void:
@@ -98,6 +101,8 @@ func _finish_close() -> void:
 		_holder.remove_child(_active)
 		_active.queue_free()
 	_model.shutdown()
+	if _keep_room != &"":
+		room_keep_requested.emit(_keep_room)
 	closed.emit()
 	queue_free()
 
@@ -264,8 +269,20 @@ func _make_tool(id: StringName) -> Control:
 		if packed == null:
 			push_warning("Library: не удалось загрузить студию %s (%s)" % [id, path])
 			return null
-		return packed.instantiate() as Control
+		var studio := packed.instantiate() as Control
+		_setup_tool(id, studio)
+		return studio
 	return null
+
+
+## Связь студии с оболочкой до входа в дерево. Room Studio: «Оставить активной» (только над игрой)
+func _setup_tool(id: StringName, studio: Control) -> void:
+	if id != &"room" or studio == null:
+		return
+	studio.set("embedded", _embedded)
+	studio.set("keep_room", _keep_room)
+	if studio.has_signal("keep_room_changed"):
+		studio.connect("keep_room_changed", func(room_id: StringName) -> void: _keep_room = room_id)
 
 
 ## Показать или скрыть студию, которая остаётся в памяти. Скрытая не получает клавиш и таймеров, её SubViewport не рисуется

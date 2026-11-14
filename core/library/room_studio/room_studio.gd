@@ -8,7 +8,15 @@ extends Control
 ## выбор доступен, процедурные (сцены нет) серые. Центр: отдельный World3D с нейтральным светом и свободной камерой, в нём
 ## экземпляр сцены комнаты как есть (RoomBuilder и GFX игры не используются, слои RoomRoot.setup не применяются).
 ## Справа паспорт только для чтения. Свет и небо игры здесь не показываются: их проверяют в Observe.
-## Правки паспорта и комнаты в игре нет: это просмотр.
+## Правок паспорта и комнаты нет: это просмотр. Игру студия не трогает.
+## Два способа запуска (ATTN_25 §25.5):
+##   - из Library поверх игры (LibraryScreen ставит embedded = true до входа в дерево);
+##   - отдельно, F6 на room_studio.tscn: игры и RoomBuilder нет, пауза не включается, активации нет.
+## «Оставить активной при выходе» (только embedded и Global.debug_mode): студия лишь сообщает выбранный id сигналом
+## keep_room_changed, комнату меняет ModeController при закрытии Library (RoomBuilder.request_room, источник admin).
+
+## Выбор для «Оставить активной»: id комнаты, пустое имя = выключено. Сообщается при каждой правке переключателя и выбора
+signal keep_room_changed(id: StringName)
 
 const StudioSettings := preload("res://core/library/icon_studio/studio_settings.gd")
 
@@ -26,12 +34,19 @@ const CAM_FAR := 6000.0
 const BG_COLOR := Color(0.16, 0.17, 0.19)
 
 var settings: StudioSettings
+## Открыта поверх игры (Library). Задаёт LibraryScreen до входа в дерево; при F6 false
+var embedded := false
+## Комната, оставленная включённым переключателем ранее (LibraryScreen хранит её, пока студия закрыта и открыта заново)
+var keep_room: StringName = &""
 
 var _entries: Array[Dictionary] = []    # {id, title, tip, dev_only, cfg: RoomConfig, has_scene: bool}
 var _list: ItemList
 var _info: Label
 var _ceiling_check: CheckButton
 var _table_check: CheckButton
+var _keep_check: CheckButton
+var _active_label: Label
+var _selected_id: StringName = &""   # выбранная в списке (у процедурной сцены нет, а выбрать её можно)
 var _view_area: PanelContainer
 var _vp: SubViewport
 var _cam: Camera3D
@@ -183,6 +198,17 @@ func _build_right() -> Control:
 	_table_check.tooltip_text = "Столешница подмакетника по паспорту (table_top) на y = 0, только для масштаба: это не часть сцены комнаты"
 	_table_check.toggled.connect(func(_on: bool): _apply_toggles())
 	v.add_child(_table_check)
+	if _can_keep():
+		v.add_child(HSeparator.new())
+		_active_label = Label.new()
+		v.add_child(_active_label)
+		_keep_check = CheckButton.new()
+		_keep_check.text = "Оставить активной при выходе"
+		_keep_check.tooltip_text = "Просмотр игру не меняет. Включено: при закрытии Library выбранная комната станет активной в игре (если она другая). Только для админа (debug)"
+		_keep_check.button_pressed = keep_room != &""
+		_keep_check.toggled.connect(func(_on: bool): _emit_keep())
+		v.add_child(_keep_check)
+		_refresh_active_label()
 	return p
 
 
@@ -197,31 +223,70 @@ func _fill_list() -> void:
 				_list.set_item_tooltip(i, "Тестовая комната (dev_only): игроку не показывается. %s" % e["tip"])
 		else:
 			_list.set_item_text(i, "%s (процедурная)" % e["title"])
-			_list.set_item_disabled(i, true)
-			_list.set_item_tooltip(i, "Процедурная комната: сцены нет, просмотр недоступен (ATTN_22 §22.5.5)")
+			_list.set_item_custom_fg_color(i, Color(1, 1, 1, 0.55))
+			_list.set_item_tooltip(i, "Процедурная комната: сцены нет, просмотр недоступен. Оставить активной можно (ATTN_25 §25.5)")
 
 
-## Последняя показанная комната или первая со сценой
+## Комната из keep_room, иначе последняя показанная, иначе первая со сценой
 func _select_initial() -> void:
-	var last := StringName(str(settings.get_value("state", "last_id", "")))
+	var last := keep_room if keep_room != &"" else StringName(str(settings.get_value("state", "last_id", "")))
 	var pick := -1
 	for i in _entries.size():
-		if not _entries[i]["has_scene"]:
-			continue
-		if pick < 0:
-			pick = i
 		if _entries[i]["id"] == last:
 			pick = i
 			break
 	if pick < 0:
+		for i in _entries.size():
+			if _entries[i]["has_scene"]:
+				pick = i
+				break
+	if pick < 0:
 		_info.text = "Нет комнат со сценой (карточки в data/rooms/cards/)."
 		return
 	_list.select(pick)
-	_show_room(pick)
+	_select(pick)
 
 
 func _on_selected(i: int) -> void:
-	_show_room(i)
+	_select(i)
+	_emit_keep()
+
+
+## Выбор в списке: комната со сценой показывается, у процедурной просмотра нет
+func _select(i: int) -> void:
+	if i < 0 or i >= _entries.size():
+		return
+	var e: Dictionary = _entries[i]
+	_selected_id = e["id"]
+	if e["has_scene"]:
+		_show_room(i)
+		return
+	_clear_room()
+	_info.text = "%s\n\nПроцедурная комната: сцены нет, просмотр недоступен.%s" % [_info_head(e),
+			"\nОставить её активной в игре можно." if _can_keep() else ""]
+
+
+# ==========================================
+# ОСТАВИТЬ АКТИВНОЙ
+# ==========================================
+
+## Переключатель есть только над игрой и только админу
+func _can_keep() -> bool:
+	return embedded and Global.debug_mode
+
+
+func _emit_keep() -> void:
+	if _keep_check == null:
+		return
+	keep_room_changed.emit(_selected_id if _keep_check.button_pressed and _selected_id != &"" else &"")
+	_refresh_active_label()
+
+
+func _refresh_active_label() -> void:
+	if _active_label == null:
+		return
+	var rb := get_tree().get_first_node_in_group(&"room_root") as RoomBuilder
+	_active_label.text = "В игре сейчас: %s" % (String(rb.get_room_id()) if rb != null else "комнаты нет")
 
 
 # ==========================================
@@ -332,13 +397,19 @@ func _apply_toggles() -> void:
 		c.visible = _ceiling_check.button_pressed
 
 
-func _info_text(e: Dictionary) -> String:
-	var cfg: RoomConfig = e["cfg"]
+func _info_head(e: Dictionary) -> String:
 	var lines := PackedStringArray()
 	lines.append("%s" % e["title"])
 	lines.append("id: %s%s" % [e["id"], "  (dev_only)" if e["dev_only"] else ""])
 	if String(e["tip"]) != "":
 		lines.append(String(e["tip"]))
+	return "\n".join(lines)
+
+
+func _info_text(e: Dictionary) -> String:
+	var cfg: RoomConfig = e["cfg"]
+	var lines := PackedStringArray()
+	lines.append(_info_head(e))
 	lines.append("")
 	lines.append("Размер, см: %.0f × %.0f × %.0f" % [cfg.size.x, cfg.size.y, cfg.size.z])
 	lines.append("Уровень пола (floor_y): %.0f" % cfg.floor_y)

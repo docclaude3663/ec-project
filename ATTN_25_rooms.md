@@ -157,9 +157,9 @@ API (RM2): `RoomBuilder.request_room(id, source)`, где `source` это `&"sta
 
 **Запуск.**
 1. Library → кнопка «Room Studio» (как сейчас; кнопки студий прячет `SHOW_AUTHOR_STUDIOS`).
-2. F6 на `core/library/room_studio/room_studio.tscn` (новая сцена из одного корня со скриптом студии, RM4). Режим «отдельно»: игры и `RoomBuilder` нет, паузы нет, «Назад» нет, активация скрыта.
+2. F6 на `core/library/room_studio/room_studio.tscn` (сцена из одного корня со скриптом студии, RM4, сделано). Режим «отдельно»: игры и `RoomBuilder` нет, паузы нет, «Назад» нет, активация скрыта.
 
-**Что показывает.** Слева список карточек из `RoomCatalog` (процедурные серые; комнаты `dev_only` помечены). Центр: отдельный `World3D`, нейтральный свет, свободная камера, потолок и стол-ориентир. Справа три вкладки:
+**Что показывает.** Слева список карточек из `RoomCatalog` (процедурные тусклые с пометкой «(процедурная)», выбираются без просмотра; комнаты `dev_only` помечены `[dev]`). Центр: отдельный `World3D`, нейтральный свет, свободная камера, потолок и стол-ориентир. Справа три вкладки:
 - **Паспорт**: поля `RoomConfig`, при `.glb` кнопка «Обновить из сцены» (RM5).
 - **Объекты**: управляемые объекты сцены (§25.6): свет (вкл/выкл, энергия), механизмы (ползунок 0..1), переключатели. Работает над экземпляром комнаты в окне студии, в игру ничего не пишет.
 - **Проверка**: отчёт по сцене (число треугольников по группам, лампы, роли, метки) в тех же правилах, что `glb_preflight.py --kind room` (RM7).
@@ -361,7 +361,7 @@ API (RM2): `RoomBuilder.request_room(id, source)`, где `source` это `&"sta
 - [x] Каталог читает `data/rooms/cards/*.tres` без рекурсии; встроенные процедурные остаются в коде (временно). `entries(for_player)` скрывает `dev_only` (`bench`, `cube`), `is_dev_only(id)`.
 - [x] `RoomCatalog.validate()`: `id` равен имени файла, у карточки есть сцена `data/models/room_<имя>/room_<имя>.tscn`, id уникальны, название не пустое, в `data/rooms/` ничего кроме `cards/`. Блок «Комнаты» в `catalog_lint.gd` зовёт её же.
 
-**Проверка:** (1) в FileSystem `data/rooms/cards/` содержит `attic.tres` и `bench.tres`, сцены лежат в `data/models/room_attic/` и `data/models/room_bench/`, папок `attic` и `bench` в `data/rooms/` нет; открыть оба `.tres`: сцена на месте, `bench` с галочкой `dev_only`, предупреждений о путях нет. (2) F6 на `tests/room_catalog_test.tscn`: все OK, в конце ИТОГ: OK. (3) File → Run на `tests/catalog_lint.gd`: строка «Комнаты: ... проблем 0». (4) Library → Room Studio: `attic` в списке обычная, `bench [dev]` помечена, `kid_room_10` и `cube` серые «(процедурная)». (5) Игра запускается, `--room=attic` и `--room=bench` работают, как в RM2; перезапуск проекта без «resource not found»; `git status` показывает переименования, а не удаление и создание.
+**Проверка:** (1) в FileSystem `data/rooms/cards/` содержит `attic.tres` и `bench.tres`, сцены лежат в `data/models/room_attic/` и `data/models/room_bench/`, папок `attic` и `bench` в `data/rooms/` нет; открыть оба `.tres`: сцена на месте, `bench` с галочкой `dev_only`, предупреждений о путях нет. (2) F6 на `tests/room_catalog_test.tscn`: все OK, в конце ИТОГ: OK. (3) File → Run на `tests/catalog_lint.gd`: строка «Комнаты: ... проблем 0». (4) Library → Room Studio: `attic` в списке обычная, `bench [dev]` помечена, `kid_room_10` и `cube` помечены «(процедурная)» (выбираются, просмотра нет). (5) Игра запускается, `--room=attic` и `--room=bench` работают, как в RM2; перезапуск проекта без «resource not found»; `git status` показывает переименования, а не удаление и создание.
 
 ### RM3b. Файлы комнаты: код в `core/room`, сцены в `data/models` [x]
 
@@ -372,15 +372,16 @@ API (RM2): `RoomBuilder.request_room(id, source)`, где `source` это `&"sta
 
 **Проверка:** (1) открыть проект: Output без «resource not found» и «invalid UID». (2) FileSystem: `core/room/` содержит 6 скриптов с `.uid`; `data/scenes/` без `room_*.gd` и `table_supports.gd`; `data/rooms/` только `cards/`. (3) Игра по умолчанию строит `kid_room_10`; `--room=attic` строит мансарду (скос крыши, лампы), `--room=bench` стенд. (4) F6 на `tests/room_catalog_test.tscn`, `tests/room_access_test.tscn`, `tests/table_support_test.tscn`: везде «ИТОГ: OK». (5) `catalog_lint.gd`: «Комнаты: ... проблем 0».
 
-### RM4. Room Studio: запуск и «Оставить активной» [ ]
+### RM4. Room Studio: запуск и «Оставить активной» [x]
 
-**Файлы:** `core/library/room_studio/room_studio.gd`, новая `room_studio.tscn`, `core/library/library_screen.gd` (сигнал `room_keep_requested`), `ui/mode_controller.gd`.
+**Файлы:** `core/library/room_studio/room_studio.gd`, новая `room_studio.tscn`, `core/library/library_screen.gd` (сигнал `room_keep_requested`, таблица студий), `ui/mode_controller.gd`, `tests/room_studio_test.tscn` (новый).
 
-- [ ] `room_studio.tscn` запускается по F6: список, просмотр, паспорт, без «Назад» и без активации.
-- [ ] Переключатель «Оставить активной при выходе» (только `Global.debug_mode` и только в оверлее над игрой).
-- [ ] При закрытии Library `ModeController` вызывает `RoomBuilder.request_room(id, &"admin")`, если переключатель включён и комната другая.
+- [x] `room_studio.tscn` запускается по F6: список, просмотр, паспорт, без «Назад» и без активации (`embedded = false`).
+- [x] Переключатель «Оставить активной при выходе» (только `Global.debug_mode` и только в оверлее над игрой), рядом строка «В игре сейчас: <id>».
+- [x] Студия сообщает выбор сигналом `keep_room_changed(id)` (пустое имя: выключено), `LibraryScreen` хранит его, пока открыт экран (студию можно закрыть и открыть), и при закрытии шлёт `room_keep_requested(id)`; `ModeController` после закрытия вызывает `RoomBuilder.request_room(id, &"admin")`, если комната другая.
+- [x] Процедурные комнаты в списке выбираются (просмотра нет, оставить активной можно), а не серые недоступные.
 
-**Проверка:** (1) F6 на `room_studio.tscn`: окно открывается, `attic` показывается, переключателя активации нет. (2) Игра, Library → Room Studio → `attic`, включить «Оставить активной», выйти: в игре мансарда, границы камеры новой комнаты, сохранить и загрузить: комната та же. (3) то же без переключателя: комната прежняя. (4) в Observe комнату сменить нельзя (RM1).
+**Проверка:** (1) F6 на `core/library/room_studio/room_studio.tscn`: окно открывается, комната показывается, переключателя активации нет. (2) F6 на `tests/room_studio_test.tscn`: все OK, в конце ИТОГ: OK. (3) Игра, Library → Room Studio → `attic` → «Оставить активной при выходе» → закрыть Library: в игре мансарда, камера в границах новой комнаты, строка «В игре сейчас» до выхода показывала прежнюю комнату; сохранить и загрузить: комната та же. (4) То же без переключателя: комната прежняя. (5) Выбрать `attic`, включить переключатель, перейти в Model Studio и обратно в Room Studio: переключатель включён, выбрана `attic`; закрыть Library: мансарда. (6) Выбрать `Детская (процедурная)`: окно просмотра пустое, подпись про отсутствие сцены, переключатель работает. (7) В Observe комнату сменить нельзя (RM1). (8) Выключить `debug_mode`: переключателя в Library нет.
 
 ### RM5. Room Studio: панель объектов [ ]
 

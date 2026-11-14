@@ -35,6 +35,8 @@ var _library_prev_mode: StringName = &"build"
 ## Запрос «В игру» из Library: модель и исполнение, которые надо взять в руку после закрытия экрана (ATTN_22 L4)
 var _library_place_setting: EntitySetting
 var _library_place_variant: Dictionary = {}
+## «Оставить активной» из Room Studio (ATTN_25 RM4): комната, которую надо сделать активной после закрытия экрана
+var _library_keep_room: StringName = &""
 ## Кнопки режимов живут в TopBar (U9). Берём через TopBar: изнутри его сцены % снаружи не виден
 @onready var _mode_panel = %TopBar.get_mode_panel()
 
@@ -144,6 +146,7 @@ func _open_library() -> void:
 	_library_screen = LIBRARY_SCREEN.instantiate()
 	_library_screen.closed.connect(_on_library_closed)
 	_library_screen.place_requested.connect(_on_library_place)
+	_library_screen.room_keep_requested.connect(_on_library_room_keep)
 	_library_layer.add_child(_library_screen)
 	get_parent().add_child(_library_layer)
 
@@ -157,12 +160,29 @@ func _on_library_closed() -> void:
 	var btn := _mode_panel.get_node_or_null("VBoxContainer/" + String(_library_prev_mode).capitalize() + "Button") as Button
 	if btn:
 		btn.button_pressed = true
+	if _library_keep_room != &"":
+		var keep_id := _library_keep_room
+		_library_keep_room = &""
+		_apply_kept_room.call_deferred(keep_id)
 	if _library_place_setting != null:
 		var setting := _library_place_setting
 		var variant := _library_place_variant
 		_library_place_setting = null
 		_library_place_variant = {}
 		_start_build_from_library.call_deferred(setting, variant)
+
+
+## Room Studio просит оставить комнату активной (админ): применяется после закрытия экрана
+func _on_library_room_keep(id: StringName) -> void:
+	_library_keep_room = id
+
+
+## Сменить активную комнату на выбранную в Room Studio. Права проверяет RoomBuilder.request_room (источник admin: Global.debug_mode)
+func _apply_kept_room(id: StringName) -> void:
+	var rb := get_tree().get_first_node_in_group(&"room_root") as RoomBuilder
+	if rb == null or rb.get_room_id() == id:
+		return
+	rb.request_room(id, RoomBuilder.SRC_ADMIN)
 
 
 ## «В игру» в Library: закрыть экран и включить Build с этой моделью и её исполнением
