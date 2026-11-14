@@ -213,20 +213,28 @@ func on_entity_ready() -> void:
 ## Плеер модели не трогаем и свои плееры не заводим: позы по состоянию ставит Mech.apply (одна анимация на механизм,
 ## в ней может быть сколько угодно узлов). Дорожки костей и неизвестные узлы пропускаются с предупреждением
 func _setup_anim(m: Mech, vis: C_Visual) -> void:
+	bind_anim(m, vis.instance, str(entity.name) if entity else "?")
+
+
+## Общее ядро ANIM для вагонов и комнат (RoomMechanism, ATTN_25 RM5): привязывает механизм m к анимации mech_<id> (или anim_name)
+## плеера внутри root (сам root тоже может быть AnimationPlayer). true: дорожки найдены. owner_name только для сообщений
+static func bind_anim(m: Mech, root: Node, owner_name: String) -> bool:
 	var aname: StringName = m.cfg.anim_name if m.cfg.anim_name != &"" else StringName("mech_%s" % m.cfg.id)
-	var owner_name := str(entity.name) if entity else "?"
+	var players: Array[Node] = root.find_children("*", "AnimationPlayer", true, false)
+	if root is AnimationPlayer:
+		players.push_front(root)
 	var src: AnimationPlayer = null
-	for n in vis.instance.find_children("*", "AnimationPlayer", true, false):
+	for n in players:
 		if (n as AnimationPlayer).has_animation(aname):
 			src = n
 			break
 	if src == null:
 		push_warning("[C_Mechanisms] %s: анимация '%s' не найдена в модели (экспорт из Blender: режим Actions, имя mech_<id>)" % [owner_name, aname])
-		return
+		return false
 	var base := src.get_node_or_null(src.root_node)
 	if base == null:
 		push_warning("[C_Mechanisms] %s: у плеера анимации '%s' не найден корень (root_node)" % [owner_name, aname])
-		return
+		return false
 	var anim: Animation = src.get_animation(aname)
 	var tracks: Array = []
 	var t0 := INF
@@ -250,11 +258,12 @@ func _setup_anim(m: Mech, vis: C_Visual) -> void:
 		t1 = maxf(t1, anim.track_get_key_time(i, keys - 1))
 	if tracks.is_empty():
 		push_warning("[C_Mechanisms] %s: в анимации '%s' нет дорожек позиции, поворота или масштаба узлов" % [owner_name, aname])
-		return
+		return false
 	m.anim = anim
 	m.anim_tracks = tracks
 	m.anim_t0 = t0
 	m.anim_t1 = maxf(t1, t0)
+	return true
 
 
 ## Лампы на шине аксессуаров нагружают её (D6): потребитель регистрируется в PGM.bus

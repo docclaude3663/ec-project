@@ -9,6 +9,8 @@ extends Control
 ## экземпляр сцены комнаты как есть (RoomBuilder и GFX игры не используются, слои RoomRoot.setup не применяются).
 ## Справа паспорт только для чтения. Свет и небо игры здесь не показываются: их проверяют в Observe.
 ## Правок паспорта и комнаты нет: это просмотр. Игру студия не трогает.
+## Справа три вкладки (RM5): «Паспорт», «Объекты» (управляемые объекты сцены: RoomControlRegistry, свет и механизмы работают
+## над экземпляром комнаты в окне студии, в игру и в сцену ничего не пишут), «Проверка» (отчёт по сцене).
 ## Два способа запуска (ATTN_25 §25.5):
 ##   - из Library поверх игры (LibraryScreen ставит embedded = true до входа в дерево);
 ##   - отдельно, F6 на room_studio.tscn: игры и RoomBuilder нет, пауза не включается, активации нет.
@@ -45,6 +47,9 @@ var _info: Label
 var _ceiling_check: CheckButton
 var _table_check: CheckButton
 var _keep_check: CheckButton
+var _objects_box: VBoxContainer   # вкладка «Объекты»: строки управлений
+var _check_label: Label           # вкладка «Проверка»
+var _registry: RoomControlRegistry
 var _active_label: Label
 var _selected_id: StringName = &""   # выбранная в списке (у процедурной сцены нет, а выбрать её можно)
 var _view_area: PanelContainer
@@ -76,6 +81,12 @@ func _ready() -> void:
 	# Размеры контейнеров известны только после первого кадра раскладки
 	await get_tree().process_frame
 	_select_initial()
+
+
+func _process(delta: float) -> void:
+	# Механизмы комнаты ходят по времени (MechanismConfig.duration), пока их двигают ползунком
+	if _registry != null and _registry.is_moving():
+		_registry.tick(delta)
 
 
 func _exit_tree() -> void:
@@ -174,14 +185,18 @@ func _build_center() -> Control:
 
 
 func _build_right() -> Control:
-	var p := PanelContainer.new()
-	p.custom_minimum_size = Vector2(320, 0)
+	var tabs := TabContainer.new()
+	tabs.custom_minimum_size = Vector2(340, 0)
+	tabs.add_child(_build_passport_tab())
+	tabs.add_child(_build_objects_tab())
+	tabs.add_child(_build_check_tab())
+	return tabs
+
+
+func _build_passport_tab() -> Control:
 	var v := VBoxContainer.new()
+	v.name = "Паспорт"
 	v.add_theme_constant_override("separation", 6)
-	p.add_child(v)
-	var title := Label.new()
-	title.text = "Паспорт"
-	v.add_child(title)
 	_info = Label.new()
 	_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_info.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -209,7 +224,29 @@ func _build_right() -> Control:
 		_keep_check.toggled.connect(func(_on: bool): _emit_keep())
 		v.add_child(_keep_check)
 		_refresh_active_label()
-	return p
+	return v
+
+
+func _build_objects_tab() -> Control:
+	var sc := ScrollContainer.new()
+	sc.name = "Объекты"
+	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_objects_box = VBoxContainer.new()
+	_objects_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_objects_box.add_theme_constant_override("separation", 6)
+	sc.add_child(_objects_box)
+	return sc
+
+
+func _build_check_tab() -> Control:
+	var sc := ScrollContainer.new()
+	sc.name = "Проверка"
+	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_check_label = Label.new()
+	_check_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_check_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sc.add_child(_check_label)
+	return sc
 
 
 func _fill_list() -> void:
@@ -356,11 +393,17 @@ func _show_room(i: int) -> void:
 	_build_table(cfg)
 	_apply_toggles()
 	_info.text = _info_text(e)
+	_registry = RoomControlRegistry.collect(_room, String(e["id"]))
+	_rebuild_objects()
+	_rebuild_check(e)
 	_fit()
 
 
 func _clear_room() -> void:
 	_current_id = &""
+	_registry = null
+	_rebuild_objects()
+	_rebuild_check({})
 	if _room != null:
 		_stage.remove_child(_room)
 		_room.queue_free()
@@ -429,6 +472,117 @@ func _count_lights(n: Node) -> int:
 	for ch in n.get_children():
 		c += _count_lights(ch)
 	return c
+
+
+# ==========================================
+# ОБЪЕКТЫ И ПРОВЕРКА
+# ==========================================
+
+## Вкладка «Объекты»: по строке на управление. TOGGLE переключатель, SLIDER и MECH ползунок 0..1
+func _rebuild_objects() -> void:
+	if _objects_box == null:
+		return
+	for c in _objects_box.get_children():
+		_objects_box.remove_child(c)
+		c.queue_free()
+	if _registry == null:
+		_add_hint("Комната не выбрана или без сцены: управляемых объектов нет.")
+		return
+	if _registry.defs.is_empty():
+		_add_hint("В сцене нет управляемых объектов. Метка RoomControl на лампе, узле или плеере анимации даёт здесь строку (ATTN_25 §25.6).")
+	var reset := Button.new()
+	reset.text = "Всё в начальное состояние"
+	reset.pressed.connect(func() -> void:
+		if _registry != null:
+			_registry.reset()
+		_rebuild_objects.call_deferred())
+	_objects_box.add_child(reset)
+	for d in _registry.defs:
+		_objects_box.add_child(_object_row(d))
+	if not _registry.warnings.is_empty():
+		_add_hint("Замечания:\n- " + "\n- ".join(_registry.warnings))
+
+
+func _add_hint(text: String) -> void:
+	var l := Label.new()
+	l.text = text
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.modulate = Color(1, 1, 1, 0.7)
+	_objects_box.add_child(l)
+
+
+func _object_row(d: RoomControlDef) -> Control:
+	var box := VBoxContainer.new()
+	var tag := "Observe" if d.scope == RoomControl.Scope.OBSERVE else "студия"
+	var cnt := " ×%d" % d.nodes.size() if d.nodes.size() > 1 else ""
+	var tip := "id: %s, узлов: %d, в Observe: %s" % [d.id, d.nodes.size(), "да" if d.scope == RoomControl.Scope.OBSERVE else "нет"]
+	if d.kind == RoomControl.Kind.TOGGLE:
+		var cb := CheckButton.new()
+		cb.text = "%s%s  [%s]" % [d.display_title(), cnt, tag]
+		cb.tooltip_text = tip
+		cb.button_pressed = d.value > 0.0
+		cb.toggled.connect(func(on: bool) -> void: d.set_value(1.0 if on else 0.0))
+		box.add_child(cb)
+		return box
+	var l := Label.new()
+	l.text = "%s%s  [%s]" % [d.display_title(), cnt, tag]
+	l.tooltip_text = tip
+	box.add_child(l)
+	var sl := HSlider.new()
+	sl.min_value = 0.0
+	sl.max_value = 1.0
+	sl.step = 0.01
+	sl.value = d.value
+	sl.custom_minimum_size = Vector2(0, 22)
+	sl.tooltip_text = tip
+	# Свет: сразу. Механизм: цель, к ней идёт _process по duration
+	sl.value_changed.connect(func(v: float) -> void: d.set_value(v, d.kind != RoomControl.Kind.MECH))
+	box.add_child(sl)
+	return box
+
+
+## Вкладка «Проверка»: сводка по сцене и замечания реестра. Те же правила, что у glb_preflight.py --kind room, добавит RM7
+func _rebuild_check(e: Dictionary) -> void:
+	if _check_label == null:
+		return
+	if _room == null or e.is_empty():
+		_check_label.text = "Комната не выбрана или без сцены."
+		return
+	var lines := PackedStringArray()
+	lines.append("Сцена: %s" % (e["cfg"] as RoomConfig).scene.resource_path)
+	lines.append("Корень: %s%s" % [_room.get_class() if _room.get_script() == null else String(_room.get_script().get_global_name()),
+			"" if _room is RoomRoot else "  (ожидается RoomRoot)"])
+	lines.append("")
+	lines.append("Треугольников по группам корня:")
+	var total := 0
+	for ch in _room.get_children():
+		var tri := _triangles(ch)
+		total += tri
+		lines.append("  %s: %d" % [ch.name, tri])
+	lines.append("  всего: %d" % total)
+	lines.append("")
+	lines.append("Ламп (Light3D): %d" % _count_lights(_room))
+	var n_ctl := _registry.defs.size() if _registry != null else 0
+	lines.append("Управляемых объектов: %d (Observe: %d)" % [n_ctl,
+			_registry.for_scope(RoomControl.Scope.OBSERVE).size() if _registry != null else 0])
+	if _registry != null and not _registry.warnings.is_empty():
+		lines.append("")
+		lines.append("Замечания:")
+		for w in _registry.warnings:
+			lines.append("  - " + w)
+	elif _registry != null:
+		lines.append("")
+		lines.append("Замечаний нет.")
+	_check_label.text = "\n".join(lines)
+
+
+func _triangles(n: Node) -> int:
+	var t := 0
+	if n is MeshInstance3D and (n as MeshInstance3D).mesh != null:
+		t += int((n as MeshInstance3D).mesh.get_faces().size() / 3.0)
+	for c in n.get_children():
+		t += _triangles(c)
+	return t
 
 
 # ==========================================

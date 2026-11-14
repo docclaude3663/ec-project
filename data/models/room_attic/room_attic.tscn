@@ -1,6 +1,7 @@
 [gd_scene format=4 uid="uid://b5270rd4y4fmo"]
 
 [ext_resource type="Script" uid="uid://c2q3oh5oln37o" path="res://core/room/room_root.gd" id="1_ls85a"]
+[ext_resource type="Script" path="res://core/room/room_control.gd" id="2_rctl"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_kiqy7"]
 size = Vector3(540, 10, 440)
@@ -772,6 +773,12 @@ shadow_normal_bias = 3.0
 spot_range = 123.05
 spot_angle = 80.0
 
+[node name="RoomControl" type="Node" parent="Lights/Lamp0"]
+script = ExtResource("2_rctl")
+id = &"lamp_1"
+scope = 1
+title = "Лампа 1"
+
 [node name="Lamp1" type="SpotLight3D" parent="Lights" unique_id=393791649]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 25, 190, 0)
 light_color = Color(0.9, 0.95, 1, 1)
@@ -782,6 +789,11 @@ shadow_bias = 0.6
 shadow_normal_bias = 3.0
 spot_range = 600.0
 spot_angle = 80.0
+
+[node name="RoomControl" type="Node" parent="Lights/Lamp1"]
+script = ExtResource("2_rctl")
+id = &"lamp_2"
+title = "Лампа 2 (только студия)"
 
 [node name="Lamp2" type="SpotLight3D" parent="Lights" unique_id=881677794]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, -170, 190, 0)

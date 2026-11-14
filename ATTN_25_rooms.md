@@ -179,13 +179,14 @@ API (RM2): `RoomBuilder.request_room(id, source)`, где `source` это `&"sta
 | `scope` | `observe` (карточка в Observe → Light и вкладка «Объекты» студии) или `studio` (только студия). По умолчанию `studio` |
 | `title` | подпись, по умолчанию `id` |
 | `default` | начальное значение |
-| `group` | необязательно: несколько узлов под одним управлением (все потолочные лампы одним переключателем) |
+| `group` | необязательно: несколько узлов под одним управлением (все потолочные лампы одним переключателем); метки с одной `group` сливаются, ключом управления становится `group` |
+| `mechanism` | только `mech`: `MechanismConfig` (SLIDE, ROTATE, ANIM); SLIDE и ROTATE двигают узел с меткой, ANIM берёт плеер внутри него |
 
 **Откуда берётся описание (два источника, одна модель данных `RoomControlDef`):**
 1. **Из `.glb`**: свойства объекта Blender (§25.7.4) попадают в `extras` узла; `RoomRoot` читает их при загрузке.
 2. **Из сцены Godot**: дочерний узел `RoomControl` (`class_name RoomControl extends Node`, поля как в таблице выше) у любой `Light3D`, `Node3D` или `AnimationPlayer`. Так работает пункт 9 из §25.0: добавили `OmniLight3D` в обёртку `.tscn`, повесили `RoomControl`, и Room Studio получила переключатель.
 
-`RoomControlRegistry` (RM5) собирает описания из обоих источников в один список. Его читают вкладка «Объекты» Room Studio и `CardCatalogProvider` (Observe → Light, только `scope = observe`). Объект без описания управления не управляется никем: ни студией, ни Observe.
+`RoomControlRegistry` (RM5: источник «сцена Godot», RM8: источник `.glb`) собирает описания из обоих источников в один список `RoomControlDef`. Его читают вкладка «Объекты» Room Studio и `CardCatalogProvider` (Observe → Light, только `scope = observe`). Объект без описания управления не управляется никем: ни студией, ни Observe.
 
 **Механизмы комнаты** (жалюзи, шторы, дверь, дверцы шкафа). `C_Mechanisms` работает с `Entity`, а комната не `Entity`. Данные берём те же: `MechanismConfig` и анимация `mech_<id>` из Blender ([0_ATTN_24 §24.6](0_ATTN_24_model_pipeline.md)); исполняет их лёгкий `RoomMechanism` без сущностей (плеер на паузе, `seek` по `t` 0..1). Если по ходу RM5 окажется, что проще вынести общее ядро из `C_Mechanisms`, так и делаем (вопрос Q6, §25.10).
 
@@ -383,16 +384,20 @@ API (RM2): `RoomBuilder.request_room(id, source)`, где `source` это `&"sta
 
 **Проверка:** (1) F6 на `core/library/room_studio/room_studio.tscn`: окно открывается, комната показывается, переключателя активации нет. (2) F6 на `tests/room_studio_test.tscn`: все OK, в конце ИТОГ: OK. (3) Игра, Library → Room Studio → `attic` → «Оставить активной при выходе» → закрыть Library: в игре мансарда, камера в границах новой комнаты, строка «В игре сейчас» до выхода показывала прежнюю комнату; сохранить и загрузить: комната та же. (4) То же без переключателя: комната прежняя. (5) Выбрать `attic`, включить переключатель, перейти в Model Studio и обратно в Room Studio: переключатель включён, выбрана `attic`; закрыть Library: мансарда. (6) Выбрать `Детская (процедурная)`: окно просмотра пустое, подпись про отсутствие сцены, переключатель работает. (7) В Observe комнату сменить нельзя (RM1). (8) Выключить `debug_mode`: переключателя в Library нет.
 
-### RM5. Room Studio: панель объектов [ ]
+### RM5. Room Studio: панель объектов [x]
 
-**Файлы:** новые `core/room/room_control.gd` (`RoomControl`), `core/room/room_control_registry.gd`, `core/room/room_mechanism.gd`; правка `room_studio.gd` (вкладки «Паспорт», «Объекты», «Проверка», кнопка «Обновить из сцены»).
+**Файлы:** новые `core/room/room_control.gd` (`RoomControl`, метка в сцене), `core/room/room_control_def.gd` (`RoomControlDef`, описание и значение), `core/room/room_control_registry.gd` (`RoomControlRegistry`), `core/room/room_mechanism.gd` (`RoomMechanism`); `core/components/trains/c_mechanisms.gd` (общее ядро `bind_anim`); `core/library/room_studio/room_studio.gd` (вкладки «Паспорт», «Объекты», «Проверка»); `data/models/room_attic/room_attic.tscn` (метки на двух лампах); `tests/room_control_test.tscn` (новый).
 
-- [ ] `RoomControl` и `RoomControlRegistry` (источник «сцена Godot»; источник `.glb` добавит RM8).
-- [ ] Вкладка «Объекты»: переключатели и ползунки над экземпляром комнаты в студии.
-- [ ] `RoomMechanism` для `mech`: анимация `mech_<id>` по `t`.
-- [ ] Тестовая обёртка: `attic.tscn` получает `RoomControl` на двух лампах (один как `observe`).
+- [x] `RoomControl` и `RoomControlRegistry` (источник «сцена Godot»; источник `.glb` добавит RM8 в тот же `RoomControlDef`). Метки с одной `group` сливаются в одно управление; повтор `id`, узел не того типа, механизм без анимации не роняют сборку, а попадают в `warnings`.
+- [x] Вкладка «Объекты»: `TOGGLE` переключатель, `SLIDER` и `MECH` ползунок 0..1, кнопка «Всё в начальное состояние», пометка `[Observe]` или `[студия]`, замечания реестра.
+- [x] `RoomMechanism` для `mech`: SLIDE, ROTATE по оси родителя, ANIM по анимации `mech_<id>` (поза по состоянию 0..1, плеер не запускается). Ход по `MechanismConfig.duration`.
+- [x] Вкладка «Проверка»: сцена, корень, треугольники по группам, лампы, число управлений, замечания. Правила `glb_preflight.py --kind room` добавит RM7.
+- [x] Тестовая обёртка: `room_attic.tscn` получила `RoomControl` на `Lamp0` (`lamp_1`, `observe`) и `Lamp1` (`lamp_2`, `studio`).
+- Кнопка «Обновить из сцены» (числа карточки из `room_volume` и других прокси-коробок) переносится в RM8: у сцены без `.glb` обновлять нечего.
 
-**Проверка:** (1) Room Studio → `attic`, вкладка «Объекты»: две лампы с переключателями; выключить одну, комната темнеет в этом месте (свет студии нейтральный, ламп комнаты видно по пятнам). (2) добавить в `attic.tscn` новый `OmniLight3D` с `RoomControl` (`id = lamp_test`): строка появляется в списке без правки кода. (3) удалить `RoomControl`: строка исчезает. (4) ошибок в Output нет, Model Studio и Track Studio открываются как раньше.
+**Решение по Q6.** Общее ядро выделено: `RoomMechanism` использует тот же `C_Mechanisms.Mech` (позы SLIDE, ROTATE, ANIM) и статический `C_Mechanisms.bind_anim` (поиск плеера и дорожек); `C_Mechanisms._setup_anim` теперь вызывает его же. Шины команд, сейва и сущностей у комнаты нет.
+
+**Проверка:** (1) F6 на `tests/room_control_test.tscn`: везде OK, в конце ИТОГ: OK (предупреждения `[RoomControl]` и `[RoomMechanism]` в Output ожидаемы). (2) F6 на `tests/mech_anim_test.tscn`: как раньше OK (общее ядро не сломало вагоны). (3) Room Studio → `attic`, вкладка «Объекты»: две лампы, «Лампа 1 [Observe]» и «Лампа 2 (только студия) [студия]»; выключить одну: комната темнеет в этом месте (свет студии нейтральный, лампы видно по пятнам и теням). (4) Добавить в `room_attic.tscn` новый `OmniLight3D` с дочерним `RoomControl` (`id = lamp_test`), переоткрыть студию: строка появляется без правки кода. (5) Удалить метку: строка исчезает. (6) Добавить две метки с одним `id`: во вкладке «Объекты» и «Проверка» замечание про повтор. (7) Вкладка «Проверка»: число треугольников по группам Floor, Shell, Decor… и «Ламп (Light3D): 4», «Управляемых объектов: 2 (Observe: 1)». (8) Игра с `--room=attic` работает как раньше, в Output нет ошибок; Model Studio, Track Studio и Icon Studio открываются как раньше; у вагона `wagon_coal_01` двери открываются (O) как раньше.
 
 ### RM6. Observe: свет комнаты [ ]
 
@@ -440,7 +445,7 @@ API (RM2): `RoomBuilder.request_room(id, source)`, где `source` это `&"sta
 | Q3 | Кто админ | **[решено]** `Global.debug_mode` |
 | Q4 | Единицы комнаты в Blender | **[предложение]** метры и `root_scale = 100`; числа в свойствах в см. **Проверить в редакторе** (RM8) |
 | Q5 | Свет в Blender | **[предложение]** якоря-пустышки со свойствами, без Punctual Lights |
-| Q6 | Механизмы комнаты | **[предложение]** `RoomMechanism` на тех же `MechanismConfig` и анимациях `mech_<id>`; общее ядро с `C_Mechanisms` по ходу RM5 |
+| Q6 | Механизмы комнаты | **[решено, RM5]** `RoomMechanism` на тех же `MechanismConfig` и анимациях `mech_<id>`; общее ядро `C_Mechanisms.Mech` и `bind_anim` |
 | Q7 | Состояние света комнаты в сейве | **[предложение]** `SavedGame.room_controls` (RM6) |
 | Q8 | Прокси-коробки вместо чисел | **[предложение]** окно, дверь, границы, коллизия рисуются коробками, числа читает игра |
 | Q9 | `ec_room_tools.py` отдельным файлом или общим с `ec_model_tools.py` | **[предложение]** отдельный файл (панель ставится одним файлом), общие функции копируются |
