@@ -6,11 +6,11 @@
 [ext_resource type="Script" uid="uid://bm2guc8626oc2" path="res://ui/operate_controller.gd" id="4_mf2ns"]
 [ext_resource type="Script" uid="uid://clkuxy8sfhdwm" path="res://ui/toolbar/toolbar_controller.gd" id="4_tbc"]
 [ext_resource type="PackedScene" uid="uid://boj0kanwn0n0e" path="res://ui/panels/info_panel.tscn" id="10_ay4pc"]
-[ext_resource type="Script" path="res://ui/ui.gd" id="99_uigd"]
 [ext_resource type="PackedScene" path="res://ui/hud/top_bar.tscn" id="13_topbar"]
 [ext_resource type="PackedScene" path="res://ui/windows/confirm_dialog.tscn" id="14_confirm"]
 [ext_resource type="PackedScene" path="res://ui/windows/save_load_dialog.tscn" id="15_saveload"]
-[ext_resource type="Script" path="res://ui/hud/system_menu.gd" id="16_sysmenu"]
+[ext_resource type="Script" uid="uid://c6287df8pqrh" path="res://ui/hud/system_menu.gd" id="16_sysmenu"]
+[ext_resource type="Script" uid="uid://b1a08tultjehh" path="res://ui/ui.gd" id="99_uigd"]
 
 [node name="UI" type="CanvasLayer" unique_id=1965858759]
 script = ExtResource("99_uigd")
@@ -175,25 +175,39 @@ text = "Library"
 vertical_alignment = 1
 
 [node name="InfoPanel" parent="HUD" unique_id=1788166654 instance=ExtResource("10_ay4pc")]
+layout_mode = 0
+anchors_preset = 0
+anchor_left = 0.0
+anchor_right = 0.0
+offset_left = 0.0
 offset_top = 44.0
+offset_right = 574.0
 offset_bottom = 293.0
+grow_horizontal = 1
 
 [node name="DCControlPanel" parent="HUD" unique_id=1088175003 instance=ExtResource("1_bi8hs")]
 unique_name_in_owner = true
+layout_mode = 0
+anchors_preset = 0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 0.0
 offset_top = -610.0
+offset_right = 116.0
 offset_bottom = -291.0
+grow_vertical = 1
 
 [node name="Windows" type="CanvasLayer" parent="." unique_id=1311200802]
 layer = 20
-
-[node name="Toasts" type="CanvasLayer" parent="." unique_id=1311200803]
-layer = 30
 
 [node name="ConfirmDialog" parent="Windows" unique_id=1311200820 instance=ExtResource("14_confirm")]
 unique_name_in_owner = true
 
 [node name="SaveLoadDialog" parent="Windows" unique_id=1311200821 instance=ExtResource("15_saveload")]
 unique_name_in_owner = true
+
+[node name="Toasts" type="CanvasLayer" parent="." unique_id=1311200803]
+layer = 30
 
 [node name="SystemMenu" type="Node" parent="." unique_id=1311200822]
 script = ExtResource("16_sysmenu")
