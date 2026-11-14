@@ -87,7 +87,7 @@ data/rooms/cards/<id>.tres              # карточка и конфиг (Room
 data/rooms/room_root.gd                 # контракт сцены (как сейчас)
 ```
 
-Каталог читает **только** `data/rooms/cards/*.tres`, без рекурсии, как каталог объектов читает `data/<категория>/objects/` (папки не сканируются). Сейчас карточки лежат в `data/rooms/attic/attic.tres` и `data/rooms/bench/bench.tres`: переезд делается в панели FileSystem Godot (она переписывает `ext_resource` и держит `uid`).
+Каталог читает **только** `data/rooms/cards/*.tres`, без рекурсии, как каталог объектов читает `data/<категория>/objects/` (папки не сканируются). Карточки `attic` и `bench` перенесены из `data/rooms/<id>/<id>.tres` в `data/rooms/cards/` (RM3, `git mv`: сцены остались на месте, поэтому пути в `ext_resource` не менялись). Старое место проверяет `RoomCatalog.validate()`.
 
 **Поля `RoomConfig` после перехода на сцены** (процедурные поля живут до RM9):
 
@@ -339,14 +339,14 @@ API (RM2): `RoomBuilder.request_room(id, source)`, где `source` это `&"sta
 
 **Проверка:** F6 на `tests/room_access_test.tscn`: все PASS. Запуск игры с `--room=attic`: стартует мансарда. Загрузка автосейва возвращает его комнату.
 
-### RM3. Карточки комнат в отдельной папке [ ]
+### RM3. Карточки комнат в отдельной папке [x]
 
-**Файлы:** `data/scenes/room_catalog.gd`, `setting/room_config.gd` (+`dev_only`), `tests/room_catalog_test.tscn` (новый), `tests/catalog_lint.gd`. Переезд карточек `attic` и `bench` в `data/rooms/cards/` делается автором **в панели FileSystem**.
+**Файлы:** `data/scenes/room_catalog.gd`, `setting/room_config.gd` (+`dev_only`, `@tool`), `data/rooms/cards/` (карточки перенесены в патче), `core/library/room_studio/room_studio.gd` (пометка `[dev]`), `data/scenes/room_builder.gd` (`save_room_scene` пишет карточку в `cards/`), `tests/room_catalog_test.tscn` (новый), `tests/catalog_lint.gd`.
 
-- [ ] Каталог читает `data/rooms/cards/*.tres` без рекурсии; встроенные процедурные остаются в коде (временно).
-- [ ] Проверки: `id` равен имени файла, у карточки есть сцена, id уникальны, процедурным id нет карточек.
+- [x] Каталог читает `data/rooms/cards/*.tres` без рекурсии; встроенные процедурные остаются в коде (временно). `entries(for_player)` скрывает `dev_only` (`bench`, `cube`), `is_dev_only(id)`.
+- [x] `RoomCatalog.validate()`: `id` равен имени файла, у карточки есть сцена `data/rooms/<id>/<id>.tscn`, id уникальны, название не пустое, карточек в старом месте нет. Блок «Комнаты» в `catalog_lint.gd` зовёт её же.
 
-**Проверка:** (1) в FileSystem перетащить `attic.tres` и `bench.tres` в `data/rooms/cards/`; открыть оба: сцена на месте, предупреждений о путях нет. (2) F6 на `tests/room_catalog_test.tscn`: все PASS. (3) Library → Room Studio: `attic` и `bench` в списке, `kid_room_10` и `cube` серые. (4) перезапуск проекта: нет «resource not found»; `git status` показывает переименования.
+**Проверка:** (1) в FileSystem `data/rooms/cards/` содержит `attic.tres` и `bench.tres`, папки `data/rooms/attic/` и `bench/` без `.tres`; открыть оба: сцена на месте, `bench` с галочкой `dev_only`, предупреждений о путях нет. (2) F6 на `tests/room_catalog_test.tscn`: все OK, в конце ИТОГ: OK. (3) File → Run на `tests/catalog_lint.gd`: строка «Комнаты: ... проблем 0». (4) Library → Room Studio: `attic` в списке обычная, `bench [dev]` помечена, `kid_room_10` и `cube` серые «(процедурная)». (5) Игра запускается, `--room=attic` и `--room=bench` работают, как в RM2; перезапуск проекта без «resource not found»; `git status` показывает переименования, а не удаление и создание.
 
 ### RM4. Room Studio: запуск и «Оставить активной» [ ]
 

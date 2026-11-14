@@ -9,6 +9,7 @@ extends EditorScript
 ## Итог в Output: список проблем или «OK».
 ## Отдельным блоком «Library: ...» (не входит в проблемы): у объектов train и building нет паспорта Library
 ## (res://data/library/info/<key>.tres) или паспорт ссылается на несуществующий key (ATTN_22, шаг L0).
+## Блок «Комнаты: ...»: карточки data/rooms/cards (RoomCatalog.validate, ATTN_25 RM3).
 
 const DIRS := [
 	"res://data/tracks/objects/",
@@ -46,6 +47,7 @@ func _run() -> void:
 		for p in problems:
 			print("  - ", p)
 	_report_passports(objects)
+	_report_rooms()
 
 
 # XX claude-library L0: паспорта Library (предупреждения, не проблемы каталога)
@@ -72,6 +74,18 @@ func _report_passports(objects: Array[Dictionary]) -> void:
 	print("Library: паспортов проверено %d, предупреждений %d" % [checked, warns.size()])
 	for w in warns:
 		print("  - ", w)
+
+
+## Карточки комнат (ATTN_25 RM3): data/rooms/cards/*.tres. Проверки те же, что в tests/room_catalog_test.tscn
+func _report_rooms() -> void:
+	# RoomConfig должен быть @tool, иначе в редакторе поля карточки недоступны
+	if not "dev_only" in RoomConfig.new():
+		print("ОШИБКА: у RoomConfig нет полей в редакторе (нужен @tool в setting/room_config.gd). Проверка комнат не выполнена")
+		return
+	var problems := RoomCatalog.validate()
+	print("Комнаты: карточек в каталоге %d, проблем %d" % [RoomCatalog.entries().size(), problems.size()])
+	for p in problems:
+		print("  - ", p)
 
 
 func _check(path: String, res: EntitySetting, seen: Dictionary) -> Array[String]:

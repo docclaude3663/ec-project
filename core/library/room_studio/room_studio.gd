@@ -27,7 +27,7 @@ const BG_COLOR := Color(0.16, 0.17, 0.19)
 
 var settings: StudioSettings
 
-var _entries: Array[Dictionary] = []    # {id, title, tip, cfg: RoomConfig, has_scene: bool}
+var _entries: Array[Dictionary] = []    # {id, title, tip, dev_only, cfg: RoomConfig, has_scene: bool}
 var _list: ItemList
 var _info: Label
 var _ceiling_check: CheckButton
@@ -95,6 +95,7 @@ func _load_entries() -> void:
 			"id": e["id"],
 			"title": e["title"],
 			"tip": e["tip"],
+			"dev_only": e["dev_only"],
 			"cfg": cfg,
 			"has_scene": cfg != null and cfg.scene != null,
 		})
@@ -191,6 +192,9 @@ func _fill_list() -> void:
 		var i := _list.add_item(String(e["title"]))
 		if e["has_scene"]:
 			_list.set_item_tooltip(i, String(e["tip"]))
+			if e["dev_only"]:
+				_list.set_item_text(i, "%s [dev]" % e["title"])
+				_list.set_item_tooltip(i, "Тестовая комната (dev_only): игроку не показывается. %s" % e["tip"])
 		else:
 			_list.set_item_text(i, "%s (процедурная)" % e["title"])
 			_list.set_item_disabled(i, true)
@@ -210,7 +214,7 @@ func _select_initial() -> void:
 			pick = i
 			break
 	if pick < 0:
-		_info.text = "Нет комнат со сценой (data/rooms/<id>/<id>.tres)."
+		_info.text = "Нет комнат со сценой (карточки в data/rooms/cards/)."
 		return
 	_list.select(pick)
 	_show_room(pick)
@@ -332,7 +336,7 @@ func _info_text(e: Dictionary) -> String:
 	var cfg: RoomConfig = e["cfg"]
 	var lines := PackedStringArray()
 	lines.append("%s" % e["title"])
-	lines.append("id: %s" % e["id"])
+	lines.append("id: %s%s" % [e["id"], "  (dev_only)" if e["dev_only"] else ""])
 	if String(e["tip"]) != "":
 		lines.append(String(e["tip"]))
 	lines.append("")

@@ -183,7 +183,7 @@ func rebuild_room() -> void:
 
 
 ## Dev (только запуск из редактора): записывает текущую процедурную комнату в сцену data/rooms/<id>/<id>.tscn
-## и паспорт <id>.tres рядом. Со следующего запуска RoomCatalog берёт сцену вместо кода. Возвращает путь сцены или "".
+## и карточку data/rooms/cards/<id>.tres. Со следующего запуска RoomCatalog берёт сцену вместо кода. Возвращает путь сцены или "".
 ## Структура сцены описана в RoomRoot. Живую комнату это не меняет: в сцену уходят копии нод (ресурсы общие)
 func save_room_scene() -> String:
 	if not OS.has_feature("editor"):
@@ -197,8 +197,9 @@ func save_room_scene() -> String:
 	var id := String(config.id)
 	var dir := "res://data/rooms/%s" % id
 	var scene_path := "%s/%s.tscn" % [dir, id]
-	var passport_path := "%s/%s.tres" % [dir, id]
+	var passport_path := "%s/%s.tres" % [RoomCatalog.CARDS_DIR, id]
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(dir))
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(RoomCatalog.CARDS_DIR))
 
 	var root := RoomRoot.new()
 	root.name = id
@@ -247,6 +248,7 @@ func save_room_scene() -> String:
 		if b.id == config.id:
 			pc.title = b.title
 			pc.tip = b.tip
+			pc.dev_only = bool(b.get("dev_only", false))
 	pc.scene = ResourceLoader.load(scene_path, "PackedScene", ResourceLoader.CACHE_MODE_REPLACE) as PackedScene
 	err = ResourceSaver.save(pc, passport_path)
 	if err != OK:
